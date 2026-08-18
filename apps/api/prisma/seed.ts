@@ -4,26 +4,50 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main(): Promise<void> {
-  const email = (process.env.SEED_ADMIN_EMAIL ?? 'admin@lfpb.bj').toLowerCase();
-  const password = process.env.SEED_ADMIN_PASSWORD;
+async function upsertUser(
+  email: string,
+  password: string,
+  firstName: string,
+  lastName: string,
+) {
+  const passwordHash = await hash(password, 12);
+  return prisma.user.upsert({
+    where: { email },
+    update: { passwordHash, active: true },
+    create: { email, passwordHash, firstName, lastName },
+  });
+}
 
-  if (!password || password.length < 12) {
+async function main(): Promise<void> {
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? 'admin@lfpb.bj').toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  const clubEmail = (process.env.SEED_CLUB_EMAIL ?? 'admin@dragons.bj').toLowerCase();
+  const clubPassword = process.env.SEED_CLUB_PASSWORD;
+
+  if (!adminPassword || adminPassword.length < 12) {
     throw new Error('SEED_ADMIN_PASSWORD doit contenir au moins 12 caractères');
+  }
+  if (!clubPassword || clubPassword.length < 12) {
+    throw new Error('SEED_CLUB_PASSWORD doit contenir au moins 12 caractères');
   }
 
   const league = await prisma.organization.upsert({
     where: { code: 'LFPB' },
     update: {},
-    create: { name: 'Ligue de Football Professionnel du Bénin', code: 'LFPB', type: OrganizationType.LEAGUE },
+    create: {
+      name: 'Ligue de Football Professionnel du Bénin',
+      code: 'LFPB',
+      type: OrganizationType.LEAGUE,
+    },
   });
 
+  const clubs = new Map<string, string>();
   for (const club of [
     { name: 'Dragons FC de l’Ouémé', code: 'DRAGONS', shortName: 'Dragons FC', division: Division.LIGUE_1, city: 'Porto-Novo' },
     { name: 'RC Aziza FC', code: 'AZIZA', shortName: 'RC Aziza', division: Division.LIGUE_1, city: 'Cotonou' },
     { name: 'Béké FC', code: 'BEKE', shortName: 'Béké FC', division: Division.LIGUE_1, city: 'Bembèrèkè' },
   ]) {
-    await prisma.organization.upsert({
+    const organization = await prisma.organization.upsert({
       where: { code: club.code },
       update: {},
       create: {
@@ -33,33 +57,45 @@ async function main(): Promise<void> {
         club: { create: { shortName: club.shortName, division: club.division, city: club.city } },
       },
     });
+    clubs.set(club.code, organization.id);
   }
 
-  const admin = await prisma.user.upsert({
-    where: { email },
-    update: { passwordHash: await hash(password, 12), active: true },
-    create: {
-      email,
-      passwordHash: await hash(password, 12),
-      firstName: 'Administrateur',
-      lastName: 'LFPB',
-    },
-  });
-
+  const leagueAdmin = await upsertUser(adminEmail, adminPassword, 'Administrateur', 'LFPB');
   await prisma.membership.upsert({
     where: {
       userId_organizationId_role: {
-        userId: admin.id,
+        userId: leagueAdmin.id,
         organizationId: league.id,
         role: Role.LIGUE_ADMIN,
       },
     },
     update: {},
-    create: { userId: admin.id, organizationId: league.id, role: Role.LIGUE_ADMIN },
+    create: { userId: leagueAdmin.id, organizationId: league.id, role: Role.LIGUE_ADMIN },
   });
 
-  console.info(`Compte administrateur créé : ${email}`);
+  const dragonsId = clubs.get('DRAGONS');
+  if (!dragonsId) throw new Error('Organisation DRAGONS introuvable');
+
+  const clubAdmin = await upsertUser(clubEmail, clubPassword, 'Administrateur', 'Dragons');
+  await prisma.membership.upsert({
+    where: {
+      userId_organizationId_role: {
+        userId: clubAdmin.id,
+        organizationId: dragonsId,
+        role: Role.CLUB_ADMIN,
+      },
+    },
+    update: {},
+    create: { userId: clubAdmin.id, organizationId: dragonsId, role: Role.CLUB_ADMIN },
+  });
+
+  console.info(`Compte Ligue créé : ${adminEmail}`);
+  console.info(`Compte Dragons créé : ${clubEmail}`);
 }
 
 main()
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
   .finally(async () => prisma.$disconnect());
