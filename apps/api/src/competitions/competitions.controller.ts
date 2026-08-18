@@ -67,6 +67,15 @@ export class CompetitionsController {
     return this.competitions.enrollClub(actor, competitionId, input);
   }
 
+  @Get('competitions/:competitionId/fixture-plan/preview')
+  @Roles(Role.LIGUE_ADMIN)
+  previewFixturePlan(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.previewFixturePlan(actor, competitionId);
+  }
+
   @Get('competitions/:competitionId/rounds')
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
   listRounds(
