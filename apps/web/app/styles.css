@@ -1,0 +1,16 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #10233e;
+  background: #f4f7fb;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1080px; margin: 0 auto; padding: 96px 28px; }
+.eyebrow { color: #14844a; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+h1 { max-width: 820px; margin: 12px 0; font-size: clamp(2.7rem, 7vw, 5.5rem); line-height: .98; }
+.lead { max-width: 680px; font-size: 1.3rem; color: #53627a; }
+section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 56px; }
+article { padding: 26px; border-radius: 18px; background: white; box-shadow: 0 18px 50px rgba(16,35,62,.08); }
+article h2 { margin-top: 0; }
+@media (max-width: 720px) { section { grid-template-columns: 1fr; } main { padding-top: 56px; } }
