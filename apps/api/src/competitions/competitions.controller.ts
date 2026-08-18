@@ -15,11 +15,13 @@ import { AuthenticatedActor } from '../iam/domain/actor';
 import { Roles } from '../iam/roles.decorator';
 import { RolesGuard } from '../iam/roles.guard';
 import { CompetitionsService } from './competitions.service';
+import { AssignClubVenueDto } from './dto/assign-club-venue.dto';
 import { CreateCompetitionDto } from './dto/create-competition.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { CreateSeasonDto } from './dto/create-season.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
+import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
 
 @Controller()
@@ -110,6 +112,40 @@ export class CompetitionsController {
     @Body() input: CreateMatchDto,
   ) {
     return this.competitions.createMatch(actor, competitionId, input);
+  }
+
+  @Get('clubs/:clubId/venues')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
+  listClubVenues(@Param('clubId', ParseUUIDPipe) clubId: string) {
+    return this.competitions.listClubVenues(clubId);
+  }
+
+  @Post('clubs/:clubId/venues')
+  @Roles(Role.LIGUE_ADMIN)
+  assignClubVenue(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('clubId', ParseUUIDPipe) clubId: string,
+    @Body() input: AssignClubVenueDto,
+  ) {
+    return this.competitions.assignClubVenue(actor, clubId, input);
+  }
+
+  @Get('venues/:venueId/unavailabilities')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
+  listVenueUnavailabilities(
+    @Param('venueId', ParseUUIDPipe) venueId: string,
+  ) {
+    return this.competitions.listVenueUnavailabilities(venueId);
+  }
+
+  @Post('venues/:venueId/unavailabilities')
+  @Roles(Role.LIGUE_ADMIN)
+  createVenueUnavailability(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('venueId', ParseUUIDPipe) venueId: string,
+    @Body() input: CreateVenueUnavailabilityDto,
+  ) {
+    return this.competitions.createVenueUnavailability(actor, venueId, input);
   }
 
   @Get('venues')
