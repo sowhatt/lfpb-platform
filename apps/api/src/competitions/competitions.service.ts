@@ -9,15 +9,18 @@ import {
   MatchStatus,
   OrganizationType,
   Prisma,
+  VenueAssignmentType,
 } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
+import { AssignClubVenueDto } from './dto/assign-club-venue.dto';
 import { CreateCompetitionDto } from './dto/create-competition.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { CreateSeasonDto } from './dto/create-season.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
+import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
 import { FixturePlannerService } from './fixture-planner.service';
 
@@ -422,6 +425,136 @@ export class CompetitionsService {
         },
       });
       return match;
+    });
+  }
+
+  listClubVenues(clubId: string) {
+    return this.prisma.clubVenue.findMany({
+      where: { clubId, active: true },
+      include: { venue: true },
+      orderBy: [{ type: 'desc' }, { priority: 'asc' }],
+    });
+  }
+
+  async assignClubVenue(
+    actor: AuthenticatedActor,
+    clubId: string,
+    input: AssignClubVenueDto,
+  ) {
+    const club = await this.prisma.club.findUnique({
+      where: { id: clubId },
+    });
+    if (!club) throw new NotFoundException('Club introuvable');
+
+    const venue = await this.prisma.venue.findUnique({
+      where: { id: input.venueId },
+    });
+    if (!venue || !venue.active || !venue.approved) {
+      throw new BadRequestException('Le stade doit être actif et homologué');
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      if (input.type === VenueAssignmentType.PRIMARY) {
+        await tx.clubVenue.updateMany({
+          where: {
+            clubId,
+            type: VenueAssignmentType.PRIMARY,
+            venueId: { not: input.venueId },
+          },
+          data: { type: VenueAssignmentType.ALTERNATE },
+        });
+      }
+
+      const assignment = await tx.clubVenue.upsert({
+        where: { clubId_venueId: { clubId, venueId: input.venueId } },
+        update: {
+          type: input.type,
+          priority: input.priority ?? 1,
+          active: true,
+        },
+        create: {
+          clubId,
+          venueId: input.venueId,
+          type: input.type,
+          priority: input.priority ?? 1,
+        },
+        include: { venue: true },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: club.organizationId,
+          action: 'CLUB_VENUE_ASSIGNED',
+          resourceType: 'ClubVenue',
+          resourceId: clubId,
+          metadata: {
+            venueId: input.venueId,
+            type: input.type,
+            priority: input.priority ?? 1,
+          },
+        },
+      });
+      return assignment;
+    });
+  }
+
+  listVenueUnavailabilities(venueId: string) {
+    return this.prisma.venueUnavailability.findMany({
+      where: { venueId },
+      orderBy: { startsAt: 'asc' },
+    });
+  }
+
+  async createVenueUnavailability(
+    actor: AuthenticatedActor,
+    venueId: string,
+    input: CreateVenueUnavailabilityDto,
+  ) {
+    const venue = await this.prisma.venue.findUnique({
+      where: { id: venueId },
+    });
+    if (!venue) throw new NotFoundException('Stade introuvable');
+
+    const startsAt = new Date(input.startsAt);
+    const endsAt = new Date(input.endsAt);
+    if (endsAt <= startsAt) {
+      throw new BadRequestException(
+        'La fin de l’indisponibilité doit être postérieure au début',
+      );
+    }
+
+    const overlap = await this.prisma.venueUnavailability.findFirst({
+      where: {
+        venueId,
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+      },
+    });
+    if (overlap) {
+      throw new ConflictException(
+        'Cette période chevauche une indisponibilité existante',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const unavailability = await tx.venueUnavailability.create({
+        data: {
+          venueId,
+          startsAt,
+          endsAt,
+          reason: input.reason.trim(),
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          action: 'VENUE_UNAVAILABILITY_CREATED',
+          resourceType: 'VenueUnavailability',
+          resourceId: unavailability.id,
+          metadata: { venueId, startsAt: input.startsAt, endsAt: input.endsAt },
+        },
+      });
+      return unavailability;
     });
   }
 
