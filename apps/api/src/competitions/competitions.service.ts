@@ -23,6 +23,7 @@ import { CreateVenueDto } from './dto/create-venue.dto';
 import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
 import { FixturePlannerService } from './fixture-planner.service';
+import { FixtureQualityService } from './fixture-quality.service';
 import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
 
 @Injectable()
@@ -31,6 +32,7 @@ export class CompetitionsService {
     private readonly prisma: PrismaService,
     private readonly tenantAccess: TenantAccessService,
     private readonly fixturePlanner: FixturePlannerService,
+    private readonly fixtureQuality: FixtureQualityService,
   ) {}
 
   listSeasons() {
@@ -244,9 +246,15 @@ export class CompetitionsService {
       name: entry.club.shortName,
     }));
     const clubNames = new Map(clubs.map((club) => [club.id, club.name]));
-    const rounds = this.fixturePlanner.generateRoundRobin(
+    const doubleRound =
+      competition.format === CompetitionFormat.DOUBLE_ROUND_ROBIN;
+    const rounds = this.fixturePlanner.generateRoundRobin(clubs, doubleRound);
+    const quality = this.fixtureQuality.evaluate(
       clubs,
-      competition.format === CompetitionFormat.DOUBLE_ROUND_ROBIN,
+      rounds,
+      competition.maxConsecutiveHome,
+      competition.maxConsecutiveAway,
+      doubleRound ? 2 : 1,
     );
 
     return {
@@ -256,6 +264,7 @@ export class CompetitionsService {
         format: competition.format,
       },
       generatedBy: 'RKJO_FIXTURE_PLANNER_V1',
+      quality,
       constraints: [
         'Aucun club ne joue contre lui-même',
         'Une seule rencontre par club et par journée',
