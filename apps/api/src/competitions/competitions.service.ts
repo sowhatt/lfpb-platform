@@ -432,7 +432,7 @@ export class CompetitionsService {
     return this.prisma.clubVenue.findMany({
       where: { clubId, active: true },
       include: { venue: true },
-      orderBy: [{ type: 'desc' }, { priority: 'asc' }],
+      orderBy: [{ type: 'asc' }, { priority: 'asc' }],
     });
   }
 
