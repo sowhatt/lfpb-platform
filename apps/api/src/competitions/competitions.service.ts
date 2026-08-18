@@ -4,7 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { MatchStatus, OrganizationType, Prisma } from '@prisma/client';
+import {
+  CompetitionFormat,
+  MatchStatus,
+  OrganizationType,
+  Prisma,
+} from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
@@ -14,12 +19,14 @@ import { CreateRoundDto } from './dto/create-round.dto';
 import { CreateSeasonDto } from './dto/create-season.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
+import { FixturePlannerService } from './fixture-planner.service';
 
 @Injectable()
 export class CompetitionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantAccess: TenantAccessService,
+    private readonly fixturePlanner: FixturePlannerService,
   ) {}
 
   listSeasons() {
@@ -162,6 +169,77 @@ export class CompetitionsService {
       });
       return entry;
     });
+  }
+
+  async previewFixturePlan(
+    actor: AuthenticatedActor,
+    competitionId: string,
+  ) {
+    const competition = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+      include: {
+        entries: {
+          where: { active: true },
+          include: { club: { include: { organization: true } } },
+          orderBy: [{ seed: 'asc' }, { createdAt: 'asc' }],
+        },
+      },
+    });
+    if (!competition) throw new NotFoundException('Compétition introuvable');
+    this.tenantAccess.assertOrganizationAccess(actor, competition.organizationId);
+
+    if (
+      competition.format !== CompetitionFormat.ROUND_ROBIN &&
+      competition.format !== CompetitionFormat.DOUBLE_ROUND_ROBIN
+    ) {
+      throw new BadRequestException(
+        'Ce planificateur prend actuellement en charge les championnats',
+      );
+    }
+
+    const clubs = competition.entries.map((entry) => ({
+      id: entry.clubId,
+      name: entry.club.shortName,
+    }));
+    const clubNames = new Map(clubs.map((club) => [club.id, club.name]));
+    const rounds = this.fixturePlanner.generateRoundRobin(
+      clubs,
+      competition.format === CompetitionFormat.DOUBLE_ROUND_ROBIN,
+    );
+
+    return {
+      competition: {
+        id: competition.id,
+        name: competition.name,
+        format: competition.format,
+      },
+      generatedBy: 'RKJO_FIXTURE_PLANNER_V1',
+      constraints: [
+        'Aucun club ne joue contre lui-même',
+        'Une seule rencontre par club et par journée',
+        'Alternance domicile et extérieur sur la phase retour',
+        'Exemption automatique avec un nombre impair de clubs',
+      ],
+      rounds: rounds.map((round) => ({
+        number: round.number,
+        byeClub: round.byeClubId
+          ? {
+              id: round.byeClubId,
+              name: clubNames.get(round.byeClubId),
+            }
+          : null,
+        matches: round.matches.map((match) => ({
+          homeClub: {
+            id: match.homeClubId,
+            name: clubNames.get(match.homeClubId),
+          },
+          awayClub: {
+            id: match.awayClubId,
+            name: clubNames.get(match.awayClubId),
+          },
+        })),
+      })),
+    };
   }
 
   listRounds(competitionId: string) {
