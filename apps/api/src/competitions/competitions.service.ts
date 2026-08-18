@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { OrganizationType, Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
@@ -6,6 +11,7 @@ import { TenantAccessService } from '../iam/tenant-access.service';
 import { CreateCompetitionDto } from './dto/create-competition.dto';
 import { CreateSeasonDto } from './dto/create-season.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
+import { EnrollClubDto } from './dto/enroll-club.dto';
 
 @Injectable()
 export class CompetitionsService {
@@ -98,6 +104,61 @@ export class CompetitionsService {
         },
       });
       return competition;
+    });
+  }
+
+  async enrollClub(
+    actor: AuthenticatedActor,
+    competitionId: string,
+    input: EnrollClubDto,
+  ) {
+    const competition = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+    });
+    if (!competition) throw new NotFoundException('Compétition introuvable');
+    this.tenantAccess.assertOrganizationAccess(actor, competition.organizationId);
+
+    const club = await this.prisma.club.findUnique({
+      where: { id: input.clubId },
+      include: { organization: true },
+    });
+    if (!club || !club.organization.active) {
+      throw new NotFoundException('Club actif introuvable');
+    }
+    if (competition.division && club.division !== competition.division) {
+      throw new BadRequestException(
+        'La division du club ne correspond pas à celle de la compétition',
+      );
+    }
+
+    const existing = await this.prisma.competitionClub.findUnique({
+      where: {
+        competitionId_clubId: {
+          competitionId,
+          clubId: input.clubId,
+        },
+      },
+    });
+    if (existing) {
+      throw new ConflictException('Ce club est déjà engagé dans la compétition');
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const entry = await tx.competitionClub.create({
+        data: { competitionId, clubId: input.clubId, seed: input.seed },
+        include: { club: { include: { organization: true } } },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: competition.organizationId,
+          action: 'CLUB_ENROLLED_IN_COMPETITION',
+          resourceType: 'CompetitionClub',
+          resourceId: competitionId,
+          metadata: { clubId: input.clubId, seed: input.seed },
+        },
+      });
+      return entry;
     });
   }
 
