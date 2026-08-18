@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrganizationType, Prisma, RegistrationCategory } from '@prisma/client';
+import { DocumentStatus, OrganizationType, Prisma, RegistrationCategory } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
@@ -7,6 +7,7 @@ import { AddDocumentDto } from './dto/add-document.dto';
 import { CreateOfficialDto } from './dto/create-official.dto';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
+import { DocumentDecisionDto } from './dto/document-decision.dto';
 
 @Injectable()
 export class RegistriesService {
@@ -145,6 +146,55 @@ export class RegistriesService {
         },
       });
       return document;
+    });
+  }
+
+
+  async decideDocument(
+    actor: AuthenticatedActor,
+    documentId: string,
+    input: DocumentDecisionDto,
+  ) {
+    const document = await this.prisma.registrationDocument.findUnique({
+      where: { id: documentId },
+      include: { registration: { select: { organizationId: true } } },
+    });
+    if (!document) throw new NotFoundException('Document introuvable');
+    if (document.status !== DocumentStatus.PENDING) {
+      throw new BadRequestException('Seul un document en attente peut être traité');
+    }
+    if (input.decision === 'REJECTED' && !input.reason?.trim()) {
+      throw new BadRequestException('Le motif de rejet est obligatoire');
+    }
+
+    const status =
+      input.decision === 'APPROVED'
+        ? DocumentStatus.VALID
+        : DocumentStatus.REJECTED;
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.registrationDocument.update({
+        where: { id: documentId },
+        data: { status },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: document.registration.organizationId,
+          action:
+            status === DocumentStatus.VALID
+              ? 'REGISTRATION_DOCUMENT_APPROVED'
+              : 'REGISTRATION_DOCUMENT_REJECTED',
+          resourceType: 'RegistrationDocument',
+          resourceId: documentId,
+          metadata: {
+            previousStatus: document.status,
+            status,
+            reason: input.reason?.trim(),
+          },
+        },
+      });
+      return updated;
     });
   }
 
