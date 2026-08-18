@@ -23,6 +23,7 @@ import { CreateVenueDto } from './dto/create-venue.dto';
 import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
 import { FixturePlannerService } from './fixture-planner.service';
+import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
 
 @Injectable()
 export class CompetitionsService {
@@ -171,6 +172,44 @@ export class CompetitionsService {
         },
       });
       return entry;
+    });
+  }
+
+  async updatePlanningRules(
+    actor: AuthenticatedActor,
+    competitionId: string,
+    input: UpdatePlanningRulesDto,
+  ) {
+    const competition = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+    });
+    if (!competition) throw new NotFoundException('Compétition introuvable');
+    this.tenantAccess.assertOrganizationAccess(actor, competition.organizationId);
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.competition.update({
+        where: { id: competitionId },
+        data: {
+          minRestHours: input.minRestHours,
+          maxConsecutiveHome: input.maxConsecutiveHome,
+          maxConsecutiveAway: input.maxConsecutiveAway,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: competition.organizationId,
+          action: 'COMPETITION_PLANNING_RULES_UPDATED',
+          resourceType: 'Competition',
+          resourceId: competitionId,
+          metadata: {
+            minRestHours: updated.minRestHours,
+            maxConsecutiveHome: updated.maxConsecutiveHome,
+            maxConsecutiveAway: updated.maxConsecutiveAway,
+          },
+        },
+      });
+      return updated;
     });
   }
 
@@ -382,6 +421,28 @@ export class CompetitionsService {
     if (unavailable) {
       throw new ConflictException(
         'Le stade est indisponible à cet horaire',
+      );
+    }
+
+    const restWindowStart = new Date(
+      kickoffAt.getTime() - competition.minRestHours * 60 * 60 * 1000,
+    );
+    const restWindowEnd = new Date(
+      kickoffAt.getTime() + competition.minRestHours * 60 * 60 * 1000,
+    );
+    const restConflict = await this.prisma.match.findFirst({
+      where: {
+        kickoffAt: { gt: restWindowStart, lt: restWindowEnd },
+        status: { notIn: [MatchStatus.CANCELLED, MatchStatus.POSTPONED] },
+        OR: [
+          { homeClubId: { in: [input.homeClubId, input.awayClubId] } },
+          { awayClubId: { in: [input.homeClubId, input.awayClubId] } },
+        ],
+      },
+    });
+    if (restConflict) {
+      throw new ConflictException(
+        `Le repos minimal de ${competition.minRestHours} heures n’est pas respecté`,
       );
     }
 
