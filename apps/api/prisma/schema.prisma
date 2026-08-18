@@ -303,6 +303,9 @@ model Competition {
   division       Division?
   format         CompetitionFormat
   status         CompetitionStatus @default(DRAFT)
+  minRestHours   Int               @default(72)
+  maxConsecutiveHome Int            @default(2)
+  maxConsecutiveAway Int            @default(2)
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
