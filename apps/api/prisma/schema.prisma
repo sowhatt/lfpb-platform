@@ -95,6 +95,36 @@ enum DocumentStatus {
   EXPIRED
 }
 
+enum SeasonStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum CompetitionFormat {
+  ROUND_ROBIN
+  DOUBLE_ROUND_ROBIN
+  KNOCKOUT
+  GROUPS_AND_KNOCKOUT
+}
+
+enum CompetitionStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MatchStatus {
+  DRAFT
+  SCHEDULED
+  POSTPONED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 model Organization {
   id            String         @id @default(uuid()) @db.Uuid
   name          String
@@ -107,6 +137,7 @@ model Organization {
   memberships   Membership[]
   registrations Registration[]
   auditLogs     AuditLog[]
+  competitions Competition[]
 
   @@index([type, active])
 }
@@ -119,6 +150,9 @@ model Club {
   city           String?
   colors         String?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  competitionEntries CompetitionClub[]
+  homeMatches    Match[]      @relation("HomeClub")
+  awayMatches    Match[]      @relation("AwayClub")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -239,6 +273,112 @@ model RegistrationDocument {
   registration  Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
   @@index([registrationId, type, status])
+}
+
+model Season {
+  id           String       @id @default(uuid()) @db.Uuid
+  name         String       @unique
+  startDate    DateTime     @db.Date
+  endDate      DateTime     @db.Date
+  status       SeasonStatus @default(DRAFT)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  competitions Competition[]
+
+  @@index([status, startDate])
+}
+
+model Competition {
+  id             String            @id @default(uuid()) @db.Uuid
+  organizationId String            @db.Uuid
+  seasonId       String            @db.Uuid
+  name           String
+  code           String
+  division       Division?
+  format         CompetitionFormat
+  status         CompetitionStatus @default(DRAFT)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  season         Season            @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  entries        CompetitionClub[]
+  rounds         CompetitionRound[]
+  matches        Match[]
+
+  @@unique([seasonId, code])
+  @@index([organizationId, status])
+}
+
+model CompetitionClub {
+  competitionId String      @db.Uuid
+  clubId        String      @db.Uuid
+  seed          Int?
+  active        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  club          Club        @relation(fields: [clubId], references: [id], onDelete: Restrict)
+
+  @@id([competitionId, clubId])
+  @@index([clubId, active])
+}
+
+model Venue {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  city         String
+  address      String?
+  pitchSurface String?
+  capacity     Int?
+  approved     Boolean  @default(false)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  matches      Match[]
+
+  @@unique([name, city])
+  @@index([city, approved, active])
+}
+
+model CompetitionRound {
+  id            String      @id @default(uuid()) @db.Uuid
+  competitionId String      @db.Uuid
+  number        Int
+  name          String?
+  startDate     DateTime?   @db.Date
+  endDate       DateTime?   @db.Date
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  matches       Match[]
+
+  @@unique([competitionId, number])
+  @@index([competitionId, startDate])
+}
+
+model Match {
+  id              String           @id @default(uuid()) @db.Uuid
+  competitionId   String           @db.Uuid
+  roundId         String?          @db.Uuid
+  venueId         String?          @db.Uuid
+  homeClubId      String           @db.Uuid
+  awayClubId      String           @db.Uuid
+  kickoffAt       DateTime?
+  status          MatchStatus      @default(DRAFT)
+  homeScore       Int?
+  awayScore       Int?
+  postponementReason String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  competition     Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  round           CompetitionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  venue           Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  homeClub        Club             @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
+  awayClub        Club             @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
+
+  @@index([competitionId, status, kickoffAt])
+  @@index([homeClubId, kickoffAt])
+  @@index([awayClubId, kickoffAt])
+  @@index([venueId, kickoffAt])
 }
 
 model AuditLog {
