@@ -125,6 +125,11 @@ enum MatchStatus {
   CANCELLED
 }
 
+enum VenueAssignmentType {
+  PRIMARY
+  ALTERNATE
+}
+
 model Organization {
   id            String         @id @default(uuid()) @db.Uuid
   name          String
@@ -153,6 +158,7 @@ model Club {
   competitionEntries CompetitionClub[]
   homeMatches    Match[]      @relation("HomeClub")
   awayMatches    Match[]      @relation("AwayClub")
+  venueAssignments ClubVenue[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -334,9 +340,40 @@ model Venue {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   matches      Match[]
+  clubAssignments ClubVenue[]
+  unavailabilities VenueUnavailability[]
 
   @@unique([name, city])
   @@index([city, approved, active])
+}
+
+model ClubVenue {
+  clubId      String              @db.Uuid
+  venueId     String              @db.Uuid
+  type        VenueAssignmentType @default(ALTERNATE)
+  priority    Int                 @default(1)
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  club        Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  venue       Venue               @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@id([clubId, venueId])
+  @@index([venueId, active])
+  @@index([clubId, type, priority])
+}
+
+model VenueUnavailability {
+  id        String   @id @default(uuid()) @db.Uuid
+  venueId   String   @db.Uuid
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@index([venueId, startsAt, endsAt])
 }
 
 model CompetitionRound {
