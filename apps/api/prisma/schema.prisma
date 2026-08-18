@@ -30,17 +30,83 @@ enum Division {
   LIGUE_2
 }
 
+enum RegistrationCategory {
+  PLAYER
+  STAFF
+  OFFICIAL
+}
+
+enum RegistrationStatus {
+  DRAFT
+  SUBMITTED
+  VALIDATED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum PlayerPosition {
+  GOALKEEPER
+  DEFENDER
+  MIDFIELDER
+  FORWARD
+}
+
+enum StaffFunction {
+  HEAD_COACH
+  ASSISTANT_COACH
+  GOALKEEPER_COACH
+  FITNESS_COACH
+  DOCTOR
+  PHYSIOTHERAPIST
+  TEAM_MANAGER
+  OTHER
+}
+
+enum OfficialFunction {
+  REFEREE
+  ASSISTANT_REFEREE
+  FOURTH_OFFICIAL
+  MATCH_COMMISSIONER
+  DELEGATE
+}
+
+enum LicenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  SUSPENDED
+  EXPIRED
+}
+
+enum DocumentType {
+  IDENTITY
+  PHOTO
+  MEDICAL_CERTIFICATE
+  CONTRACT
+  TRANSFER_CLEARANCE
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  VALID
+  REJECTED
+  EXPIRED
+}
+
 model Organization {
-  id          String           @id @default(uuid()) @db.Uuid
-  name        String
-  code        String           @unique
-  type        OrganizationType
-  active      Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  club        Club?
-  memberships Membership[]
-  auditLogs   AuditLog[]
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  code          String         @unique
+  type          OrganizationType
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  club          Club?
+  memberships   Membership[]
+  registrations Registration[]
+  auditLogs     AuditLog[]
 
   @@index([type, active])
 }
@@ -85,6 +151,94 @@ model Membership {
 
   @@unique([userId, organizationId, role])
   @@index([organizationId, role, status])
+}
+
+model Person {
+  id             String         @id @default(uuid()) @db.Uuid
+  firstName      String
+  lastName       String
+  birthDate      DateTime       @db.Date
+  nationality    String?
+  federationId   String?        @unique
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  registrations  Registration[]
+
+  @@index([lastName, firstName, birthDate])
+}
+
+model Registration {
+  id             String               @id @default(uuid()) @db.Uuid
+  personId       String               @db.Uuid
+  organizationId String               @db.Uuid
+  category       RegistrationCategory
+  status         RegistrationStatus   @default(DRAFT)
+  startDate      DateTime             @db.Date
+  endDate        DateTime?            @db.Date
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  person         Person               @relation(fields: [personId], references: [id], onDelete: Restrict)
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  playerProfile  PlayerProfile?
+  staffProfile   StaffProfile?
+  officialProfile OfficialProfile?
+  licenses       License[]
+  documents      RegistrationDocument[]
+
+  @@index([organizationId, category, status])
+  @@index([personId, status])
+}
+
+model PlayerProfile {
+  registrationId String         @id @db.Uuid
+  position       PlayerPosition
+  shirtName      String?
+  shirtNumber    Int?
+  registration  Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
+
+model StaffProfile {
+  registrationId String        @id @db.Uuid
+  function       StaffFunction
+  qualification  String?
+  registration   Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
+
+model OfficialProfile {
+  registrationId String           @id @db.Uuid
+  function       OfficialFunction
+  grade          String?
+  registration   Registration     @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
+
+model License {
+  id             String        @id @default(uuid()) @db.Uuid
+  registrationId String        @db.Uuid
+  number         String        @unique
+  season         String
+  status         LicenseStatus @default(DRAFT)
+  validFrom      DateTime?     @db.Date
+  validUntil     DateTime?     @db.Date
+  rejectionReason String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  registration  Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([registrationId, season, status])
+}
+
+model RegistrationDocument {
+  id             String         @id @default(uuid()) @db.Uuid
+  registrationId String         @db.Uuid
+  type           DocumentType
+  storageKey     String
+  status         DocumentStatus @default(PENDING)
+  expiresAt      DateTime?      @db.Date
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  registration  Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([registrationId, type, status])
 }
 
 model AuditLog {
