@@ -1,11 +1,23 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentActor } from '../iam/current-actor.decorator';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { Roles } from '../iam/roles.decorator';
 import { RolesGuard } from '../iam/roles.guard';
+import { AddDocumentDto } from './dto/add-document.dto';
+import { CreateOfficialDto } from './dto/create-official.dto';
 import { CreatePlayerDto } from './dto/create-player.dto';
+import { CreateStaffDto } from './dto/create-staff.dto';
 import { REGISTRY_REFERENCE_DATA } from './reference-data';
 import { RegistriesService } from './registries.service';
 
@@ -35,5 +47,51 @@ export class RegistriesController {
     @Body() input: CreatePlayerDto,
   ) {
     return this.registries.createPlayer(actor, input);
+  }
+
+  @Get('staff')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  listStaff(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Query('organizationId') organizationId: string,
+  ) {
+    return this.registries.listStaff(actor, organizationId);
+  }
+
+  @Post('staff')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  createStaff(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Body() input: CreateStaffDto,
+  ) {
+    return this.registries.createStaff(actor, input);
+  }
+
+  @Get('officials')
+  @Roles(Role.LIGUE_ADMIN)
+  listOfficials(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Query('organizationId') organizationId: string,
+  ) {
+    return this.registries.listOfficials(actor, organizationId);
+  }
+
+  @Post('officials')
+  @Roles(Role.LIGUE_ADMIN)
+  createOfficial(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Body() input: CreateOfficialDto,
+  ) {
+    return this.registries.createOfficial(actor, input);
+  }
+
+  @Post(':registrationId/documents')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  addDocument(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @Body() input: AddDocumentDto,
+  ) {
+    return this.registries.addDocument(actor, registrationId, input);
   }
 }
