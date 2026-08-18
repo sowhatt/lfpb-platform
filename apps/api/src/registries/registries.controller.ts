@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -18,6 +19,7 @@ import { AddDocumentDto } from './dto/add-document.dto';
 import { CreateOfficialDto } from './dto/create-official.dto';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
+import { DocumentDecisionDto } from './dto/document-decision.dto';
 import { REGISTRY_REFERENCE_DATA } from './reference-data';
 import { RegistriesService } from './registries.service';
 
@@ -93,5 +95,15 @@ export class RegistriesController {
     @Body() input: AddDocumentDto,
   ) {
     return this.registries.addDocument(actor, registrationId, input);
+  }
+
+  @Patch('documents/:documentId/decision')
+  @Roles(Role.LIGUE_ADMIN)
+  decideDocument(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @Body() input: DocumentDecisionDto,
+  ) {
+    return this.registries.decideDocument(actor, documentId, input);
   }
 }
