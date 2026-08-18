@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PlannedRound, PlannerClub } from './fixture-planner.service';
 
-interface ClubQuality {
+export interface ClubQuality {
   clubId: string;
   clubName: string;
   homeMatches: number;
