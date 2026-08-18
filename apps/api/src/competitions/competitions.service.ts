@@ -372,6 +372,19 @@ export class CompetitionsService {
     }
 
     const kickoffAt = new Date(input.kickoffAt);
+    const unavailable = await this.prisma.venueUnavailability.findFirst({
+      where: {
+        venueId: input.venueId,
+        startsAt: { lte: kickoffAt },
+        endsAt: { gt: kickoffAt },
+      },
+    });
+    if (unavailable) {
+      throw new ConflictException(
+        'Le stade est indisponible à cet horaire',
+      );
+    }
+
     const conflict = await this.prisma.match.findFirst({
       where: {
         kickoffAt,
@@ -533,6 +546,19 @@ export class CompetitionsService {
     if (overlap) {
       throw new ConflictException(
         'Cette période chevauche une indisponibilité existante',
+      );
+    }
+
+    const scheduledMatch = await this.prisma.match.findFirst({
+      where: {
+        venueId,
+        kickoffAt: { gte: startsAt, lt: endsAt },
+        status: { notIn: [MatchStatus.CANCELLED, MatchStatus.POSTPONED] },
+      },
+    });
+    if (scheduledMatch) {
+      throw new ConflictException(
+        'Un match est déjà programmé pendant cette période',
       );
     }
 
