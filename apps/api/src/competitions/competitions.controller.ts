@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -23,6 +24,7 @@ import { CreateSeasonDto } from './dto/create-season.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
+import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -67,6 +69,20 @@ export class CompetitionsController {
     @Body() input: EnrollClubDto,
   ) {
     return this.competitions.enrollClub(actor, competitionId, input);
+  }
+
+  @Patch('competitions/:competitionId/planning-rules')
+  @Roles(Role.LIGUE_ADMIN)
+  updatePlanningRules(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+    @Body() input: UpdatePlanningRulesDto,
+  ) {
+    return this.competitions.updatePlanningRules(
+      actor,
+      competitionId,
+      input,
+    );
   }
 
   @Get('competitions/:competitionId/fixture-plan/preview')
