@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentActor } from '../iam/current-actor.decorator';
@@ -9,6 +18,7 @@ import { CompetitionsService } from './competitions.service';
 import { CreateCompetitionDto } from './dto/create-competition.dto';
 import { CreateSeasonDto } from './dto/create-season.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
+import { EnrollClubDto } from './dto/enroll-club.dto';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -43,6 +53,16 @@ export class CompetitionsController {
     @Body() input: CreateCompetitionDto,
   ) {
     return this.competitions.createCompetition(actor, input);
+  }
+
+  @Post('competitions/:competitionId/clubs')
+  @Roles(Role.LIGUE_ADMIN)
+  enrollClub(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+    @Body() input: EnrollClubDto,
+  ) {
+    return this.competitions.enrollClub(actor, competitionId, input);
   }
 
   @Get('venues')
