@@ -25,6 +25,7 @@ import { CreateVenueDto } from './dto/create-venue.dto';
 import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
 import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
+import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dto';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -69,6 +70,52 @@ export class CompetitionsController {
     @Body() input: EnrollClubDto,
   ) {
     return this.competitions.enrollClub(actor, competitionId, input);
+  }
+
+  @Get('competitions/:competitionId/schedule-proposals')
+  @Roles(Role.LIGUE_ADMIN)
+  listScheduleProposals(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.listScheduleProposals(actor, competitionId);
+  }
+
+  @Post('competitions/:competitionId/schedule-proposals/generate')
+  @Roles(Role.LIGUE_ADMIN)
+  generateScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.generateScheduleProposal(actor, competitionId);
+  }
+
+  @Patch('schedule-proposals/:proposalId/submit')
+  @Roles(Role.LIGUE_ADMIN)
+  submitScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+  ) {
+    return this.competitions.submitScheduleProposal(actor, proposalId);
+  }
+
+  @Patch('schedule-proposals/:proposalId/decision')
+  @Roles(Role.LIGUE_ADMIN)
+  decideScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+    @Body() input: ScheduleProposalDecisionDto,
+  ) {
+    return this.competitions.decideScheduleProposal(actor, proposalId, input);
+  }
+
+  @Patch('schedule-proposals/:proposalId/publish')
+  @Roles(Role.LIGUE_ADMIN)
+  publishScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+  ) {
+    return this.competitions.publishScheduleProposal(actor, proposalId);
   }
 
   @Patch('competitions/:competitionId/planning-rules')
