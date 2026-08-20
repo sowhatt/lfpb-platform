@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import {
   CompetitionFormat,
+  CompetitionStatus,
   MatchStatus,
   OrganizationType,
   Prisma,
+  ScheduleProposalStatus,
   VenueAssignmentType,
 } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
@@ -25,6 +27,7 @@ import { EnrollClubDto } from './dto/enroll-club.dto';
 import { FixturePlannerService } from './fixture-planner.service';
 import { FixtureQualityService } from './fixture-quality.service';
 import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
+import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dto';
 
 @Injectable()
 export class CompetitionsService {
@@ -174,6 +177,228 @@ export class CompetitionsService {
         },
       });
       return entry;
+    });
+  }
+
+  async listScheduleProposals(
+    actor: AuthenticatedActor,
+    competitionId: string,
+  ) {
+    const competition = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+    });
+    if (!competition) throw new NotFoundException('Compétition introuvable');
+    this.tenantAccess.assertOrganizationAccess(actor, competition.organizationId);
+
+    return this.prisma.scheduleProposal.findMany({
+      where: { competitionId },
+      include: {
+        generatedByUser: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        decidedByUser: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+      },
+      orderBy: { version: 'desc' },
+    });
+  }
+
+  async generateScheduleProposal(
+    actor: AuthenticatedActor,
+    competitionId: string,
+  ) {
+    const preview = await this.previewFixturePlan(actor, competitionId);
+    const competition = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+    });
+    if (!competition) throw new NotFoundException('Compétition introuvable');
+
+    const latest = await this.prisma.scheduleProposal.aggregate({
+      where: { competitionId },
+      _max: { version: true },
+    });
+    const version = (latest._max.version ?? 0) + 1;
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const proposal = await tx.scheduleProposal.create({
+        data: {
+          competitionId,
+          version,
+          generatedBy: preview.generatedBy,
+          generatedByUserId: actor.userId,
+          qualityScore: preview.quality.score,
+          qualityReport:
+            preview.quality as unknown as Prisma.InputJsonValue,
+          payload: {
+            competition: preview.competition,
+            constraints: preview.constraints,
+            rounds: preview.rounds,
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: competition.organizationId,
+          action: 'SCHEDULE_PROPOSAL_GENERATED',
+          resourceType: 'ScheduleProposal',
+          resourceId: proposal.id,
+          metadata: { competitionId, version, score: preview.quality.score },
+        },
+      });
+      return proposal;
+    });
+  }
+
+  async submitScheduleProposal(
+    actor: AuthenticatedActor,
+    proposalId: string,
+  ) {
+    const proposal = await this.prisma.scheduleProposal.findUnique({
+      where: { id: proposalId },
+      include: { competition: true },
+    });
+    if (!proposal) throw new NotFoundException('Proposition introuvable');
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      proposal.competition.organizationId,
+    );
+    if (proposal.status !== ScheduleProposalStatus.GENERATED) {
+      throw new BadRequestException(
+        'Seule une proposition générée peut être soumise',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.scheduleProposal.update({
+        where: { id: proposalId },
+        data: {
+          status: ScheduleProposalStatus.SUBMITTED,
+          submittedAt: new Date(),
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: proposal.competition.organizationId,
+          action: 'SCHEDULE_PROPOSAL_SUBMITTED',
+          resourceType: 'ScheduleProposal',
+          resourceId: proposalId,
+          metadata: { version: proposal.version },
+        },
+      });
+      return updated;
+    });
+  }
+
+  async decideScheduleProposal(
+    actor: AuthenticatedActor,
+    proposalId: string,
+    input: ScheduleProposalDecisionDto,
+  ) {
+    const proposal = await this.prisma.scheduleProposal.findUnique({
+      where: { id: proposalId },
+      include: { competition: true },
+    });
+    if (!proposal) throw new NotFoundException('Proposition introuvable');
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      proposal.competition.organizationId,
+    );
+    if (proposal.status !== ScheduleProposalStatus.SUBMITTED) {
+      throw new BadRequestException(
+        'Seule une proposition soumise peut être traitée',
+      );
+    }
+    if (input.decision === 'REJECTED' && !input.reason?.trim()) {
+      throw new BadRequestException('Le motif de rejet est obligatoire');
+    }
+
+    const status =
+      input.decision === 'APPROVED'
+        ? ScheduleProposalStatus.APPROVED
+        : ScheduleProposalStatus.REJECTED;
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.scheduleProposal.update({
+        where: { id: proposalId },
+        data: {
+          status,
+          decidedAt: new Date(),
+          decidedByUserId: actor.userId,
+          rejectionReason:
+            status === ScheduleProposalStatus.REJECTED
+              ? input.reason?.trim()
+              : null,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: proposal.competition.organizationId,
+          action:
+            status === ScheduleProposalStatus.APPROVED
+              ? 'SCHEDULE_PROPOSAL_APPROVED'
+              : 'SCHEDULE_PROPOSAL_REJECTED',
+          resourceType: 'ScheduleProposal',
+          resourceId: proposalId,
+          metadata: { version: proposal.version, reason: input.reason?.trim() },
+        },
+      });
+      return updated;
+    });
+  }
+
+  async publishScheduleProposal(
+    actor: AuthenticatedActor,
+    proposalId: string,
+  ) {
+    const proposal = await this.prisma.scheduleProposal.findUnique({
+      where: { id: proposalId },
+      include: { competition: true },
+    });
+    if (!proposal) throw new NotFoundException('Proposition introuvable');
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      proposal.competition.organizationId,
+    );
+    if (proposal.status !== ScheduleProposalStatus.APPROVED) {
+      throw new BadRequestException(
+        'Seule une proposition approuvée peut être publiée',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.scheduleProposal.updateMany({
+        where: {
+          competitionId: proposal.competitionId,
+          status: ScheduleProposalStatus.PUBLISHED,
+        },
+        data: { status: ScheduleProposalStatus.APPROVED, publishedAt: null },
+      });
+      const updated = await tx.scheduleProposal.update({
+        where: { id: proposalId },
+        data: {
+          status: ScheduleProposalStatus.PUBLISHED,
+          publishedAt: new Date(),
+        },
+      });
+      await tx.competition.update({
+        where: { id: proposal.competitionId },
+        data: { status: CompetitionStatus.PUBLISHED },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: proposal.competition.organizationId,
+          action: 'SCHEDULE_PROPOSAL_PUBLISHED',
+          resourceType: 'ScheduleProposal',
+          resourceId: proposalId,
+          metadata: { version: proposal.version },
+        },
+      });
+      return updated;
     });
   }
 
