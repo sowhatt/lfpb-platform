@@ -130,6 +130,14 @@ enum VenueAssignmentType {
   ALTERNATE
 }
 
+enum ScheduleProposalStatus {
+  GENERATED
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
 model Organization {
   id            String         @id @default(uuid()) @db.Uuid
   name          String
@@ -176,6 +184,8 @@ model User {
   updatedAt    DateTime     @updatedAt
   memberships Membership[]
   auditLogs    AuditLog[]   @relation("AuditActor")
+  generatedScheduleProposals ScheduleProposal[] @relation("ProposalGenerator")
+  decidedScheduleProposals ScheduleProposal[] @relation("ProposalDecider")
 }
 
 model Membership {
@@ -313,6 +323,7 @@ model Competition {
   entries        CompetitionClub[]
   rounds         CompetitionRound[]
   matches        Match[]
+  scheduleProposals ScheduleProposal[]
 
   @@unique([seasonId, code])
   @@index([organizationId, status])
@@ -419,6 +430,31 @@ model Match {
   @@index([homeClubId, kickoffAt])
   @@index([awayClubId, kickoffAt])
   @@index([venueId, kickoffAt])
+}
+
+model ScheduleProposal {
+  id                String                 @id @default(uuid()) @db.Uuid
+  competitionId     String                 @db.Uuid
+  version           Int
+  status            ScheduleProposalStatus @default(GENERATED)
+  generatedBy       String
+  generatedByUserId String                 @db.Uuid
+  qualityScore      Int
+  qualityReport     Json
+  payload           Json
+  submittedAt       DateTime?
+  decidedAt         DateTime?
+  decidedByUserId   String?                @db.Uuid
+  rejectionReason   String?
+  publishedAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  competition       Competition            @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  generatedByUser   User                   @relation("ProposalGenerator", fields: [generatedByUserId], references: [id], onDelete: Restrict)
+  decidedByUser     User?                  @relation("ProposalDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([competitionId, version])
+  @@index([competitionId, status, createdAt])
 }
 
 model AuditLog {
