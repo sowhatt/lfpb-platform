@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -269,6 +270,11 @@ export class CompetitionsService {
         'Seule une proposition générée peut être soumise',
       );
     }
+    if (proposal.generatedByUserId !== actor.userId) {
+      throw new ForbiddenException(
+        'Seul le responsable ayant généré cette proposition peut la soumettre',
+      );
+    }
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.scheduleProposal.update({
@@ -309,6 +315,11 @@ export class CompetitionsService {
     if (proposal.status !== ScheduleProposalStatus.SUBMITTED) {
       throw new BadRequestException(
         'Seule une proposition soumise peut être traitée',
+      );
+    }
+    if (proposal.generatedByUserId === actor.userId) {
+      throw new ForbiddenException(
+        'Le créateur d’une proposition ne peut pas prendre la décision',
       );
     }
     if (input.decision === 'REJECTED' && !input.reason?.trim()) {

@@ -73,7 +73,7 @@ export class CompetitionsController {
   }
 
   @Get('competitions/:competitionId/schedule-proposals')
-  @Roles(Role.LIGUE_ADMIN)
+  @Roles(Role.LIGUE_ADMIN, Role.COMPETITION_MANAGER, Role.SCHEDULE_APPROVER)
   listScheduleProposals(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('competitionId', ParseUUIDPipe) competitionId: string,
@@ -82,7 +82,7 @@ export class CompetitionsController {
   }
 
   @Post('competitions/:competitionId/schedule-proposals/generate')
-  @Roles(Role.LIGUE_ADMIN)
+  @Roles(Role.COMPETITION_MANAGER)
   generateScheduleProposal(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('competitionId', ParseUUIDPipe) competitionId: string,
@@ -91,7 +91,7 @@ export class CompetitionsController {
   }
 
   @Patch('schedule-proposals/:proposalId/submit')
-  @Roles(Role.LIGUE_ADMIN)
+  @Roles(Role.COMPETITION_MANAGER)
   submitScheduleProposal(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('proposalId', ParseUUIDPipe) proposalId: string,
@@ -100,7 +100,7 @@ export class CompetitionsController {
   }
 
   @Patch('schedule-proposals/:proposalId/decision')
-  @Roles(Role.LIGUE_ADMIN)
+  @Roles(Role.SCHEDULE_APPROVER)
   decideScheduleProposal(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('proposalId', ParseUUIDPipe) proposalId: string,
