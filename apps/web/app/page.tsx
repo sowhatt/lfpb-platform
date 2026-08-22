@@ -99,6 +99,7 @@ export default function HomePage() {
   const role = actor?.memberships[0]?.role ?? '';
   const space: Space = role === 'CLUB_ADMIN' ? 'CLUB' : role === 'OFFICIEL' ? 'OFFICIEL' : 'LIGUE';
   const currentClubId = organizations.find((organization) => organization.id === actor?.memberships[0]?.organizationId)?.club?.id;
+  const currentOrganizationId = actor?.memberships[0]?.organizationId;
   const visibleMatches = space === 'CLUB' && currentClubId ? matches.filter((match) => match.homeClub.id === currentClubId || match.awayClub.id === currentClubId) : matches;
   const nav = space === 'CLUB'
     ? ['Vue d’ensemble', 'Effectif', 'Staff', 'Licences', 'Calendrier']
@@ -126,7 +127,7 @@ export default function HomePage() {
         {active === 'Compétitions' && <CompetitionsView competitions={competitions} />}
         {active === 'Rencontres' && <MatchesView matches={matches} />}
         {active === 'Calendrier RKJO' && <PlannerView proposals={proposals} />}
-        {active === 'Effectif' && <RegistrationsView title="Effectif du club" registrations={players} profile="player" />}
+        {active === 'Effectif' && currentOrganizationId && <PlayersWorkspace registrations={players} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
         {active === 'Staff' && <RegistrationsView title="Staff technique et médical" registrations={staff} profile="staff" />}
         {active === 'Licences' && (space === 'CLUB' ? <LicensesView licenses={licenses} /> : <LeagueLicensesView clubs={clubs} />)}
         {active === 'Officiels' && <RegistrationsView title="Arbitres et officiels" registrations={officials} profile="official" />}
@@ -158,6 +159,31 @@ function ClubsView({ clubs }: { clubs: Organization[] }) { return <DataPanel tit
 function CompetitionsView({ competitions }: { competitions: Competition[] }) { return <DataPanel title="Compétitions"><table><thead><tr><th>Nom</th><th>Code</th><th>Format</th><th>Division</th><th>Statut</th></tr></thead><tbody>{competitions.map((c) => <tr key={c.id}><td><strong>{c.name}</strong></td><td>{c.code}</td><td>{c.format.replaceAll('_', ' ')}</td><td>{c.division?.replace('_', ' ') ?? '—'}</td><td><Badge value={c.status} /></td></tr>)}</tbody></table></DataPanel>; }
 function MatchesView({ matches }: { matches: Match[] }) { return <DataPanel title="Toutes les rencontres"><table><thead><tr><th>Journée</th><th>Affiche</th><th>Date</th><th>Stade</th><th>Statut</th></tr></thead><tbody>{matches.map((m) => <tr key={m.id}><td>J{m.round?.number ?? '—'}</td><td><strong>{m.homeClub.shortName} — {m.awayClub.shortName}</strong></td><td>{formatDate(m.kickoffAt)} · {formatTime(m.kickoffAt)}</td><td>{m.venue?.name ?? '—'}</td><td><Badge value={m.status} /></td></tr>)}</tbody></table></DataPanel>; }
 function PlannerView({ proposals }: { proposals: Proposal[] }) { return <DataPanel title="Propositions RKJO"><table><thead><tr><th>Version</th><th>Moteur</th><th>Qualité</th><th>Date</th><th>Statut</th></tr></thead><tbody>{proposals.map((p) => <tr key={p.id}><td><strong>Version {p.version}</strong></td><td>{p.generatedBy}</td><td>{p.qualityScore}/100</td><td>{formatDate(p.createdAt)}</td><td><Badge value={p.status} /></td></tr>)}</tbody></table>{proposals.length === 0 && <Empty text="Aucune proposition accessible avec ce rôle" />}</DataPanel>; }
+function PlayersWorkspace({ registrations, organizationId, token, onCreated }: { registrations: Registration[]; organizationId: string; token: string; onCreated: () => Promise<void> }) {
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  async function createPlayer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setSaving(true); setMessage('');
+    const form = new FormData(event.currentTarget);
+    try {
+      await request('/registries/players', token, { method: 'POST', body: JSON.stringify({
+        organizationId,
+        firstName: form.get('firstName'),
+        lastName: form.get('lastName'),
+        birthDate: form.get('birthDate'),
+        nationality: form.get('nationality'),
+        position: form.get('position'),
+        shirtName: form.get('shirtName') || undefined,
+        shirtNumber: form.get('shirtNumber') ? Number(form.get('shirtNumber')) : undefined,
+        startDate: form.get('startDate'),
+      }) });
+      event.currentTarget.reset(); setCreating(false); setMessage('Joueur ajouté à l’effectif.'); await onCreated();
+    } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Création impossible'); }
+    finally { setSaving(false); }
+  }
+  return <><section className="workspace-actions"><div><label>GESTION DU CLUB</label><h2>Effectif</h2><p>Les joueurs créés sont enregistrés en brouillon avant validation de leur licence.</p></div><button className="primary" onClick={() => setCreating((value) => !value)}>{creating ? 'Fermer' : '+ Ajouter un joueur'}</button></section>{message && <div className="success-message">{message}</div>}{creating && <form className="entity-form" onSubmit={createPlayer}><div><label>Prénom</label><input name="firstName" required /></div><div><label>Nom</label><input name="lastName" required /></div><div><label>Date de naissance</label><input name="birthDate" type="date" required /></div><div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" required /></div><div><label>Poste</label><select name="position" required><option value="GOALKEEPER">Gardien de but</option><option value="DEFENDER">Défenseur</option><option value="MIDFIELDER">Milieu de terrain</option><option value="FORWARD">Attaquant</option></select></div><div><label>Nom sur le maillot</label><input name="shirtName" /></div><div><label>Numéro</label><input name="shirtNumber" type="number" min="1" max="99" /></div><div><label>Date d’arrivée</label><input name="startDate" type="date" defaultValue="2026-08-01" required /></div><button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le joueur'}</button></form>}<RegistrationsView title="Effectif du club" registrations={registrations} profile="player" /></>;
+}
 function RegistrationsView({ title, registrations, profile }: { title: string; registrations: Registration[]; profile: 'player' | 'staff' | 'official' }) { return <DataPanel title={title}>{registrations.length === 0 ? <Empty text="Aucune donnée enregistrée" /> : <table><thead><tr><th>Nom</th><th>{profile === 'player' ? 'Poste' : 'Fonction'}</th><th>{profile === 'player' ? 'N°' : 'Qualification / niveau'}</th><th>Statut</th></tr></thead><tbody>{registrations.map((r) => <tr key={r.id}><td><strong>{r.person.firstName} {r.person.lastName}</strong></td><td>{profile === 'player' ? translatePosition(r.playerProfile?.position) : profile === 'staff' ? translateFunction(r.staffProfile?.function) : translateFunction(r.officialProfile?.function)}</td><td>{profile === 'player' ? r.playerProfile?.shirtNumber ?? '—' : profile === 'staff' ? r.staffProfile?.qualification ?? '—' : r.officialProfile?.level ?? '—'}</td><td><Badge value={r.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
 function LicensesView({ licenses }: { licenses: License[] }) { return <DataPanel title="Licences du club">{licenses.length === 0 ? <Empty text="Aucune licence enregistrée" /> : <table><thead><tr><th>Numéro</th><th>Saison</th><th>Statut</th></tr></thead><tbody>{licenses.map((l) => <tr key={l.id}><td><strong>{l.number}</strong></td><td>{l.season}</td><td><Badge value={l.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
 function LeagueLicensesView({ clubs }: { clubs: Organization[] }) { return <DataPanel title="Contrôle des licences"><Empty text={`${clubs.length} club(s) sous supervision — file de validation détaillée au prochain incrément`} /></DataPanel>; }
