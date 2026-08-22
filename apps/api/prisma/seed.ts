@@ -23,12 +23,27 @@ async function main(): Promise<void> {
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
   const clubEmail = (process.env.SEED_CLUB_EMAIL ?? 'admin@dragons.bj').toLowerCase();
   const clubPassword = process.env.SEED_CLUB_PASSWORD;
+  const managerEmail = (process.env.SEED_COMPETITION_MANAGER_EMAIL ?? 'competitions@lfpb.bj').toLowerCase();
+  const managerPassword = process.env.SEED_COMPETITION_MANAGER_PASSWORD;
+  const approverEmail = (process.env.SEED_SCHEDULE_APPROVER_EMAIL ?? 'validation.calendrier@lfpb.bj').toLowerCase();
+  const approverPassword = process.env.SEED_SCHEDULE_APPROVER_PASSWORD;
+  const officialEmail = (process.env.SEED_OFFICIAL_EMAIL ?? 'arbitre.demo@lfpb.bj').toLowerCase();
+  const officialPassword = process.env.SEED_OFFICIAL_PASSWORD;
 
   if (!adminPassword || adminPassword.length < 12) {
     throw new Error('SEED_ADMIN_PASSWORD doit contenir au moins 12 caractères');
   }
   if (!clubPassword || clubPassword.length < 12) {
     throw new Error('SEED_CLUB_PASSWORD doit contenir au moins 12 caractères');
+  }
+  if (!managerPassword || managerPassword.length < 12) {
+    throw new Error('SEED_COMPETITION_MANAGER_PASSWORD doit contenir au moins 12 caractères');
+  }
+  if (!approverPassword || approverPassword.length < 12) {
+    throw new Error('SEED_SCHEDULE_APPROVER_PASSWORD doit contenir au moins 12 caractères');
+  }
+  if (!officialPassword || officialPassword.length < 12) {
+    throw new Error('SEED_OFFICIAL_PASSWORD doit contenir au moins 12 caractères');
   }
 
   const league = await prisma.organization.upsert({
@@ -73,6 +88,72 @@ async function main(): Promise<void> {
     create: { userId: leagueAdmin.id, organizationId: league.id, role: Role.LIGUE_ADMIN },
   });
 
+  const official = await upsertUser(
+    officialEmail,
+    officialPassword,
+    'Arbitre',
+    'Démonstration',
+  );
+  await prisma.membership.upsert({
+    where: {
+      userId_organizationId_role: {
+        userId: official.id,
+        organizationId: league.id,
+        role: Role.OFFICIEL,
+      },
+    },
+    update: {},
+    create: {
+      userId: official.id,
+      organizationId: league.id,
+      role: Role.OFFICIEL,
+    },
+  });
+
+  const competitionManager = await upsertUser(
+    managerEmail,
+    managerPassword,
+    'Responsable',
+    'Compétitions',
+  );
+  await prisma.membership.upsert({
+    where: {
+      userId_organizationId_role: {
+        userId: competitionManager.id,
+        organizationId: league.id,
+        role: Role.COMPETITION_MANAGER,
+      },
+    },
+    update: {},
+    create: {
+      userId: competitionManager.id,
+      organizationId: league.id,
+      role: Role.COMPETITION_MANAGER,
+    },
+  });
+
+  const scheduleApprover = await upsertUser(
+    approverEmail,
+    approverPassword,
+    'Validateur',
+    'Calendrier',
+  );
+  await prisma.membership.upsert({
+    where: {
+      userId_organizationId_role: {
+        userId: scheduleApprover.id,
+        organizationId: league.id,
+        role: Role.SCHEDULE_APPROVER,
+      },
+    },
+    update: {},
+    create: {
+      userId: scheduleApprover.id,
+      organizationId: league.id,
+      role: Role.SCHEDULE_APPROVER,
+    },
+  });
+
   const dragonsId = clubs.get('DRAGONS');
   if (!dragonsId) throw new Error('Organisation DRAGONS introuvable');
 
@@ -91,6 +172,9 @@ async function main(): Promise<void> {
 
   console.info(`Compte Ligue créé : ${adminEmail}`);
   console.info(`Compte Dragons créé : ${clubEmail}`);
+  console.info(`Compte responsable compétitions créé : ${managerEmail}`);
+  console.info(`Compte validateur calendrier créé : ${approverEmail}`);
+  console.info(`Compte officiel créé : ${officialEmail}`);
 }
 
 main()

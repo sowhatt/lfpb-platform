@@ -2,7 +2,12 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthenticatedActor } from './domain/actor';
 
-const CROSS_TENANT_ROLES = new Set<Role>([Role.LIGUE_ADMIN, Role.SUPPORT]);
+const CROSS_TENANT_ROLES = new Set<Role>([
+  Role.LIGUE_ADMIN,
+  Role.COMPETITION_MANAGER,
+  Role.SCHEDULE_APPROVER,
+  Role.SUPPORT,
+]);
 
 @Injectable()
 export class TenantAccessService {

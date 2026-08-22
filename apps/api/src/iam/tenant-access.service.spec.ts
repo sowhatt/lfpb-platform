@@ -35,6 +35,19 @@ describe('TenantAccessService', () => {
     expect(service.organizationScope(actor)).toBeNull();
   });
 
+  it.each([Role.COMPETITION_MANAGER, Role.SCHEDULE_APPROVER])(
+    'autorise le rôle Ligue %s à accéder aux compétitions',
+    (role) => {
+      const actor = {
+        userId: 'league-user',
+        memberships: [{ organizationId: 'league-id', role }],
+      };
+
+      expect(service.canAccessOrganization(actor, azizaId)).toBe(true);
+      expect(service.organizationScope(actor)).toBeNull();
+    },
+  );
+
   it('retourne une portée limitée pour un officiel ou un club', () => {
     const actor = {
       userId: 'official-1',
