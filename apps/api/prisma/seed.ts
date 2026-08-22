@@ -27,6 +27,8 @@ async function main(): Promise<void> {
   const managerPassword = process.env.SEED_COMPETITION_MANAGER_PASSWORD;
   const approverEmail = (process.env.SEED_SCHEDULE_APPROVER_EMAIL ?? 'validation.calendrier@lfpb.bj').toLowerCase();
   const approverPassword = process.env.SEED_SCHEDULE_APPROVER_PASSWORD;
+  const officialEmail = (process.env.SEED_OFFICIAL_EMAIL ?? 'arbitre.demo@lfpb.bj').toLowerCase();
+  const officialPassword = process.env.SEED_OFFICIAL_PASSWORD;
 
   if (!adminPassword || adminPassword.length < 12) {
     throw new Error('SEED_ADMIN_PASSWORD doit contenir au moins 12 caractères');
@@ -39,6 +41,9 @@ async function main(): Promise<void> {
   }
   if (!approverPassword || approverPassword.length < 12) {
     throw new Error('SEED_SCHEDULE_APPROVER_PASSWORD doit contenir au moins 12 caractères');
+  }
+  if (!officialPassword || officialPassword.length < 12) {
+    throw new Error('SEED_OFFICIAL_PASSWORD doit contenir au moins 12 caractères');
   }
 
   const league = await prisma.organization.upsert({
@@ -81,6 +86,28 @@ async function main(): Promise<void> {
     },
     update: {},
     create: { userId: leagueAdmin.id, organizationId: league.id, role: Role.LIGUE_ADMIN },
+  });
+
+  const official = await upsertUser(
+    officialEmail,
+    officialPassword,
+    'Arbitre',
+    'Démonstration',
+  );
+  await prisma.membership.upsert({
+    where: {
+      userId_organizationId_role: {
+        userId: official.id,
+        organizationId: league.id,
+        role: Role.OFFICIEL,
+      },
+    },
+    update: {},
+    create: {
+      userId: official.id,
+      organizationId: league.id,
+      role: Role.OFFICIEL,
+    },
   });
 
   const competitionManager = await upsertUser(
@@ -147,6 +174,7 @@ async function main(): Promise<void> {
   console.info(`Compte Dragons créé : ${clubEmail}`);
   console.info(`Compte responsable compétitions créé : ${managerEmail}`);
   console.info(`Compte validateur calendrier créé : ${approverEmail}`);
+  console.info(`Compte officiel créé : ${officialEmail}`);
 }
 
 main()
