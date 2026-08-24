@@ -120,18 +120,7 @@ export class RegistriesService {
     const registration = await this.prisma.registration.findUnique({
       where: { id: registrationId },
       include: {
-        person: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            birthDate: true,
-            nationality: true,
-            federationId: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
+        person: true,
         playerProfile: true,
         licenses: { orderBy: { createdAt: 'desc' } },
         documents: { orderBy: { createdAt: 'desc' } },
@@ -377,7 +366,18 @@ export class RegistriesService {
     return this.prisma.registration.findMany({
       where: { organizationId, category },
       include: {
-        person: true,
+        person: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            birthDate: true,
+            nationality: true,
+            federationId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
         playerProfile: true,
         staffProfile: true,
         officialProfile: true,
