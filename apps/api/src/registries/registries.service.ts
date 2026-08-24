@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DocumentStatus, OrganizationType, Prisma, RegistrationCategory } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
@@ -8,6 +8,7 @@ import { CreateOfficialDto } from './dto/create-official.dto';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { DocumentDecisionDto } from './dto/document-decision.dto';
+import { buildPlayerDeduplicationKey, parseStrictDate } from './player-registration.rules';
 
 @Injectable()
 export class RegistriesService {
@@ -32,30 +33,86 @@ export class RegistriesService {
     await this.assertOrganizationType(input.organizationId, OrganizationType.CLUB);
     this.tenantAccess.assertOrganizationAccess(actor, input.organizationId);
 
-    return this.prisma.person.create({
-      data: {
-        firstName: input.firstName.trim(),
-        lastName: input.lastName.trim(),
-        birthDate: new Date(input.birthDate),
-        nationality: input.nationality?.trim(),
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName.trim();
+    const birthDate = parseStrictDate(input.birthDate, 'La date de naissance', {
+      forbidFuture: true,
+    });
+    const startDate = parseStrictDate(input.startDate, 'La date d’arrivée');
+    const endDate = input.endDate
+      ? parseStrictDate(input.endDate, 'La date de fin')
+      : undefined;
+
+    if (endDate && endDate < startDate) {
+      throw new BadRequestException(
+        'La date de fin ne peut pas précéder la date d’arrivée',
+      );
+    }
+
+    const existing = await this.prisma.person.findFirst({
+      where: {
+        firstName: { equals: firstName, mode: 'insensitive' },
+        lastName: { equals: lastName, mode: 'insensitive' },
+        birthDate,
         registrations: {
-          create: {
+          some: {
             organizationId: input.organizationId,
             category: RegistrationCategory.PLAYER,
-            startDate: new Date(input.startDate),
-            endDate: input.endDate ? new Date(input.endDate) : undefined,
-            playerProfile: {
-              create: {
-                position: input.position,
-                shirtName: input.shirtName?.trim(),
-                shirtNumber: input.shirtNumber,
+          },
+        },
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'Ce joueur existe déjà dans l’effectif de ce club',
+      );
+    }
+
+    const deduplicationKey = buildPlayerDeduplicationKey({
+      organizationId: input.organizationId,
+      firstName,
+      lastName,
+      birthDate: input.birthDate,
+    });
+
+    try {
+      return await this.prisma.person.create({
+        data: {
+          firstName,
+          lastName,
+          birthDate,
+          nationality: input.nationality?.trim(),
+          registrations: {
+            create: {
+              organizationId: input.organizationId,
+              category: RegistrationCategory.PLAYER,
+              deduplicationKey,
+              startDate,
+              endDate,
+              playerProfile: {
+                create: {
+                  position: input.position,
+                  shirtName: input.shirtName?.trim(),
+                  shirtNumber: input.shirtNumber,
+                },
               },
             },
           },
         },
-      },
-      include: { registrations: { include: { playerProfile: true } } },
-    });
+        include: { registrations: { include: { playerProfile: true } } },
+      });
+    } catch (reason) {
+      if (
+        reason instanceof Prisma.PrismaClientKnownRequestError &&
+        reason.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Ce joueur existe déjà dans l’effectif de ce club',
+        );
+      }
+      throw reason;
+    }
   }
 
   async createStaff(actor: AuthenticatedActor, input: CreateStaffDto) {
