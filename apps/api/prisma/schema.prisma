@@ -212,6 +212,8 @@ model Person {
   birthDate      DateTime       @db.Date
   nationality    String?
   federationId   String?        @unique
+  photoData       Bytes?
+  photoMimeType   String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   registrations  Registration[]
