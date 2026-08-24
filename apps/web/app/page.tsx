@@ -9,7 +9,7 @@ type Organization = { id: string; name: string; code: string; type: string; acti
 type Competition = { id: string; name: string; code: string; format: string; status: string; division?: string; season?: { name: string }; entries?: unknown[] };
 type Match = { id: string; kickoffAt?: string; status: string; homeClub: { id: string; shortName: string }; awayClub: { id: string; shortName: string }; venue?: { name: string } | null; round?: { number: number } | null };
 type Proposal = { id: string; version: number; status: string; qualityScore: number; generatedBy: string; createdAt: string };
-type Registration = { id: string; status: string; person: { firstName: string; lastName: string; nationality?: string }; playerProfile?: { position: string; shirtNumber?: number } | null; staffProfile?: { function: string; qualification?: string } | null; officialProfile?: { function: string; level?: string } | null; licenses?: License[]; documents?: { id: string; type: string; status: string }[] };
+type Registration = { id: string; status: string; startDate?: string; person: { firstName: string; lastName: string; birthDate?: string; nationality?: string; federationId?: string; photoDataUrl?: string | null }; playerProfile?: { position: string; shirtNumber?: number } | null; staffProfile?: { function: string; qualification?: string } | null; officialProfile?: { function: string; level?: string } | null; licenses?: License[]; documents?: { id: string; type: string; status: string }[] };
 type License = { id: string; number: string; season: string; status: string; registration?: Registration };
 type Space = 'LIGUE' | 'CLUB' | 'OFFICIEL';
 
@@ -69,6 +69,41 @@ function normalizeDateInput(
   }
 
   return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+async function preparePlayerPhoto(file: File): Promise<string> {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    throw new Error('Sélectionnez une photo JPEG, PNG ou WebP');
+  }
+
+  const source = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Lecture de la photo impossible'));
+    reader.readAsDataURL(file);
+  });
+
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error('Cette image ne peut pas être traitée'));
+    element.src = source;
+  });
+
+  const maximum = 640;
+  const ratio = Math.min(1, maximum / Math.max(image.width, image.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.width * ratio));
+  canvas.height = Math.max(1, Math.round(image.height * ratio));
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Traitement de la photo impossible');
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  const photoDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+  if (photoDataUrl.length > 1_000_000) {
+    throw new Error('La photo reste trop volumineuse après compression');
+  }
+  return photoDataUrl;
 }
 
 export default function HomePage() {
@@ -213,6 +248,54 @@ function PlayersWorkspace({ registrations, organizationId, token, onCreated }: {
   const [message, setMessage] = useState('');
   const [messageIsError, setMessageIsError] = useState(false);
   const submitting = useRef(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<Registration | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [photoSaving, setPhotoSaving] = useState(false);
+
+  async function openPlayer(registrationId: string) {
+    setProfileLoading(true);
+    setMessage('');
+    try {
+      const player = await request<Registration>(
+        `/registries/players/${registrationId}`,
+        token,
+      );
+      setSelectedPlayer(player);
+    } catch (reason) {
+      setMessageIsError(true);
+      setMessage(reason instanceof Error ? reason.message : 'Fiche joueur indisponible');
+    } finally {
+      setProfileLoading(false);
+    }
+  }
+
+  async function updatePhoto(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !selectedPlayer) return;
+
+    setPhotoSaving(true);
+    setMessage('');
+    try {
+      const photoDataUrl = await preparePlayerPhoto(file);
+      const player = await request<Registration>(
+        `/registries/players/${selectedPlayer.id}/photo`,
+        token,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ photoDataUrl }),
+        },
+      );
+      setSelectedPlayer(player);
+      setMessageIsError(false);
+      setMessage('Photo du joueur enregistrée.');
+    } catch (reason) {
+      setMessageIsError(true);
+      setMessage(reason instanceof Error ? reason.message : 'Ajout de la photo impossible');
+    } finally {
+      setPhotoSaving(false);
+      event.target.value = '';
+    }
+  }
 
   async function createPlayer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -260,9 +343,9 @@ function PlayersWorkspace({ registrations, organizationId, token, onCreated }: {
       setSaving(false);
     }
   }
-  return <><section className="workspace-actions"><div><label>GESTION DU CLUB</label><h2>Effectif</h2><p>Les joueurs créés sont enregistrés en brouillon avant validation de leur licence.</p></div><button className="primary" onClick={() => setCreating((value) => !value)}>{creating ? 'Fermer' : '+ Ajouter un joueur'}</button></section>{message && <div className={messageIsError ? 'api-error' : 'success-message'}>{message}</div>}{creating && <form className="entity-form" onSubmit={createPlayer}><div><label>Prénom</label><input name="firstName" required /></div><div><label>Nom</label><input name="lastName" required /></div><div><label>Date de naissance</label><input name="birthDate" type="text" inputMode="numeric" placeholder="JJ/MM/AAAA" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" required /></div><div><label>Poste</label><select name="position" required><option value="GOALKEEPER">Gardien de but</option><option value="DEFENDER">Défenseur</option><option value="MIDFIELDER">Milieu de terrain</option><option value="FORWARD">Attaquant</option></select></div><div><label>Nom sur le maillot</label><input name="shirtName" /></div><div><label>Numéro</label><input name="shirtNumber" type="number" min="1" max="99" /></div><div><label>Date d’arrivée</label><input name="startDate" type="text" inputMode="numeric" defaultValue="01/08/2026" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le joueur'}</button></form>}<RegistrationsView title="Effectif du club" registrations={registrations} profile="player" /></>;
+  return <><section className="workspace-actions"><div><label>GESTION DU CLUB</label><h2>Effectif</h2><p>Les joueurs créés sont enregistrés en brouillon avant validation de leur licence.</p></div><button className="primary" onClick={() => setCreating((value) => !value)}>{creating ? 'Fermer' : '+ Ajouter un joueur'}</button></section>{message && <div className={messageIsError ? 'api-error' : 'success-message'}>{message}</div>}{creating && <form className="entity-form" onSubmit={createPlayer}><div><label>Prénom</label><input name="firstName" required /></div><div><label>Nom</label><input name="lastName" required /></div><div><label>Date de naissance</label><input name="birthDate" type="text" inputMode="numeric" placeholder="JJ/MM/AAAA" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" required /></div><div><label>Poste</label><select name="position" required><option value="GOALKEEPER">Gardien de but</option><option value="DEFENDER">Défenseur</option><option value="MIDFIELDER">Milieu de terrain</option><option value="FORWARD">Attaquant</option></select></div><div><label>Nom sur le maillot</label><input name="shirtName" /></div><div><label>Numéro</label><input name="shirtNumber" type="number" min="1" max="99" /></div><div><label>Date d’arrivée</label><input name="startDate" type="text" inputMode="numeric" defaultValue="01/08/2026" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le joueur'}</button></form>}{profileLoading && <div className="profile-loading">Chargement de la fiche joueur…</div>}{selectedPlayer && <section className="player-profile"><button className="profile-close" onClick={() => setSelectedPlayer(null)}>Fermer ×</button><div className="player-photo">{selectedPlayer.person.photoDataUrl ? <img src={selectedPlayer.person.photoDataUrl} alt={`${selectedPlayer.person.firstName} ${selectedPlayer.person.lastName}`} /> : <span>{selectedPlayer.person.firstName[0]}{selectedPlayer.person.lastName[0]}</span>}<label className="photo-upload">{photoSaving ? 'Traitement…' : 'Ajouter / modifier la photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={updatePhoto} disabled={photoSaving} /></label></div><div className="player-identity"><label>FICHE JOUEUR</label><h2>{selectedPlayer.person.firstName} {selectedPlayer.person.lastName}</h2><dl><div><dt>Date de naissance</dt><dd>{formatDate(selectedPlayer.person.birthDate)}</dd></div><div><dt>Nationalité</dt><dd>{selectedPlayer.person.nationality ?? '—'}</dd></div><div><dt>Poste</dt><dd>{translatePosition(selectedPlayer.playerProfile?.position)}</dd></div><div><dt>Numéro</dt><dd>{selectedPlayer.playerProfile?.shirtNumber ?? '—'}</dd></div><div><dt>Date d’arrivée</dt><dd>{formatDate(selectedPlayer.startDate)}</dd></div><div><dt>Statut</dt><dd><Badge value={selectedPlayer.status} /></dd></div><div><dt>Licences</dt><dd>{selectedPlayer.licenses?.length ?? 0}</dd></div><div><dt>Documents</dt><dd>{selectedPlayer.documents?.length ?? 0}</dd></div></dl></div></section>}<RegistrationsView title="Effectif du club" registrations={registrations} profile="player" onSelect={openPlayer} /></>;
 }
-function RegistrationsView({ title, registrations, profile }: { title: string; registrations: Registration[]; profile: 'player' | 'staff' | 'official' }) { return <DataPanel title={title}>{registrations.length === 0 ? <Empty text="Aucune donnée enregistrée" /> : <table><thead><tr><th>Nom</th><th>{profile === 'player' ? 'Poste' : 'Fonction'}</th><th>{profile === 'player' ? 'N°' : 'Qualification / niveau'}</th><th>Statut</th></tr></thead><tbody>{registrations.map((r) => <tr key={r.id}><td><strong>{r.person.firstName} {r.person.lastName}</strong></td><td>{profile === 'player' ? translatePosition(r.playerProfile?.position) : profile === 'staff' ? translateFunction(r.staffProfile?.function) : translateFunction(r.officialProfile?.function)}</td><td>{profile === 'player' ? r.playerProfile?.shirtNumber ?? '—' : profile === 'staff' ? r.staffProfile?.qualification ?? '—' : r.officialProfile?.level ?? '—'}</td><td><Badge value={r.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
+function RegistrationsView({ title, registrations, profile, onSelect }: { title: string; registrations: Registration[]; profile: 'player' | 'staff' | 'official'; onSelect?: (registrationId: string) => void }) { return <DataPanel title={title}>{registrations.length === 0 ? <Empty text="Aucune donnée enregistrée" /> : <table><thead><tr><th>Nom</th><th>{profile === 'player' ? 'Poste' : 'Fonction'}</th><th>{profile === 'player' ? 'N°' : 'Qualification / niveau'}</th><th>Statut</th></tr></thead><tbody>{registrations.map((r) => <tr key={r.id} className={onSelect ? 'selectable-row' : undefined} onClick={() => onSelect?.(r.id)}><td>{onSelect ? <button className="player-link" type="button" onClick={(event) => { event.stopPropagation(); onSelect(r.id); }}>{r.person.firstName} {r.person.lastName}</button> : <strong>{r.person.firstName} {r.person.lastName}</strong>}</td><td>{profile === 'player' ? translatePosition(r.playerProfile?.position) : profile === 'staff' ? translateFunction(r.staffProfile?.function) : translateFunction(r.officialProfile?.function)}</td><td>{profile === 'player' ? r.playerProfile?.shirtNumber ?? '—' : profile === 'staff' ? r.staffProfile?.qualification ?? '—' : r.officialProfile?.level ?? '—'}</td><td><Badge value={r.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
 function LicensesView({ licenses }: { licenses: License[] }) { return <DataPanel title="Licences du club">{licenses.length === 0 ? <Empty text="Aucune licence enregistrée" /> : <table><thead><tr><th>Numéro</th><th>Saison</th><th>Statut</th></tr></thead><tbody>{licenses.map((l) => <tr key={l.id}><td><strong>{l.number}</strong></td><td>{l.season}</td><td><Badge value={l.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
 function LeagueLicensesView({ clubs }: { clubs: Organization[] }) { return <DataPanel title="Contrôle des licences"><Empty text={`${clubs.length} club(s) sous supervision — file de validation détaillée au prochain incrément`} /></DataPanel>; }
 function OfficialVenuesNotice() { return <DataPanel title="Stades et accès"><Empty text="Les stades sont disponibles depuis l’API ; les consignes de mission seront reliées aux désignations." /></DataPanel>; }
