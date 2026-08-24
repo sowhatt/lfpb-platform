@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
@@ -21,6 +21,54 @@ async function request<T>(path: string, token?: string, init?: RequestInit): Pro
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error((data as { message?: string }).message ?? `Erreur ${response.status}`);
   return data as T;
+}
+
+function normalizeDateInput(
+  value: FormDataEntryValue | null,
+  label: string,
+  options: { forbidFuture?: boolean } = {},
+): string {
+  const raw = String(value ?? '').trim();
+  const french = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  const parts = french
+    ? { day: french[1], month: french[2], year: french[3] }
+    : iso
+      ? { day: iso[3], month: iso[2], year: iso[1] }
+      : null;
+
+  if (!parts) {
+    throw new Error(`${label} doit être saisie au format JJ/MM/AAAA`);
+  }
+
+  const year = Number(parts.year);
+  const month = Number(parts.month);
+  const day = Number(parts.day);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    year < 1900 ||
+    year > 2100 ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error(`${label} est invalide`);
+  }
+
+  if (options.forbidFuture) {
+    const today = new Date();
+    const todayUtc = Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+    );
+    if (date.getTime() > todayUtc) {
+      throw new Error(`${label} ne peut pas être dans le futur`);
+    }
+  }
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 export default function HomePage() {
@@ -163,26 +211,56 @@ function PlayersWorkspace({ registrations, organizationId, token, onCreated }: {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageIsError, setMessageIsError] = useState(false);
+  const submitting = useRef(false);
+
   async function createPlayer(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); setMessage('');
-    const form = new FormData(event.currentTarget);
+    event.preventDefault();
+    if (submitting.current) return;
+
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    submitting.current = true;
+    setSaving(true);
+    setMessage('');
+    setMessageIsError(false);
+
     try {
+      const birthDate = normalizeDateInput(
+        form.get('birthDate'),
+        'La date de naissance',
+        { forbidFuture: true },
+      );
+      const startDate = normalizeDateInput(
+        form.get('startDate'),
+        'La date d’arrivée',
+      );
+
       await request('/registries/players', token, { method: 'POST', body: JSON.stringify({
         organizationId,
         firstName: form.get('firstName'),
         lastName: form.get('lastName'),
-        birthDate: form.get('birthDate'),
+        birthDate,
         nationality: form.get('nationality'),
         position: form.get('position'),
         shirtName: form.get('shirtName') || undefined,
         shirtNumber: form.get('shirtNumber') ? Number(form.get('shirtNumber')) : undefined,
-        startDate: form.get('startDate'),
+        startDate,
       }) });
-      event.currentTarget.reset(); setCreating(false); setMessage('Joueur ajouté à l’effectif.'); await onCreated();
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Création impossible'); }
-    finally { setSaving(false); }
+
+      formElement.reset();
+      setCreating(false);
+      setMessage('Joueur ajouté à l’effectif.');
+      await onCreated();
+    } catch (reason) {
+      setMessageIsError(true);
+      setMessage(reason instanceof Error ? reason.message : 'Création impossible');
+    } finally {
+      submitting.current = false;
+      setSaving(false);
+    }
   }
-  return <><section className="workspace-actions"><div><label>GESTION DU CLUB</label><h2>Effectif</h2><p>Les joueurs créés sont enregistrés en brouillon avant validation de leur licence.</p></div><button className="primary" onClick={() => setCreating((value) => !value)}>{creating ? 'Fermer' : '+ Ajouter un joueur'}</button></section>{message && <div className="success-message">{message}</div>}{creating && <form className="entity-form" onSubmit={createPlayer}><div><label>Prénom</label><input name="firstName" required /></div><div><label>Nom</label><input name="lastName" required /></div><div><label>Date de naissance</label><input name="birthDate" type="date" required /></div><div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" required /></div><div><label>Poste</label><select name="position" required><option value="GOALKEEPER">Gardien de but</option><option value="DEFENDER">Défenseur</option><option value="MIDFIELDER">Milieu de terrain</option><option value="FORWARD">Attaquant</option></select></div><div><label>Nom sur le maillot</label><input name="shirtName" /></div><div><label>Numéro</label><input name="shirtNumber" type="number" min="1" max="99" /></div><div><label>Date d’arrivée</label><input name="startDate" type="date" defaultValue="2026-08-01" required /></div><button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le joueur'}</button></form>}<RegistrationsView title="Effectif du club" registrations={registrations} profile="player" /></>;
+  return <><section className="workspace-actions"><div><label>GESTION DU CLUB</label><h2>Effectif</h2><p>Les joueurs créés sont enregistrés en brouillon avant validation de leur licence.</p></div><button className="primary" onClick={() => setCreating((value) => !value)}>{creating ? 'Fermer' : '+ Ajouter un joueur'}</button></section>{message && <div className={messageIsError ? 'api-error' : 'success-message'}>{message}</div>}{creating && <form className="entity-form" onSubmit={createPlayer}><div><label>Prénom</label><input name="firstName" required /></div><div><label>Nom</label><input name="lastName" required /></div><div><label>Date de naissance</label><input name="birthDate" type="text" inputMode="numeric" placeholder="JJ/MM/AAAA" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" required /></div><div><label>Poste</label><select name="position" required><option value="GOALKEEPER">Gardien de but</option><option value="DEFENDER">Défenseur</option><option value="MIDFIELDER">Milieu de terrain</option><option value="FORWARD">Attaquant</option></select></div><div><label>Nom sur le maillot</label><input name="shirtName" /></div><div><label>Numéro</label><input name="shirtNumber" type="number" min="1" max="99" /></div><div><label>Date d’arrivée</label><input name="startDate" type="text" inputMode="numeric" defaultValue="01/08/2026" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le joueur'}</button></form>}<RegistrationsView title="Effectif du club" registrations={registrations} profile="player" /></>;
 }
 function RegistrationsView({ title, registrations, profile }: { title: string; registrations: Registration[]; profile: 'player' | 'staff' | 'official' }) { return <DataPanel title={title}>{registrations.length === 0 ? <Empty text="Aucune donnée enregistrée" /> : <table><thead><tr><th>Nom</th><th>{profile === 'player' ? 'Poste' : 'Fonction'}</th><th>{profile === 'player' ? 'N°' : 'Qualification / niveau'}</th><th>Statut</th></tr></thead><tbody>{registrations.map((r) => <tr key={r.id}><td><strong>{r.person.firstName} {r.person.lastName}</strong></td><td>{profile === 'player' ? translatePosition(r.playerProfile?.position) : profile === 'staff' ? translateFunction(r.staffProfile?.function) : translateFunction(r.officialProfile?.function)}</td><td>{profile === 'player' ? r.playerProfile?.shirtNumber ?? '—' : profile === 'staff' ? r.staffProfile?.qualification ?? '—' : r.officialProfile?.level ?? '—'}</td><td><Badge value={r.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
 function LicensesView({ licenses }: { licenses: License[] }) { return <DataPanel title="Licences du club">{licenses.length === 0 ? <Empty text="Aucune licence enregistrée" /> : <table><thead><tr><th>Numéro</th><th>Saison</th><th>Statut</th></tr></thead><tbody>{licenses.map((l) => <tr key={l.id}><td><strong>{l.number}</strong></td><td>{l.season}</td><td><Badge value={l.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
