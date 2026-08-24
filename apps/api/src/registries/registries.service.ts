@@ -8,6 +8,7 @@ import { CreateOfficialDto } from './dto/create-official.dto';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { DocumentDecisionDto } from './dto/document-decision.dto';
+import { UpdatePlayerPhotoDto } from './dto/update-player-photo.dto';
 import { buildPlayerDeduplicationKey, parseStrictDate } from './player-registration.rules';
 
 @Injectable()
@@ -113,6 +114,118 @@ export class RegistriesService {
       }
       throw reason;
     }
+  }
+
+  async getPlayer(actor: AuthenticatedActor, registrationId: string) {
+    const registration = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: {
+        person: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            birthDate: true,
+            nationality: true,
+            federationId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        playerProfile: true,
+        licenses: { orderBy: { createdAt: 'desc' } },
+        documents: { orderBy: { createdAt: 'desc' } },
+      },
+    });
+
+    if (
+      !registration ||
+      registration.category !== RegistrationCategory.PLAYER
+    ) {
+      throw new NotFoundException('Joueur introuvable');
+    }
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      registration.organizationId,
+    );
+
+    const { photoData, photoMimeType, ...person } = registration.person;
+    return {
+      ...registration,
+      person: {
+        ...person,
+        photoDataUrl:
+          photoData && photoMimeType
+            ? `data:${photoMimeType};base64,${Buffer.from(photoData).toString('base64')}`
+            : null,
+      },
+    };
+  }
+
+  async updatePlayerPhoto(
+    actor: AuthenticatedActor,
+    registrationId: string,
+    input: UpdatePlayerPhotoDto,
+  ) {
+    const registration = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      select: {
+        personId: true,
+        organizationId: true,
+        category: true,
+      },
+    });
+    if (
+      !registration ||
+      registration.category !== RegistrationCategory.PLAYER
+    ) {
+      throw new NotFoundException('Joueur introuvable');
+    }
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      registration.organizationId,
+    );
+
+    const match =
+      /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+        input.photoDataUrl,
+      );
+    if (!match) {
+      throw new BadRequestException(
+        'La photo doit être une image JPEG, PNG ou WebP valide',
+      );
+    }
+
+    const [, mimeType, encoded] = match;
+    const photoData = Buffer.from(encoded, 'base64');
+    if (photoData.length === 0 || photoData.length > 750_000) {
+      throw new BadRequestException(
+        'La photo doit avoir une taille maximale de 750 Ko',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.person.update({
+        where: { id: registration.personId },
+        data: { photoData, photoMimeType: mimeType },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: registration.organizationId,
+          action: 'PLAYER_PHOTO_UPDATED',
+          resourceType: 'Person',
+          resourceId: registration.personId,
+          metadata: {
+            registrationId,
+            mimeType,
+            size: photoData.length,
+          },
+        },
+      });
+    });
+
+    return this.getPlayer(actor, registrationId);
   }
 
   async createStaff(actor: AuthenticatedActor, input: CreateStaffDto) {
