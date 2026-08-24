@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 type Actor = { email: string; memberships: { organizationId: string; role: string }[] };
@@ -269,7 +269,7 @@ function PlayersWorkspace({ registrations, organizationId, token, onCreated }: {
     }
   }
 
-  async function updatePhoto(event: React.ChangeEvent<HTMLInputElement>) {
+  async function updatePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !selectedPlayer) return;
 
