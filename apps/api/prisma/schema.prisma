@@ -224,6 +224,7 @@ model Registration {
   personId       String               @db.Uuid
   organizationId String               @db.Uuid
   category       RegistrationCategory
+  deduplicationKey String?              @unique
   status         RegistrationStatus   @default(DRAFT)
   startDate      DateTime             @db.Date
   endDate        DateTime?            @db.Date
