@@ -83,7 +83,7 @@ export class OfficialAssistantService {
     const extension = match[1].split('/')[1];
     const form = new FormData();
     form.append('file', new Blob([bytes], { type: match[1] }), `dictee.${extension}`);
-    form.append('model', this.config.get<string>('TRANSCRIPTION_MODEL') ?? 'gpt-4o-mini-transcribe');
+    form.append('model', this.config.get<string>('TRANSCRIPTION_MODEL') ?? 'gpt-transcribe');
     form.append('language', input.language);
 
     const response = await fetch(endpoint, {
