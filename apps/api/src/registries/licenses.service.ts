@@ -4,7 +4,7 @@ import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
 import { CreateLicenseDto } from './dto/create-license.dto';
-import { LicenseDecisionDto } from './dto/license-decision.dto';
+import { FederationDecisionDto, LeagueReviewDto } from './dto/license-decision.dto';
 import { LicenseStatusService } from './license-status.service';
 
 @Injectable()
@@ -37,7 +37,7 @@ export class LicensesService {
       const license = await tx.license.create({
         data: {
           registrationId: input.registrationId,
-          number: input.number.trim().toUpperCase(),
+          number: input.number?.trim().toUpperCase(),
           season: input.season.trim(),
           validFrom: input.validFrom ? new Date(input.validFrom) : undefined,
           validUntil: input.validUntil ? new Date(input.validUntil) : undefined,
@@ -59,25 +59,59 @@ export class LicensesService {
   async submit(actor: AuthenticatedActor, licenseId: string) {
     const license = await this.getWithRegistration(licenseId);
     this.tenantAccess.assertOrganizationAccess(actor, license.registration.organizationId);
-    this.statusWorkflow.assertTransition(license.status, LicenseStatus.SUBMITTED);
-    return this.changeStatus(actor, license, LicenseStatus.SUBMITTED);
+    this.statusWorkflow.assertTransition(license.status, LicenseStatus.SUBMITTED_TO_LEAGUE);
+    return this.changeStatus(actor, license, LicenseStatus.SUBMITTED_TO_LEAGUE);
   }
 
-  async decide(actor: AuthenticatedActor, licenseId: string, input: LicenseDecisionDto) {
+  async reviewByLeague(actor: AuthenticatedActor, licenseId: string, input: LeagueReviewDto) {
     const license = await this.getWithRegistration(licenseId);
     this.statusWorkflow.assertTransition(license.status, input.decision);
 
-    if (input.decision === LicenseStatus.REJECTED && !input.reason?.trim()) {
-      throw new BadRequestException('Le motif de rejet est obligatoire');
+    if (input.decision === LicenseStatus.INCOMPLETE && !input.reason?.trim()) {
+      throw new BadRequestException('Les compléments demandés doivent être précisés');
     }
 
     return this.changeStatus(actor, license, input.decision, input.reason);
+  }
+
+  async transmitToFederation(actor: AuthenticatedActor, licenseId: string) {
+    const license = await this.getWithRegistration(licenseId);
+    this.statusWorkflow.assertTransition(license.status, LicenseStatus.TRANSMITTED_TO_FBF);
+    return this.changeStatus(actor, license, LicenseStatus.TRANSMITTED_TO_FBF);
+  }
+
+  async decideByFederation(
+    actor: AuthenticatedActor,
+    licenseId: string,
+    input: FederationDecisionDto,
+  ) {
+    const license = await this.getWithRegistration(licenseId);
+    this.statusWorkflow.assertTransition(license.status, input.decision);
+
+    if (input.decision === LicenseStatus.ISSUED_BY_FBF && !input.number?.trim()) {
+      throw new BadRequestException('Le numéro de licence FBF est obligatoire');
+    }
+    if (input.decision === LicenseStatus.REJECTED_BY_FBF && !input.reason?.trim()) {
+      throw new BadRequestException('Le motif du refus fédéral est obligatoire');
+    }
+
+    return this.changeStatus(actor, license, input.decision, input.reason, {
+      number: input.number?.trim().toUpperCase(),
+      validFrom: input.validFrom ? new Date(input.validFrom) : undefined,
+      validUntil: input.validUntil ? new Date(input.validUntil) : undefined,
+    });
   }
 
   async suspend(actor: AuthenticatedActor, licenseId: string, reason?: string) {
     const license = await this.getWithRegistration(licenseId);
     this.statusWorkflow.assertTransition(license.status, LicenseStatus.SUSPENDED);
     return this.changeStatus(actor, license, LicenseStatus.SUSPENDED, reason);
+  }
+
+  async cancel(actor: AuthenticatedActor, licenseId: string, reason?: string) {
+    const license = await this.getWithRegistration(licenseId);
+    this.statusWorkflow.assertTransition(license.status, LicenseStatus.CANCELLED);
+    return this.changeStatus(actor, license, LicenseStatus.CANCELLED, reason);
   }
 
   private async getWithRegistration(licenseId: string) {
@@ -94,13 +128,22 @@ export class LicensesService {
     license: Awaited<ReturnType<LicensesService['getWithRegistration']>>,
     status: LicenseStatus,
     reason?: string,
+    federationData?: {
+      number?: string;
+      validFrom?: Date;
+      validUntil?: Date;
+    },
   ) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.license.update({
         where: { id: license.id },
         data: {
           status,
-          rejectionReason: status === LicenseStatus.REJECTED ? reason?.trim() : null,
+          rejectionReason:
+            status === LicenseStatus.INCOMPLETE || status === LicenseStatus.REJECTED_BY_FBF
+              ? reason?.trim()
+              : null,
+          ...federationData,
         },
       });
       await tx.auditLog.create({

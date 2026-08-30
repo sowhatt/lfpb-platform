@@ -16,7 +16,7 @@ import { AuthenticatedActor } from '../iam/domain/actor';
 import { Roles } from '../iam/roles.decorator';
 import { RolesGuard } from '../iam/roles.guard';
 import { CreateLicenseDto } from './dto/create-license.dto';
-import { LicenseDecisionDto } from './dto/license-decision.dto';
+import { FederationDecisionDto, LeagueReviewDto } from './dto/license-decision.dto';
 import { LicensesService } from './licenses.service';
 
 @Controller('licenses')
@@ -25,7 +25,7 @@ export class LicensesController {
   constructor(private readonly licenses: LicensesService) {}
 
   @Get()
-  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  @Roles(Role.FEDERATION_AGENT, Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   list(
     @CurrentActor() actor: AuthenticatedActor,
     @Query('organizationId', ParseUUIDPipe) organizationId: string,
@@ -48,23 +48,52 @@ export class LicensesController {
     return this.licenses.submit(actor, licenseId);
   }
 
-  @Patch(':licenseId/decision')
+  @Patch(':licenseId/league-review')
   @Roles(Role.LIGUE_ADMIN)
-  decide(
+  reviewByLeague(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('licenseId', ParseUUIDPipe) licenseId: string,
-    @Body() input: LicenseDecisionDto,
+    @Body() input: LeagueReviewDto,
   ) {
-    return this.licenses.decide(actor, licenseId, input);
+    return this.licenses.reviewByLeague(actor, licenseId, input);
+  }
+
+  @Patch(':licenseId/transmit-fbf')
+  @Roles(Role.LIGUE_ADMIN)
+  transmitToFederation(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('licenseId', ParseUUIDPipe) licenseId: string,
+  ) {
+    return this.licenses.transmitToFederation(actor, licenseId);
+  }
+
+  @Patch(':licenseId/federation-decision')
+  @Roles(Role.FEDERATION_AGENT)
+  decideByFederation(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('licenseId', ParseUUIDPipe) licenseId: string,
+    @Body() input: FederationDecisionDto,
+  ) {
+    return this.licenses.decideByFederation(actor, licenseId, input);
   }
 
   @Patch(':licenseId/suspend')
-  @Roles(Role.LIGUE_ADMIN)
+  @Roles(Role.FEDERATION_AGENT)
   suspend(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('licenseId', ParseUUIDPipe) licenseId: string,
     @Body('reason') reason?: string,
   ) {
     return this.licenses.suspend(actor, licenseId, reason);
+  }
+
+  @Patch(':licenseId/cancel')
+  @Roles(Role.FEDERATION_AGENT)
+  cancel(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('licenseId', ParseUUIDPipe) licenseId: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.licenses.cancel(actor, licenseId, reason);
   }
 }

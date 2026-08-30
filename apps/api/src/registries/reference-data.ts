@@ -46,10 +46,14 @@ export const REGISTRATION_STATUS_LABELS: LabelMap<RegistrationStatus> = {
 
 export const LICENSE_STATUS_LABELS: LabelMap<LicenseStatus> = {
   DRAFT: 'Brouillon',
-  SUBMITTED: 'Soumise à validation',
-  APPROVED: 'Validée',
-  REJECTED: 'Rejetée',
-  SUSPENDED: 'Suspendue',
+  SUBMITTED_TO_LEAGUE: 'Soumis à la LFPB',
+  INCOMPLETE: 'Dossier à compléter',
+  LEAGUE_FAVORABLE: 'Avis favorable LFPB',
+  TRANSMITTED_TO_FBF: 'Transmis à la FBF',
+  ISSUED_BY_FBF: 'Licence délivrée par la FBF',
+  REJECTED_BY_FBF: 'Refusé par la FBF',
+  SUSPENDED: 'Suspendue par la FBF',
+  CANCELLED: 'Annulée par la FBF',
   EXPIRED: 'Expirée',
 };
 

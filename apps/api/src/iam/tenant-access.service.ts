@@ -3,6 +3,7 @@ import { Role } from '@prisma/client';
 import { AuthenticatedActor } from './domain/actor';
 
 const CROSS_TENANT_ROLES = new Set<Role>([
+  Role.FEDERATION_AGENT,
   Role.LIGUE_ADMIN,
   Role.COMPETITION_MANAGER,
   Role.SCHEDULE_APPROVER,

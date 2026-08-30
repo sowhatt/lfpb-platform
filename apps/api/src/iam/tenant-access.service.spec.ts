@@ -35,6 +35,15 @@ describe('TenantAccessService', () => {
     expect(service.organizationScope(actor)).toBeNull();
   });
 
+  it('autorise un agent FBF à consulter les dossiers transmis par tous les clubs', () => {
+    const actor = {
+      userId: 'federation-user',
+      memberships: [{ organizationId: 'federation-id', role: Role.FEDERATION_AGENT }],
+    };
+    expect(service.canAccessOrganization(actor, 'club-id')).toBe(true);
+    expect(service.organizationScope(actor)).toBeNull();
+  });
+
   it.each([Role.COMPETITION_MANAGER, Role.SCHEDULE_APPROVER])(
     'autorise le rôle Ligue %s à accéder aux compétitions',
     (role) => {

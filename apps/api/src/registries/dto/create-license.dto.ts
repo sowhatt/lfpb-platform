@@ -4,9 +4,10 @@ export class CreateLicenseDto {
   @IsUUID()
   registrationId!: string;
 
+  @IsOptional()
   @IsString()
   @Length(3, 40)
-  number!: string;
+  number?: string;
 
   @IsString()
   @Length(4, 20)

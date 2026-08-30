@@ -8,11 +8,13 @@ datasource db {
 }
 
 enum OrganizationType {
+  FEDERATION
   LEAGUE
   CLUB
 }
 
 enum Role {
+  FEDERATION_AGENT
   LIGUE_ADMIN
   COMPETITION_MANAGER
   SCHEDULE_APPROVER
@@ -72,12 +74,33 @@ enum OfficialFunction {
   DELEGATE
 }
 
+enum MatchOfficialRole {
+  REFEREE
+  ASSISTANT_REFEREE_1
+  ASSISTANT_REFEREE_2
+  FOURTH_OFFICIAL
+  MATCH_COMMISSIONER
+  DELEGATE
+}
+
+enum MatchOfficialAssignmentStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REFUSED
+  CANCELLED
+}
+
 enum LicenseStatus {
   DRAFT
-  SUBMITTED
-  APPROVED
-  REJECTED
+  SUBMITTED_TO_LEAGUE
+  INCOMPLETE
+  LEAGUE_FAVORABLE
+  TRANSMITTED_TO_FBF
+  ISSUED_BY_FBF
+  REJECTED_BY_FBF
   SUSPENDED
+  CANCELLED
   EXPIRED
 }
 
@@ -188,6 +211,8 @@ model User {
   auditLogs    AuditLog[]   @relation("AuditActor")
   generatedScheduleProposals ScheduleProposal[] @relation("ProposalGenerator")
   decidedScheduleProposals ScheduleProposal[] @relation("ProposalDecider")
+  officialProfile OfficialProfile?
+  createdOfficialAssignments MatchOfficialAssignment[] @relation("AssignmentCreator")
 }
 
 model Membership {
@@ -261,15 +286,18 @@ model StaffProfile {
 
 model OfficialProfile {
   registrationId String           @id @db.Uuid
+  userId         String?          @unique @db.Uuid
   function       OfficialFunction
   grade          String?
   registration   Registration     @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  assignments    MatchOfficialAssignment[]
 }
 
 model License {
   id             String        @id @default(uuid()) @db.Uuid
   registrationId String        @db.Uuid
-  number         String        @unique
+  number         String?       @unique
   season         String
   status         LicenseStatus @default(DRAFT)
   validFrom      DateTime?     @db.Date
@@ -430,11 +458,33 @@ model Match {
   venue           Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
   homeClub        Club             @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
   awayClub        Club             @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
+  officialAssignments MatchOfficialAssignment[]
 
   @@index([competitionId, status, kickoffAt])
   @@index([homeClubId, kickoffAt])
   @@index([awayClubId, kickoffAt])
   @@index([venueId, kickoffAt])
+}
+
+model MatchOfficialAssignment {
+  id                String                        @id @default(uuid()) @db.Uuid
+  matchId           String                        @db.Uuid
+  officialProfileId String                        @db.Uuid
+  role              MatchOfficialRole
+  status            MatchOfficialAssignmentStatus @default(DRAFT)
+  responseReason    String?
+  sentAt            DateTime?
+  respondedAt       DateTime?
+  createdByUserId   String                        @db.Uuid
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  match             Match                         @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  officialProfile   OfficialProfile               @relation(fields: [officialProfileId], references: [registrationId], onDelete: Restrict)
+  createdByUser     User                          @relation("AssignmentCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([matchId, role])
+  @@unique([matchId, officialProfileId])
+  @@index([officialProfileId, status])
 }
 
 model ScheduleProposal {

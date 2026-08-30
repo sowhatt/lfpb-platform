@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
+import { OfficialVoiceAssistant } from './official-voice-assistant';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 type Actor = { email: string; memberships: { organizationId: string; role: string }[] };
@@ -9,9 +10,9 @@ type Organization = { id: string; name: string; code: string; type: string; acti
 type Competition = { id: string; name: string; code: string; format: string; status: string; division?: string; season?: { name: string }; entries?: unknown[] };
 type Match = { id: string; kickoffAt?: string; status: string; homeClub: { id: string; shortName: string }; awayClub: { id: string; shortName: string }; venue?: { name: string } | null; round?: { number: number } | null };
 type Proposal = { id: string; version: number; status: string; qualityScore: number; generatedBy: string; createdAt: string };
-type Registration = { id: string; status: string; startDate?: string; person: { firstName: string; lastName: string; birthDate?: string; nationality?: string; federationId?: string; photoDataUrl?: string | null }; playerProfile?: { position: string; shirtNumber?: number } | null; staffProfile?: { function: string; qualification?: string } | null; officialProfile?: { function: string; level?: string } | null; licenses?: License[]; documents?: { id: string; type: string; status: string }[] };
-type License = { id: string; number: string; season: string; status: string; registration?: Registration };
-type Space = 'LIGUE' | 'CLUB' | 'OFFICIEL';
+type Registration = { id: string; organizationId?: string; status: string; startDate?: string; person: { firstName: string; lastName: string; birthDate?: string; nationality?: string; federationId?: string; photoDataUrl?: string | null }; playerProfile?: { position: string; shirtNumber?: number } | null; staffProfile?: { function: string; qualification?: string } | null; officialProfile?: { function: string; level?: string } | null; licenses?: License[]; documents?: { id: string; type: string; status: string }[] };
+type License = { id: string; number?: string | null; season: string; status: string; rejectionReason?: string | null; registration?: Registration };
+type Space = 'FEDERATION' | 'LIGUE' | 'CLUB' | 'OFFICIEL';
 
 async function request<T>(path: string, token?: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API}${path}`, {
@@ -127,10 +128,8 @@ export default function HomePage() {
       const connectedActor = currentActor ?? actor;
       const membership = connectedActor?.memberships[0];
       const role = membership?.role ?? '';
-      const [orgs, comps] = await Promise.all([
-        request<Organization[]>('/organizations', accessToken),
-        request<Competition[]>('/competitions', accessToken),
-      ]);
+      const orgs = await request<Organization[]>('/organizations', accessToken);
+      const comps = role === 'FEDERATION_AGENT' ? [] : await request<Competition[]>('/competitions', accessToken);
       setOrganizations(orgs); setCompetitions(comps);
       if (comps[0]) {
         const [games, plans] = await Promise.all([
@@ -147,7 +146,15 @@ export default function HomePage() {
           request<License[]>(`/licenses${query}`, accessToken),
         ]);
         setPlayers(clubPlayers); setStaff(clubStaff); setLicenses(clubLicenses);
-      } else if (membership && role === 'LIGUE_ADMIN') {
+      } else if (membership && (role === 'LIGUE_ADMIN' || role === 'FEDERATION_AGENT')) {
+        const clubLicenses = await Promise.all(
+          orgs.filter((organization) => organization.type === 'CLUB').map((organization) =>
+            request<License[]>(`/licenses?organizationId=${organization.id}`, accessToken),
+          ),
+        );
+        setLicenses(clubLicenses.flat());
+      }
+      if (membership && role === 'LIGUE_ADMIN') {
         const leagueOfficials = await request<Registration[]>(`/registries/officials?organizationId=${membership.organizationId}`, accessToken).catch(() => []);
         setOfficials(leagueOfficials);
       }
@@ -172,6 +179,7 @@ export default function HomePage() {
   function logout() { sessionStorage.clear(); setToken(''); setActor(null); }
 
   useEffect(() => {
+    if ('serviceWorker' in navigator) void navigator.serviceWorker.register('/sw.js');
     const savedToken = sessionStorage.getItem('lfpb-token');
     const savedActor = sessionStorage.getItem('lfpb-actor');
     if (savedToken && savedActor) { const restoredActor = JSON.parse(savedActor) as Actor; setToken(savedToken); setActor(restoredActor); void loadDashboard(savedToken, restoredActor); }
@@ -180,14 +188,16 @@ export default function HomePage() {
   const clubs = organizations.filter((org) => org.type === 'CLUB');
   const latestProposal = proposals[0];
   const role = actor?.memberships[0]?.role ?? '';
-  const space: Space = role === 'CLUB_ADMIN' ? 'CLUB' : role === 'OFFICIEL' ? 'OFFICIEL' : 'LIGUE';
+  const space: Space = role === 'FEDERATION_AGENT' ? 'FEDERATION' : role === 'CLUB_ADMIN' ? 'CLUB' : role === 'OFFICIEL' ? 'OFFICIEL' : 'LIGUE';
   const currentClubId = organizations.find((organization) => organization.id === actor?.memberships[0]?.organizationId)?.club?.id;
   const currentOrganizationId = actor?.memberships[0]?.organizationId;
   const visibleMatches = space === 'CLUB' && currentClubId ? matches.filter((match) => match.homeClub.id === currentClubId || match.awayClub.id === currentClubId) : matches;
-  const nav = space === 'CLUB'
+  const nav = space === 'FEDERATION'
+    ? ['Vue d’ensemble', 'Licences']
+    : space === 'CLUB'
     ? ['Vue d’ensemble', 'Effectif', 'Staff', 'Licences', 'Calendrier']
     : space === 'OFFICIEL'
-      ? ['Vue d’ensemble', 'Mes rencontres', 'Stades']
+      ? ['Vue d’ensemble', 'Mes rencontres', 'Assistant vocal', 'Stades']
       : ['Vue d’ensemble', 'Compétitions', 'Calendrier RKJO', 'Clubs', 'Licences', 'Officiels', 'Rencontres'];
   const upcoming = useMemo(() => [...visibleMatches].sort((a, b) => (a.kickoffAt ?? '').localeCompare(b.kickoffAt ?? '')).slice(0, 5), [visibleMatches]);
 
@@ -203,19 +213,20 @@ export default function HomePage() {
         <div className="user"><b>{actor.email.slice(0, 2).toUpperCase()}</b><span><strong>{actor.email}</strong><small>{actor.memberships[0]?.role.replaceAll('_', ' ')}</small></span><button onClick={logout}>↪</button></div>
       </aside>
       <main>
-        <header><div><label>{space === 'CLUB' ? organizations[0]?.name : space === 'OFFICIEL' ? 'PORTAIL DES OFFICIELS' : 'DONNÉES TEMPS RÉEL · API LFPB'}</label><h1>{active}</h1><p>{loading ? 'Actualisation des données…' : space === 'CLUB' ? `${players.length} joueur(s) · ${staff.length} membre(s) du staff · ${licenses.length} licence(s)` : `${clubs.length} clubs · ${competitions.length} compétition(s) · ${visibleMatches.length} rencontre(s)`}</p></div><div className="actions"><button onClick={() => loadDashboard(token, actor)}>↻ Actualiser</button>{space === 'LIGUE' && <button className="primary" onClick={() => setActive('Calendrier RKJO')}>Ouvrir RKJO</button>}</div></header>
+        <header><div><label>{space === 'FEDERATION' ? 'FÉDÉRATION BÉNINOISE DE FOOTBALL' : space === 'CLUB' ? organizations[0]?.name : space === 'OFFICIEL' ? 'PORTAIL DES OFFICIELS' : 'DONNÉES TEMPS RÉEL · API LFPB'}</label><h1>{active}</h1><p>{loading ? 'Actualisation des données…' : space === 'FEDERATION' ? `${licenses.length} dossier(s) de licence` : space === 'CLUB' ? `${players.length} joueur(s) · ${staff.length} membre(s) du staff · ${licenses.length} dossier(s)` : `${clubs.length} clubs · ${competitions.length} compétition(s) · ${visibleMatches.length} rencontre(s)`}</p></div><div className="actions"><button onClick={() => loadDashboard(token, actor)}>↻ Actualiser</button>{space === 'LIGUE' && <button className="primary" onClick={() => setActive('Calendrier RKJO')}>Ouvrir RKJO</button>}</div></header>
         {error && <div className="api-error">{error}</div>}
-        {active === 'Vue d’ensemble' && (space === 'CLUB' ? <ClubOverview organization={organizations[0]} players={players} staff={staff} licenses={licenses} matches={upcoming} /> : space === 'OFFICIEL' ? <OfficialOverview matches={upcoming} /> : <Overview clubs={clubs} competitions={competitions} matches={upcoming} proposal={latestProposal} />)}
+        {active === 'Vue d’ensemble' && (space === 'FEDERATION' ? <FederationOverview licenses={licenses} /> : space === 'CLUB' ? <ClubOverview organization={organizations[0]} players={players} staff={staff} licenses={licenses} matches={upcoming} /> : space === 'OFFICIEL' ? <OfficialOverview matches={upcoming} /> : <Overview clubs={clubs} competitions={competitions} matches={upcoming} proposal={latestProposal} />)}
         {active === 'Clubs' && <ClubsView clubs={clubs} />}
         {active === 'Compétitions' && <CompetitionsView competitions={competitions} />}
         {active === 'Rencontres' && <MatchesView matches={matches} />}
         {active === 'Calendrier RKJO' && <PlannerView proposals={proposals} />}
         {active === 'Effectif' && currentOrganizationId && <PlayersWorkspace registrations={players} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
         {active === 'Staff' && <RegistrationsView title="Staff technique et médical" registrations={staff} profile="staff" />}
-        {active === 'Licences' && (space === 'CLUB' ? <LicensesView licenses={licenses} /> : <LeagueLicensesView clubs={clubs} />)}
+        {active === 'Licences' && <LicenseWorkflowView authority={space} licenses={licenses} clubs={clubs} token={token} onChanged={() => loadDashboard(token, actor)} />}
         {active === 'Officiels' && <RegistrationsView title="Arbitres et officiels" registrations={officials} profile="official" />}
         {active === 'Calendrier' && <MatchesView matches={visibleMatches} />}
         {active === 'Mes rencontres' && <MatchesView matches={visibleMatches} />}
+        {active === 'Assistant vocal' && space === 'OFFICIEL' && <OfficialVoiceAssistant token={token} />}
         {active === 'Stades' && <OfficialVenuesNotice />}
       </main>
     </div>
@@ -230,8 +241,14 @@ function Overview({ clubs, competitions, matches, proposal }: { clubs: Organizat
   return <><section className="stats"><Stat value={String(clubs.length)} label="Clubs enregistrés" detail="Données PostgreSQL" /><Stat value={String(competitions.length)} label="Compétitions" detail="Toutes saisons" /><Stat value={String(matches.length)} label="Prochaines rencontres" detail="Calendrier actuel" /><Stat value={proposal ? `${proposal.qualityScore}%` : '—'} label="Qualité RKJO" detail={proposal?.status ?? 'Aucune proposition'} /></section><section className="main-grid"><MatchesPanel matches={matches} /><article className="planner"><div className="orbit">RKJO</div><label>PLANIFICATEUR INTELLIGENT</label><h2>{proposal ? `Proposition v${proposal.version}` : 'Aucune proposition active'}</h2><p>Cette information provient maintenant de l’API de gouvernance du calendrier.</p><div className="score"><strong>{proposal?.qualityScore ?? '—'}</strong><span>/100<br />{proposal?.status ?? 'À générer'}</span></div></article></section></>;
 }
 function ClubOverview({ organization, players, staff, licenses, matches }: { organization?: Organization; players: Registration[]; staff: Registration[]; licenses: License[]; matches: Match[] }) {
-  const approved = licenses.filter((license) => license.status === 'APPROVED').length;
-  return <><section className="welcome-card"><span>MON CLUB</span><h2>{organization?.name ?? 'Club'}</h2><p>{organization?.club?.division.replace('_', ' ')} · {organization?.club?.city ?? 'Ville non renseignée'}</p></section><section className="stats"><Stat value={String(players.length)} label="Joueurs" detail="Effectif enregistré" /><Stat value={String(staff.length)} label="Membres du staff" detail="Encadrement du club" /><Stat value={String(approved)} label="Licences approuvées" detail={`${licenses.length} dossier(s) au total`} /><Stat value={String(matches.length)} label="Rencontres" detail="Calendrier disponible" /></section><MatchesPanel matches={matches} /></>;
+  const issued = licenses.filter((license) => license.status === 'ISSUED_BY_FBF').length;
+  return <><section className="welcome-card"><span>MON CLUB</span><h2>{organization?.name ?? 'Club'}</h2><p>{organization?.club?.division.replace('_', ' ')} · {organization?.club?.city ?? 'Ville non renseignée'}</p></section><section className="stats"><Stat value={String(players.length)} label="Joueurs" detail="Effectif enregistré" /><Stat value={String(staff.length)} label="Membres du staff" detail="Encadrement du club" /><Stat value={String(issued)} label="Licences délivrées par la FBF" detail={`${licenses.length} dossier(s) au total`} /><Stat value={String(matches.length)} label="Rencontres" detail="Calendrier disponible" /></section><MatchesPanel matches={matches} /></>;
+}
+function FederationOverview({ licenses }: { licenses: License[] }) {
+  const pending = licenses.filter((license) => license.status === 'TRANSMITTED_TO_FBF').length;
+  const issued = licenses.filter((license) => license.status === 'ISSUED_BY_FBF').length;
+  const rejected = licenses.filter((license) => license.status === 'REJECTED_BY_FBF').length;
+  return <><section className="welcome-card"><span>AUTORITÉ DE DÉLIVRANCE</span><h2>Fédération Béninoise de Football</h2><p>Décision fédérale distincte du contrôle administratif effectué par la LFPB.</p></section><section className="stats"><Stat value={String(licenses.length)} label="Dossiers reçus" detail="Tous les clubs" /><Stat value={String(pending)} label="À traiter par la FBF" detail="Transmis par la Ligue" /><Stat value={String(issued)} label="Licences délivrées" detail="Décisions FBF" /><Stat value={String(rejected)} label="Dossiers refusés" detail="Décisions motivées" /></section></>;
 }
 function OfficialOverview({ matches }: { matches: Match[] }) {
   return <><section className="stats"><Stat value={String(matches.length)} label="Rencontres disponibles" detail="Calendrier de la compétition" /><Stat value="—" label="Désignations" detail="Module Sprint feuille de match" /><Stat value="—" label="Rapports" detail="Module à venir" /><Stat value="API" label="Accès sécurisé" detail="Rôle OFFICIEL" /></section><MatchesPanel matches={matches} /></>;
@@ -346,11 +363,51 @@ function PlayersWorkspace({ registrations, organizationId, token, onCreated }: {
   return <><section className="workspace-actions"><div><label>GESTION DU CLUB</label><h2>Effectif</h2><p>Les joueurs créés sont enregistrés en brouillon avant validation de leur licence.</p></div><button className="primary" onClick={() => setCreating((value) => !value)}>{creating ? 'Fermer' : '+ Ajouter un joueur'}</button></section>{message && <div className={messageIsError ? 'api-error' : 'success-message'}>{message}</div>}{creating && <form className="entity-form" onSubmit={createPlayer}><div><label>Prénom</label><input name="firstName" required /></div><div><label>Nom</label><input name="lastName" required /></div><div><label>Date de naissance</label><input name="birthDate" type="text" inputMode="numeric" placeholder="JJ/MM/AAAA" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" required /></div><div><label>Poste</label><select name="position" required><option value="GOALKEEPER">Gardien de but</option><option value="DEFENDER">Défenseur</option><option value="MIDFIELDER">Milieu de terrain</option><option value="FORWARD">Attaquant</option></select></div><div><label>Nom sur le maillot</label><input name="shirtName" /></div><div><label>Numéro</label><input name="shirtNumber" type="number" min="1" max="99" /></div><div><label>Date d’arrivée</label><input name="startDate" type="text" inputMode="numeric" defaultValue="01/08/2026" maxLength={10} pattern="(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})" title="Saisissez ou collez une date au format JJ/MM/AAAA" required /></div><button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le joueur'}</button></form>}{profileLoading && <div className="profile-loading">Chargement de la fiche joueur…</div>}{selectedPlayer && <section className="player-profile"><button className="profile-close" onClick={() => setSelectedPlayer(null)}>Fermer ×</button><div className="player-photo">{selectedPlayer.person.photoDataUrl ? <img src={selectedPlayer.person.photoDataUrl} alt={`${selectedPlayer.person.firstName} ${selectedPlayer.person.lastName}`} /> : <span>{selectedPlayer.person.firstName[0]}{selectedPlayer.person.lastName[0]}</span>}<label className="photo-upload">{photoSaving ? 'Traitement…' : 'Ajouter / modifier la photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={updatePhoto} disabled={photoSaving} /></label></div><div className="player-identity"><label>FICHE JOUEUR</label><h2>{selectedPlayer.person.firstName} {selectedPlayer.person.lastName}</h2><dl><div><dt>Date de naissance</dt><dd>{formatFullDate(selectedPlayer.person.birthDate)}</dd></div><div><dt>Nationalité</dt><dd>{selectedPlayer.person.nationality ?? '—'}</dd></div><div><dt>Poste</dt><dd>{translatePosition(selectedPlayer.playerProfile?.position)}</dd></div><div><dt>Numéro</dt><dd>{selectedPlayer.playerProfile?.shirtNumber ?? '—'}</dd></div><div><dt>Date d’arrivée</dt><dd>{formatFullDate(selectedPlayer.startDate)}</dd></div><div><dt>Statut</dt><dd><Badge value={selectedPlayer.status} /></dd></div><div><dt>Licences</dt><dd>{selectedPlayer.licenses?.length ?? 0}</dd></div><div><dt>Documents</dt><dd>{selectedPlayer.documents?.length ?? 0}</dd></div></dl></div></section>}<RegistrationsView title="Effectif du club" registrations={registrations} profile="player" onSelect={openPlayer} /></>;
 }
 function RegistrationsView({ title, registrations, profile, onSelect }: { title: string; registrations: Registration[]; profile: 'player' | 'staff' | 'official'; onSelect?: (registrationId: string) => void }) { return <DataPanel title={title}>{registrations.length === 0 ? <Empty text="Aucune donnée enregistrée" /> : <table><thead><tr><th>Nom</th><th>{profile === 'player' ? 'Poste' : 'Fonction'}</th><th>{profile === 'player' ? 'N°' : 'Qualification / niveau'}</th><th>Statut</th></tr></thead><tbody>{registrations.map((r) => <tr key={r.id} className={onSelect ? 'selectable-row' : undefined} onClick={() => onSelect?.(r.id)}><td>{onSelect ? <button className="player-link" type="button" onClick={(event) => { event.stopPropagation(); onSelect(r.id); }}>{r.person.firstName} {r.person.lastName}</button> : <strong>{r.person.firstName} {r.person.lastName}</strong>}</td><td>{profile === 'player' ? translatePosition(r.playerProfile?.position) : profile === 'staff' ? translateFunction(r.staffProfile?.function) : translateFunction(r.officialProfile?.function)}</td><td>{profile === 'player' ? r.playerProfile?.shirtNumber ?? '—' : profile === 'staff' ? r.staffProfile?.qualification ?? '—' : r.officialProfile?.level ?? '—'}</td><td><Badge value={r.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
-function LicensesView({ licenses }: { licenses: License[] }) { return <DataPanel title="Licences du club">{licenses.length === 0 ? <Empty text="Aucune licence enregistrée" /> : <table><thead><tr><th>Numéro</th><th>Saison</th><th>Statut</th></tr></thead><tbody>{licenses.map((l) => <tr key={l.id}><td><strong>{l.number}</strong></td><td>{l.season}</td><td><Badge value={l.status} /></td></tr>)}</tbody></table>}</DataPanel>; }
-function LeagueLicensesView({ clubs }: { clubs: Organization[] }) { return <DataPanel title="Contrôle des licences"><Empty text={`${clubs.length} club(s) sous supervision — file de validation détaillée au prochain incrément`} /></DataPanel>; }
+function LicenseWorkflowView({ authority, licenses, clubs, token, onChanged }: { authority: Space; licenses: License[]; clubs: Organization[]; token: string; onChanged: () => Promise<void> }) {
+  const [busy, setBusy] = useState('');
+  const [message, setMessage] = useState('');
+  async function transition(license: License, action: 'submit' | 'favorable' | 'incomplete' | 'transmit' | 'issue' | 'reject') {
+    let path = '';
+    let body: Record<string, string> | undefined;
+    if (action === 'submit') path = `/licenses/${license.id}/submit`;
+    if (action === 'favorable') { path = `/licenses/${license.id}/league-review`; body = { decision: 'LEAGUE_FAVORABLE' }; }
+    if (action === 'incomplete') {
+      const reason = window.prompt('Indiquez précisément les pièces ou informations manquantes :');
+      if (!reason) return;
+      path = `/licenses/${license.id}/league-review`; body = { decision: 'INCOMPLETE', reason };
+    }
+    if (action === 'transmit') path = `/licenses/${license.id}/transmit-fbf`;
+    if (action === 'issue') {
+      const number = window.prompt('Numéro officiel de la licence délivrée par la FBF :');
+      if (!number) return;
+      path = `/licenses/${license.id}/federation-decision`; body = { decision: 'ISSUED_BY_FBF', number };
+    }
+    if (action === 'reject') {
+      const reason = window.prompt('Motif officiel du refus FBF :');
+      if (!reason) return;
+      path = `/licenses/${license.id}/federation-decision`; body = { decision: 'REJECTED_BY_FBF', reason };
+    }
+    setBusy(license.id); setMessage('');
+    try {
+      await request(path, token, { method: 'PATCH', ...(body ? { body: JSON.stringify(body) } : {}) });
+      setMessage('Le dossier a été mis à jour avec succès.');
+      await onChanged();
+    } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Mise à jour impossible'); }
+    finally { setBusy(''); }
+  }
+  function actions(license: License) {
+    if (authority === 'CLUB' && ['DRAFT', 'INCOMPLETE'].includes(license.status)) return <button disabled={busy === license.id} onClick={() => transition(license, 'submit')}>Soumettre à la LFPB</button>;
+    if (authority === 'LIGUE' && license.status === 'SUBMITTED_TO_LEAGUE') return <span className="row-actions"><button disabled={busy === license.id} onClick={() => transition(license, 'favorable')}>Avis favorable</button><button disabled={busy === license.id} onClick={() => transition(license, 'incomplete')}>À compléter</button></span>;
+    if (authority === 'LIGUE' && license.status === 'LEAGUE_FAVORABLE') return <button disabled={busy === license.id} onClick={() => transition(license, 'transmit')}>Transmettre à la FBF</button>;
+    if (authority === 'FEDERATION' && license.status === 'TRANSMITTED_TO_FBF') return <span className="row-actions"><button disabled={busy === license.id} onClick={() => transition(license, 'issue')}>Délivrer la licence</button><button disabled={busy === license.id} onClick={() => transition(license, 'reject')}>Refuser</button></span>;
+    return <span>—</span>;
+  }
+  const title = authority === 'FEDERATION' ? 'Décision fédérale sur les licences' : authority === 'LIGUE' ? 'Contrôle des dossiers transmis par les clubs' : 'Dossiers de licence du club';
+  return <DataPanel title={title}>{message && <div className="success-message">{message}</div>}{licenses.length === 0 ? <Empty text="Aucun dossier de licence enregistré" /> : <table><thead><tr><th>Joueur</th><th>Club</th><th>Numéro FBF</th><th>Saison</th><th>Statut</th><th>Motif / complément</th><th>Action</th></tr></thead><tbody>{licenses.map((license) => { const registration = license.registration; const club = clubs.find((item) => item.id === registration?.organizationId); return <tr key={license.id}><td><strong>{registration ? `${registration.person.firstName} ${registration.person.lastName}` : '—'}</strong></td><td>{club?.name ?? (authority === 'CLUB' ? 'Mon club' : '—')}</td><td>{license.number ?? 'Attribué après décision FBF'}</td><td>{license.season}</td><td><Badge value={license.status} /></td><td>{license.rejectionReason ?? '—'}</td><td>{actions(license)}</td></tr>; })}</tbody></table>}</DataPanel>;
+}
 function OfficialVenuesNotice() { return <DataPanel title="Stades et accès"><Empty text="Les stades sont disponibles depuis l’API ; les consignes de mission seront reliées aux désignations." /></DataPanel>; }
 function DataPanel({ title, children }: { title: string; children: ReactNode }) { return <section className="data-panel"><div className="title"><span><label>DONNÉES RÉELLES</label><h2>{title}</h2></span></div><div className="table-wrap">{children}</div></section>; }
-function Badge({ value }: { value: string }) { return <span className={`badge ${value.toLowerCase()}`}>{value.replaceAll('_', ' ')}</span>; }
+function Badge({ value }: { value: string }) { return <span className={`badge ${value.toLowerCase()}`}>{licenseStatusLabel(value)}</span>; }
 function Empty({ text }: { text: string }) { return <div className="empty">{text}</div>; }
 function formatFullDate(value?: string) {
   if (!value) return '—';
@@ -366,3 +423,4 @@ function formatDate(value?: string) { return value ? new Intl.DateTimeFormat('fr
 function formatTime(value?: string) { return value ? new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : '—'; }
 function translatePosition(value?: string) { return ({ GOALKEEPER: 'Gardien', DEFENDER: 'Défenseur', MIDFIELDER: 'Milieu de terrain', FORWARD: 'Attaquant' } as Record<string, string>)[value ?? ''] ?? value ?? '—'; }
 function translateFunction(value?: string) { return ({ HEAD_COACH: 'Entraîneur principal', ASSISTANT_COACH: 'Entraîneur adjoint', GOALKEEPER_COACH: 'Entraîneur des gardiens', PHYSIOTHERAPIST: 'Kinésithérapeute', DOCTOR: 'Médecin', TEAM_MANAGER: 'Manager', REFEREE: 'Arbitre', ASSISTANT_REFEREE: 'Arbitre assistant', FOURTH_OFFICIAL: 'Quatrième officiel', MATCH_COMMISSIONER: 'Commissaire au match' } as Record<string, string>)[value ?? ''] ?? value ?? '—'; }
+function licenseStatusLabel(value: string) { return ({ DRAFT: 'Brouillon', SUBMITTED_TO_LEAGUE: 'Soumis à la LFPB', INCOMPLETE: 'Dossier à compléter', LEAGUE_FAVORABLE: 'Avis favorable LFPB', TRANSMITTED_TO_FBF: 'Transmis à la FBF', ISSUED_BY_FBF: 'Licence délivrée par la FBF', REJECTED_BY_FBF: 'Refusé par la FBF', SUSPENDED: 'Suspendue par la FBF', CANCELLED: 'Annulée par la FBF', EXPIRED: 'Expirée' } as Record<string, string>)[value] ?? value.replaceAll('_', ' '); }
