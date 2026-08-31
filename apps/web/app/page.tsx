@@ -179,7 +179,21 @@ export default function HomePage() {
   function logout() { sessionStorage.clear(); setToken(''); setActor(null); }
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) void navigator.serviceWorker.register('/sw.js');
+    if ('serviceWorker' in navigator) {
+      if (process.env.NODE_ENV === 'production') {
+        void navigator.serviceWorker.register('/sw.js');
+      } else {
+        // A cached Next.js development shell references build-specific CSS/JS
+        // chunks that disappear after a restart. Keep offline support for the
+        // production PWA, but remove stale workers and caches during local dev.
+        void navigator.serviceWorker.getRegistrations().then((registrations) =>
+          Promise.all(registrations.map((registration) => registration.unregister())),
+        );
+        if ('caches' in window) {
+          void caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))));
+        }
+      }
+    }
     const savedToken = sessionStorage.getItem('lfpb-token');
     const savedActor = sessionStorage.getItem('lfpb-actor');
     if (savedToken && savedActor) { const restoredActor = JSON.parse(savedActor) as Actor; setToken(savedToken); setActor(restoredActor); void loadDashboard(savedToken, restoredActor); }
