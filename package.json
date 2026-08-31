@@ -4,6 +4,7 @@
   "packageManager": "pnpm@10.15.0",
   "scripts": {
     "dev": "turbo dev",
+    "dev:local": "sh scripts/dev-local.sh",
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
