@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DocumentStatus, OrganizationType, Prisma, RegistrationCategory } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
@@ -8,6 +8,8 @@ import { CreateOfficialDto } from './dto/create-official.dto';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { DocumentDecisionDto } from './dto/document-decision.dto';
+import { UpdatePlayerPhotoDto } from './dto/update-player-photo.dto';
+import { buildPlayerDeduplicationKey, parseStrictDate } from './player-registration.rules';
 
 @Injectable()
 export class RegistriesService {
@@ -32,30 +34,187 @@ export class RegistriesService {
     await this.assertOrganizationType(input.organizationId, OrganizationType.CLUB);
     this.tenantAccess.assertOrganizationAccess(actor, input.organizationId);
 
-    return this.prisma.person.create({
-      data: {
-        firstName: input.firstName.trim(),
-        lastName: input.lastName.trim(),
-        birthDate: new Date(input.birthDate),
-        nationality: input.nationality?.trim(),
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName.trim();
+    const birthDate = parseStrictDate(input.birthDate, 'La date de naissance', {
+      forbidFuture: true,
+    });
+    const startDate = parseStrictDate(input.startDate, 'La date d’arrivée');
+    const endDate = input.endDate
+      ? parseStrictDate(input.endDate, 'La date de fin')
+      : undefined;
+
+    if (endDate && endDate < startDate) {
+      throw new BadRequestException(
+        'La date de fin ne peut pas précéder la date d’arrivée',
+      );
+    }
+
+    const existing = await this.prisma.person.findFirst({
+      where: {
+        firstName: { equals: firstName, mode: 'insensitive' },
+        lastName: { equals: lastName, mode: 'insensitive' },
+        birthDate,
         registrations: {
-          create: {
+          some: {
             organizationId: input.organizationId,
             category: RegistrationCategory.PLAYER,
-            startDate: new Date(input.startDate),
-            endDate: input.endDate ? new Date(input.endDate) : undefined,
-            playerProfile: {
-              create: {
-                position: input.position,
-                shirtName: input.shirtName?.trim(),
-                shirtNumber: input.shirtNumber,
+          },
+        },
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'Ce joueur existe déjà dans l’effectif de ce club',
+      );
+    }
+
+    const deduplicationKey = buildPlayerDeduplicationKey({
+      organizationId: input.organizationId,
+      firstName,
+      lastName,
+      birthDate: input.birthDate,
+    });
+
+    try {
+      return await this.prisma.person.create({
+        data: {
+          firstName,
+          lastName,
+          birthDate,
+          nationality: input.nationality?.trim(),
+          registrations: {
+            create: {
+              organizationId: input.organizationId,
+              category: RegistrationCategory.PLAYER,
+              deduplicationKey,
+              startDate,
+              endDate,
+              playerProfile: {
+                create: {
+                  position: input.position,
+                  shirtName: input.shirtName?.trim(),
+                  shirtNumber: input.shirtNumber,
+                },
               },
             },
           },
         },
+        include: { registrations: { include: { playerProfile: true } } },
+      });
+    } catch (reason) {
+      if (
+        reason instanceof Prisma.PrismaClientKnownRequestError &&
+        reason.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Ce joueur existe déjà dans l’effectif de ce club',
+        );
+      }
+      throw reason;
+    }
+  }
+
+  async getPlayer(actor: AuthenticatedActor, registrationId: string) {
+    const registration = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: {
+        person: true,
+        playerProfile: true,
+        licenses: { orderBy: { createdAt: 'desc' } },
+        documents: { orderBy: { createdAt: 'desc' } },
       },
-      include: { registrations: { include: { playerProfile: true } } },
     });
+
+    if (
+      !registration ||
+      registration.category !== RegistrationCategory.PLAYER
+    ) {
+      throw new NotFoundException('Joueur introuvable');
+    }
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      registration.organizationId,
+    );
+
+    const { photoData, photoMimeType, ...person } = registration.person;
+    return {
+      ...registration,
+      person: {
+        ...person,
+        photoDataUrl:
+          photoData && photoMimeType
+            ? `data:${photoMimeType};base64,${Buffer.from(photoData).toString('base64')}`
+            : null,
+      },
+    };
+  }
+
+  async updatePlayerPhoto(
+    actor: AuthenticatedActor,
+    registrationId: string,
+    input: UpdatePlayerPhotoDto,
+  ) {
+    const registration = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      select: {
+        personId: true,
+        organizationId: true,
+        category: true,
+      },
+    });
+    if (
+      !registration ||
+      registration.category !== RegistrationCategory.PLAYER
+    ) {
+      throw new NotFoundException('Joueur introuvable');
+    }
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      registration.organizationId,
+    );
+
+    const match =
+      /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+        input.photoDataUrl,
+      );
+    if (!match) {
+      throw new BadRequestException(
+        'La photo doit être une image JPEG, PNG ou WebP valide',
+      );
+    }
+
+    const [, mimeType, encoded] = match;
+    const photoData = Buffer.from(encoded, 'base64');
+    if (photoData.length === 0 || photoData.length > 750_000) {
+      throw new BadRequestException(
+        'La photo doit avoir une taille maximale de 750 Ko',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.person.update({
+        where: { id: registration.personId },
+        data: { photoData, photoMimeType: mimeType },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: registration.organizationId,
+          action: 'PLAYER_PHOTO_UPDATED',
+          resourceType: 'Person',
+          resourceId: registration.personId,
+          metadata: {
+            registrationId,
+            mimeType,
+            size: photoData.length,
+          },
+        },
+      });
+    });
+
+    return this.getPlayer(actor, registrationId);
   }
 
   async createStaff(actor: AuthenticatedActor, input: CreateStaffDto) {
@@ -207,7 +366,18 @@ export class RegistriesService {
     return this.prisma.registration.findMany({
       where: { organizationId, category },
       include: {
-        person: true,
+        person: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            birthDate: true,
+            nationality: true,
+            federationId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
         playerProfile: true,
         staffProfile: true,
         officialProfile: true,
