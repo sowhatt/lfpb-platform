@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import { OfficialVoiceAssistant } from './official-voice-assistant';
+import { StaffWorkspace } from './staff-workspace';
 import { navigationForSpace, resolveSpace } from './space-policy';
 import type { Space } from './space-policy';
 
@@ -184,9 +185,6 @@ export default function HomePage() {
       if (process.env.NODE_ENV === 'production') {
         void navigator.serviceWorker.register('/sw.js');
       } else {
-        // A cached Next.js development shell references build-specific CSS/JS
-        // chunks that disappear after a restart. Keep offline support for the
-        // production PWA, but remove stale workers and caches during local dev.
         void navigator.serviceWorker.getRegistrations().then((registrations) =>
           Promise.all(registrations.map((registration) => registration.unregister())),
         );
@@ -230,7 +228,7 @@ export default function HomePage() {
         {active === 'Rencontres' && <MatchesView matches={matches} />}
         {active === 'Calendrier RKJO' && <PlannerView proposals={proposals} />}
         {active === 'Effectif' && currentOrganizationId && <PlayersWorkspace registrations={players} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
-        {active === 'Staff' && <RegistrationsView title="Staff technique et médical" registrations={staff} profile="staff" />}
+        {active === 'Staff' && currentOrganizationId && <StaffWorkspace registrations={staff} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
         {active === 'Licences' && <LicenseWorkflowView authority={space} licenses={licenses} clubs={clubs} token={token} onChanged={() => loadDashboard(token, actor)} />}
         {active === 'Officiels' && <RegistrationsView title="Arbitres et officiels" registrations={officials} profile="official" />}
         {active === 'Calendrier' && <MatchesView matches={visibleMatches} />}
