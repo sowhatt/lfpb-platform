@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import { OfficialVoiceAssistant } from './official-voice-assistant';
+import { navigationForSpace, resolveSpace } from './space-policy';
+import type { Space } from './space-policy';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 type Actor = { email: string; memberships: { organizationId: string; role: string }[] };
@@ -12,7 +14,6 @@ type Match = { id: string; kickoffAt?: string; status: string; homeClub: { id: s
 type Proposal = { id: string; version: number; status: string; qualityScore: number; generatedBy: string; createdAt: string };
 type Registration = { id: string; organizationId?: string; status: string; startDate?: string; person: { firstName: string; lastName: string; birthDate?: string; nationality?: string; federationId?: string; photoDataUrl?: string | null }; playerProfile?: { position: string; shirtNumber?: number } | null; staffProfile?: { function: string; qualification?: string } | null; officialProfile?: { function: string; level?: string } | null; licenses?: License[]; documents?: { id: string; type: string; status: string }[] };
 type License = { id: string; number?: string | null; season: string; status: string; rejectionReason?: string | null; registration?: Registration };
-type Space = 'FEDERATION' | 'LIGUE' | 'CLUB' | 'OFFICIEL';
 
 async function request<T>(path: string, token?: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API}${path}`, {
@@ -202,17 +203,11 @@ export default function HomePage() {
   const clubs = organizations.filter((org) => org.type === 'CLUB');
   const latestProposal = proposals[0];
   const role = actor?.memberships[0]?.role ?? '';
-  const space: Space = role === 'FEDERATION_AGENT' ? 'FEDERATION' : role === 'CLUB_ADMIN' ? 'CLUB' : role === 'OFFICIEL' ? 'OFFICIEL' : 'LIGUE';
+  const space: Space = resolveSpace(role);
   const currentClubId = organizations.find((organization) => organization.id === actor?.memberships[0]?.organizationId)?.club?.id;
   const currentOrganizationId = actor?.memberships[0]?.organizationId;
   const visibleMatches = space === 'CLUB' && currentClubId ? matches.filter((match) => match.homeClub.id === currentClubId || match.awayClub.id === currentClubId) : matches;
-  const nav = space === 'FEDERATION'
-    ? ['Vue d’ensemble', 'Licences']
-    : space === 'CLUB'
-    ? ['Vue d’ensemble', 'Effectif', 'Staff', 'Licences', 'Calendrier']
-    : space === 'OFFICIEL'
-      ? ['Vue d’ensemble', 'Mes rencontres', 'Assistant vocal', 'Stades']
-      : ['Vue d’ensemble', 'Compétitions', 'Calendrier RKJO', 'Clubs', 'Licences', 'Officiels', 'Rencontres'];
+  const nav = navigationForSpace(space);
   const upcoming = useMemo(() => [...visibleMatches].sort((a, b) => (a.kickoffAt ?? '').localeCompare(b.kickoffAt ?? '')).slice(0, 5), [visibleMatches]);
 
   if (!token || !actor) return <LoginScreen loading={loading} error={error} onSubmit={login} />;
