@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { voiceSyncSummary } from './voice-sync-summary';
+import type { VoiceSyncOutcome } from './voice-sync-summary';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 const DB_NAME = 'lfpb-official-pwa';
@@ -124,27 +126,30 @@ export function OfficialVoiceAssistant({ token }: { token: string }) {
     setMessage('Brouillon préparé : vérifiez chaque information avant confirmation.');
   }
 
-  async function processAudio(audioDataUrl: string, recognizedText: string, queueId?: string) {
+  async function processAudio(audioDataUrl: string, recognizedText: string, queueId?: string): Promise<VoiceSyncOutcome> {
     if (!navigator.onLine) {
       const id = queueId ?? crypto.randomUUID();
       await queueVoice({ id, audioDataUrl, browserTranscript: recognizedText, createdAt: new Date().toISOString() });
       await refreshQueue();
       setMessage('Enregistrement conservé hors ligne. Il sera transcrit au retour du réseau.');
-      return;
+      return 'retained';
     }
     try {
       const result = await apiRequest<{ text: string }>('/official-assistant/transcriptions', token, { audioDataUrl, language: 'fr' });
       await interpret(result.text);
       if (queueId) await deleteQueuedVoice(queueId);
+      return 'synced';
     } catch (reason) {
       if (recognizedText.trim()) {
         await interpret(recognizedText);
         if (queueId) await deleteQueuedVoice(queueId);
         setMessage('Transcription navigateur utilisée. Vérifiez-la attentivement avant confirmation.');
+        return 'synced';
       } else {
         const id = queueId ?? crypto.randomUUID();
         await queueVoice({ id, audioDataUrl, browserTranscript: '', createdAt: new Date().toISOString() });
         setMessage(reason instanceof Error ? `${reason.message}. L’audio reste dans la file locale.` : 'Transcription indisponible.');
+        return 'retained';
       }
     } finally {
       await refreshQueue();
@@ -196,8 +201,12 @@ export function OfficialVoiceAssistant({ token }: { token: string }) {
     if (!items.length) return;
     setBusy(true); setMessage(`Synchronisation de ${items.length} dictée(s)…`);
     try {
-      for (const item of items) await processAudio(item.audioDataUrl, item.browserTranscript, item.id);
-      setMessage('File hors ligne synchronisée. Vérifiez le dernier brouillon généré.');
+      let synced = 0;
+      for (const item of items) {
+        const outcome = await processAudio(item.audioDataUrl, item.browserTranscript, item.id);
+        if (outcome === 'synced') synced += 1;
+      }
+      setMessage(voiceSyncSummary(items.length, synced));
     } finally { setBusy(false); await refreshQueue(); }
   }
 
