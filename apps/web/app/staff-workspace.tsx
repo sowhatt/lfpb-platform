@@ -30,20 +30,10 @@ const STAFF_FUNCTIONS = [
   ['OTHER', 'Autre fonction'],
 ] as const;
 
-const MONTHS = [
-  ['01', 'Janvier'],
-  ['02', 'Février'],
-  ['03', 'Mars'],
-  ['04', 'Avril'],
-  ['05', 'Mai'],
-  ['06', 'Juin'],
-  ['07', 'Juillet'],
-  ['08', 'Août'],
-  ['09', 'Septembre'],
-  ['10', 'Octobre'],
-  ['11', 'Novembre'],
-  ['12', 'Décembre'],
-] as const;
+const MONTH_NAMES = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+];
 
 function translateFunction(value?: string) {
   return Object.fromEntries(STAFF_FUNCTIONS)[value ?? ''] ?? value ?? '—';
@@ -59,51 +49,196 @@ function statusLabel(value: string) {
   } as Record<string, string>)[value] ?? value.replaceAll('_', ' ');
 }
 
-function FlexibleDateField({ name, required = false, birthDate = false }: { name: string; required?: boolean; birthDate?: boolean }) {
-  const currentYear = new Date().getFullYear();
-  const firstYear = birthDate ? currentYear - 100 : currentYear - 5;
-  const lastYear = birthDate ? currentYear : currentYear + 15;
-  const years = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => lastYear - index);
+function toIsoDate(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  let day: number;
+  let month: number;
+  let year: number;
+  const french = trimmed.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  const iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (french) {
+    day = Number(french[1]);
+    month = Number(french[2]);
+    year = Number(french[3]);
+  } else if (iso) {
+    year = Number(iso[1]);
+    month = Number(iso[2]);
+    day = Number(iso[3]);
+  } else {
+    return '';
+  }
+
+  const parsed = new Date(year, month - 1, day);
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) return '';
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function formatFrenchDate(iso: string) {
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return '';
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+function SmartDateField({ name, birthDate = false }: { name: string; birthDate?: boolean }) {
+  const today = new Date();
+  const [displayValue, setDisplayValue] = useState('');
+  const [isoValue, setIsoValue] = useState('');
+  const [open, setOpen] = useState(false);
+  const [panel, setPanel] = useState<'calendar' | 'months' | 'years'>('calendar');
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+  const minYear = birthDate ? today.getFullYear() - 100 : today.getFullYear() - 5;
+  const maxYear = birthDate ? today.getFullYear() : today.getFullYear() + 15;
+  const years = Array.from({ length: maxYear - minYear + 1 }, (_, index) => maxYear - index);
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const mondayOffset = (firstDay + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  function changeText(value: string) {
+    setDisplayValue(value);
+    const parsed = toIsoDate(value);
+    setIsoValue(parsed);
+    if (parsed) {
+      const [year, month] = parsed.split('-').map(Number);
+      setViewYear(year);
+      setViewMonth(month - 1);
+    }
+  }
+
+  function selectDay(day: number) {
+    const iso = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setIsoValue(iso);
+    setDisplayValue(formatFrenchDate(iso));
+    setOpen(false);
+    setPanel('calendar');
+  }
+
+  function moveMonth(delta: number) {
+    const next = new Date(viewYear, viewMonth + delta, 1);
+    const nextYear = next.getFullYear();
+    if (nextYear < minYear || nextYear > maxYear) return;
+    setViewYear(nextYear);
+    setViewMonth(next.getMonth());
+  }
+
+  const buttonStyle = { border: 0, background: 'transparent', cursor: 'pointer', padding: '0.35rem 0.45rem', borderRadius: 6 } as const;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.25fr 1fr', gap: '0.45rem' }}>
-      <select name={`${name}Day`} defaultValue="" required={required} aria-label="Jour">
-        <option value="" disabled={required}>Jour</option>
-        {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
-          <option key={day} value={String(day).padStart(2, '0')}>{day}</option>
-        ))}
-      </select>
-      <select name={`${name}Month`} defaultValue="" required={required} aria-label="Mois">
-        <option value="" disabled={required}>Mois</option>
-        {MONTHS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-      </select>
-      <select name={`${name}Year`} defaultValue="" required={required} aria-label="Année">
-        <option value="" disabled={required}>Année</option>
-        {years.map((year) => <option key={year} value={year}>{year}</option>)}
-      </select>
+    <div style={{ position: 'relative' }}>
+      <input type="hidden" name={name} value={isoValue} />
+      <div style={{ position: 'relative' }}>
+        <input
+          value={displayValue}
+          onChange={(event) => changeText(event.target.value)}
+          onPaste={(event) => {
+            const pasted = event.clipboardData.getData('text');
+            if (pasted) {
+              event.preventDefault();
+              changeText(pasted);
+            }
+          }}
+          placeholder="JJ/MM/AAAA"
+          inputMode="numeric"
+          autoComplete="off"
+          aria-label="Date"
+          style={{ paddingRight: '2.8rem' }}
+        />
+        <button
+          type="button"
+          aria-label="Ouvrir le calendrier"
+          title="Choisir dans le calendrier"
+          onClick={() => setOpen((value) => !value)}
+          style={{ position: 'absolute', right: 5, top: '50%', transform: 'translateY(-50%)', border: 0, background: 'transparent', cursor: 'pointer', fontSize: '1rem', padding: '0.35rem' }}
+        >
+          📅
+        </button>
+      </div>
+
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, width: 292, background: '#fff', border: '1px solid #d9e1e8', borderRadius: 12, boxShadow: '0 14px 34px rgba(11, 42, 67, 0.18)', padding: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '34px 1fr 34px', alignItems: 'center', marginBottom: 8 }}>
+            <button type="button" onClick={() => moveMonth(-1)} style={buttonStyle}>‹</button>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+              <button type="button" onClick={() => setPanel('months')} style={{ ...buttonStyle, fontWeight: 700 }}>{MONTH_NAMES[viewMonth]}</button>
+              <button type="button" onClick={() => setPanel('years')} style={{ ...buttonStyle, fontWeight: 700 }}>{viewYear}</button>
+            </div>
+            <button type="button" onClick={() => moveMonth(1)} style={buttonStyle}>›</button>
+          </div>
+
+          {panel === 'calendar' && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', fontSize: 11, fontWeight: 700, opacity: 0.65, marginBottom: 4 }}>
+                {['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map((day) => <span key={day}>{day}</span>)}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                {Array.from({ length: mondayOffset }, (_, index) => <span key={`blank-${index}`} />)}
+                {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => {
+                  const candidate = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const selected = candidate === isoValue;
+                  return (
+                    <button
+                      type="button"
+                      key={day}
+                      onClick={() => selectDay(day)}
+                      style={{ ...buttonStyle, height: 34, background: selected ? '#0c3554' : 'transparent', color: selected ? '#fff' : 'inherit', fontWeight: selected ? 700 : 500 }}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {panel === 'months' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+              {MONTH_NAMES.map((month, index) => (
+                <button
+                  type="button"
+                  key={month}
+                  onClick={() => { setViewMonth(index); setPanel('calendar'); }}
+                  style={{ ...buttonStyle, padding: '0.65rem 0.35rem', background: index === viewMonth ? '#f1f5f8' : 'transparent', fontWeight: index === viewMonth ? 700 : 500 }}
+                >
+                  {month.slice(0, 4)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {panel === 'years' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, maxHeight: 230, overflowY: 'auto', paddingRight: 2 }}>
+              {years.map((year) => (
+                <button
+                  type="button"
+                  key={year}
+                  onClick={() => { setViewYear(year); setPanel('calendar'); }}
+                  style={{ ...buttonStyle, padding: '0.55rem 0.25rem', background: year === viewYear ? '#0c3554' : 'transparent', color: year === viewYear ? '#fff' : 'inherit', fontWeight: year === viewYear ? 700 : 500 }}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid #edf1f4' }}>
+            <button type="button" onClick={() => { setDisplayValue(''); setIsoValue(''); setOpen(false); }} style={buttonStyle}>Effacer</button>
+            <button type="button" onClick={() => setOpen(false)} style={{ ...buttonStyle, fontWeight: 700 }}>Fermer</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function readFlexibleDate(form: FormData, name: string, required: boolean) {
-  const day = String(form.get(`${name}Day`) ?? '').trim();
-  const month = String(form.get(`${name}Month`) ?? '').trim();
-  const year = String(form.get(`${name}Year`) ?? '').trim();
-
-  if (!day && !month && !year && !required) return undefined;
-  if (!day || !month || !year) throw new Error('Veuillez renseigner complètement les dates obligatoires.');
-
-  const iso = `${year}-${month}-${day}`;
-  const parsed = new Date(`${iso}T00:00:00`);
-  if (
-    Number.isNaN(parsed.getTime()) ||
-    parsed.getFullYear() !== Number(year) ||
-    parsed.getMonth() + 1 !== Number(month) ||
-    parsed.getDate() !== Number(day)
-  ) {
-    throw new Error('Une des dates saisies est invalide.');
-  }
-  return iso;
+function readSmartDate(form: FormData, name: string, required: boolean) {
+  const value = String(form.get(name) ?? '').trim();
+  if (!value && !required) return undefined;
+  if (!value) throw new Error('Veuillez renseigner les dates obligatoires au format JJ/MM/AAAA ou avec le calendrier.');
+  return value;
 }
 
 async function request(path: string, token: string, init?: RequestInit) {
@@ -142,9 +277,9 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
     setMessageIsError(false);
 
     try {
-      const birthDate = readFlexibleDate(form, 'birthDate', true);
-      const startDate = readFlexibleDate(form, 'startDate', true);
-      const endDate = readFlexibleDate(form, 'endDate', false);
+      const birthDate = readSmartDate(form, 'birthDate', true);
+      const startDate = readSmartDate(form, 'startDate', true);
+      const endDate = readSmartDate(form, 'endDate', false);
 
       await request('/registries/staff', token, {
         method: 'POST',
@@ -193,12 +328,12 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
         <form className="entity-form" onSubmit={createStaff}>
           <div><label>Prénom *</label><input name="firstName" required maxLength={80} /></div>
           <div><label>Nom *</label><input name="lastName" required maxLength={80} /></div>
-          <div><label>Date de naissance *</label><FlexibleDateField name="birthDate" required birthDate /></div>
+          <div><label>Date de naissance *</label><SmartDateField name="birthDate" birthDate /></div>
           <div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" maxLength={80} /></div>
           <div><label>Fonction *</label><select name="function" required defaultValue="HEAD_COACH">{STAFF_FUNCTIONS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div>
           <div><label>Qualification / niveau</label><input name="qualification" maxLength={160} placeholder="Ex. Licence A CAF" /></div>
-          <div><label>Date d’arrivée *</label><FlexibleDateField name="startDate" required /></div>
-          <div><label>Date de fin</label><FlexibleDateField name="endDate" /></div>
+          <div><label>Date d’arrivée *</label><SmartDateField name="startDate" /></div>
+          <div><label>Date de fin</label><SmartDateField name="endDate" /></div>
           <button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le membre'}</button>
         </form>
       )}
