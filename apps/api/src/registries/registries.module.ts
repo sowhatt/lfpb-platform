@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { IamModule } from '../iam/iam.module';
+import { LicenseDocumentsController } from './license-documents.controller';
+import { LicenseDocumentsService } from './license-documents.service';
 import { LicenseStatusService } from './license-status.service';
 import { LicensesController } from './licenses.controller';
 import { LicensesService } from './licenses.service';
@@ -12,12 +14,18 @@ import { StaffLifecycleService } from './staff-lifecycle.service';
 
 @Module({
   imports: [AuthModule, IamModule],
-  controllers: [RegistriesController, LicensesController, StaffLifecycleController],
+  controllers: [
+    RegistriesController,
+    LicensesController,
+    LicenseDocumentsController,
+    StaffLifecycleController,
+  ],
   providers: [
     RegistriesService,
     RegistrationStatusService,
     LicensesService,
     LicenseStatusService,
+    LicenseDocumentsService,
     StaffLifecycleService,
   ],
 })
