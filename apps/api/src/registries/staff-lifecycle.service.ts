@@ -11,6 +11,27 @@ export class StaffLifecycleService {
     private readonly tenantAccess: TenantAccessService,
   ) {}
 
+  async assertStaffEditable(actor: AuthenticatedActor, registrationId: string) {
+    const registration = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      select: {
+        organizationId: true,
+        category: true,
+        status: true,
+      },
+    });
+
+    if (!registration || registration.category !== RegistrationCategory.STAFF) {
+      throw new NotFoundException('Membre du staff introuvable');
+    }
+
+    this.tenantAccess.assertOrganizationAccess(actor, registration.organizationId);
+
+    if (registration.status === RegistrationStatus.ARCHIVED) {
+      throw new BadRequestException('Un membre du staff archivé ne peut plus être modifié');
+    }
+  }
+
   async archiveStaff(actor: AuthenticatedActor, registrationId: string) {
     const registration = await this.prisma.registration.findUnique({
       where: { id: registrationId },
