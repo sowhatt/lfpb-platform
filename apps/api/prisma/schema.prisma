@@ -1,5 +1,3 @@
-// Prisma schema for LFPB Platform
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,22 +13,25 @@ enum OrganizationType {
   CLUB
 }
 
-enum OrganizationStatus {
-  ACTIVE
-  SUSPENDED
-  ARCHIVED
-}
-
 enum Role {
-  SUPER_ADMIN
   FEDERATION_AGENT
   LIGUE_ADMIN
+  COMPETITION_MANAGER
+  SCHEDULE_APPROVER
   CLUB_ADMIN
-  CLUB_STAFF
-  REFEREE
-  COMMISSIONER
-  DOCTOR
-  SECURITY_OFFICER
+  OFFICIEL
+  SUPPORT
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
+enum Division {
+  LIGUE_1
+  LIGUE_2
 }
 
 enum RegistrationCategory {
@@ -69,7 +70,25 @@ enum OfficialFunction {
   REFEREE
   ASSISTANT_REFEREE
   FOURTH_OFFICIAL
-  COMMISSIONER
+  MATCH_COMMISSIONER
+  DELEGATE
+}
+
+enum MatchOfficialRole {
+  REFEREE
+  ASSISTANT_REFEREE_1
+  ASSISTANT_REFEREE_2
+  FOURTH_OFFICIAL
+  MATCH_COMMISSIONER
+  DELEGATE
+}
+
+enum MatchOfficialAssignmentStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REFUSED
+  CANCELLED
 }
 
 enum LicenseStatus {
@@ -101,24 +120,10 @@ enum DocumentStatus {
   EXPIRED
 }
 
-enum DocumentAnalysisStatus {
-  PENDING
-  PROCESSING
-  REVIEW_REQUIRED
-  CONSISTENT
-  NON_COMPLIANT
-  FAILED
-}
-
 enum SeasonStatus {
   DRAFT
   ACTIVE
   CLOSED
-}
-
-enum Division {
-  LIGUE_1
-  LIGUE_2
 }
 
 enum CompetitionFormat {
@@ -133,13 +138,7 @@ enum CompetitionStatus {
   PUBLISHED
   IN_PROGRESS
   COMPLETED
-  ARCHIVED
-}
-
-enum RoundStatus {
-  DRAFT
-  PUBLISHED
-  COMPLETED
+  CANCELLED
 }
 
 enum MatchStatus {
@@ -149,107 +148,102 @@ enum MatchStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
-  HOMOLOGATED
+}
+
+enum VenueAssignmentType {
+  PRIMARY
+  ALTERNATE
 }
 
 enum ScheduleProposalStatus {
-  DRAFT
-  PUBLISHED
+  GENERATED
+  SUBMITTED
   APPROVED
   REJECTED
-  SUPERSEDED
-}
-
-enum MatchOfficialRole {
-  REFEREE
-  ASSISTANT_REFEREE_1
-  ASSISTANT_REFEREE_2
-  FOURTH_OFFICIAL
-  COMMISSIONER
+  PUBLISHED
 }
 
 model Organization {
-  id          String             @id @default(uuid()) @db.Uuid
-  type        OrganizationType
-  name        String
-  slug        String             @unique
-  code        String?            @unique
-  status      OrganizationStatus @default(ACTIVE)
-  parentId    String?            @db.Uuid
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  parent      Organization?      @relation("OrganizationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
-  children    Organization[]     @relation("OrganizationHierarchy")
-  memberships Membership[]
-  club        Club?
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  code          String         @unique
+  type          OrganizationType
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  club          Club?
+  memberships   Membership[]
   registrations Registration[]
+  auditLogs     AuditLog[]
   competitions Competition[]
-  venues      Venue[]
-  auditLogs   AuditLog[]
 
-  @@index([type, status])
-  @@index([parentId])
+  @@index([type, active])
 }
 
 model Club {
   id             String       @id @default(uuid()) @db.Uuid
   organizationId String       @unique @db.Uuid
   shortName      String
-  city           String
-  division       Division?
-  stadiumName    String?
-  foundedYear    Int?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  division       Division
+  city           String?
+  colors         String?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   competitionEntries CompetitionClub[]
   homeMatches    Match[]      @relation("HomeClub")
   awayMatches    Match[]      @relation("AwayClub")
+  venueAssignments ClubVenue[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  @@index([division, city])
+  @@index([division])
 }
 
 model User {
   id           String       @id @default(uuid()) @db.Uuid
   email        String       @unique
   passwordHash String
-  displayName  String
-  isActive     Boolean      @default(true)
+  firstName    String
+  lastName     String
+  active       Boolean      @default(true)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  memberships  Membership[]
+  memberships Membership[]
+  auditLogs    AuditLog[]   @relation("AuditActor")
+  generatedScheduleProposals ScheduleProposal[] @relation("ProposalGenerator")
+  decidedScheduleProposals ScheduleProposal[] @relation("ProposalDecider")
   officialProfile OfficialProfile?
-  auditLogs    AuditLog[]
-  createdScheduleProposals ScheduleProposal[] @relation("ScheduleProposalCreator")
-  decidedScheduleProposals ScheduleProposal[] @relation("ScheduleProposalDecider")
+  createdOfficialAssignments MatchOfficialAssignment[] @relation("AssignmentCreator")
 }
 
 model Membership {
-  id             String       @id @default(uuid()) @db.Uuid
-  userId         String       @db.Uuid
-  organizationId String       @db.Uuid
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  organizationId String           @db.Uuid
   role           Role
-  createdAt      DateTime     @default(now())
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId, role])
-  @@index([organizationId, role])
+  @@index([organizationId, role, status])
 }
 
 model Person {
-  id           String         @id @default(uuid()) @db.Uuid
-  firstName    String
-  lastName     String
-  birthDate    DateTime?      @db.Date
-  nationality  String?
-  federationId String?        @unique
-  photoDataUrl String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  registrations Registration[]
+  id             String         @id @default(uuid()) @db.Uuid
+  firstName      String
+  lastName       String
+  birthDate      DateTime       @db.Date
+  nationality    String?
+  federationId   String?        @unique
+  photoData       Bytes?
+  photoMimeType   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  registrations  Registration[]
 
-  @@index([lastName, firstName])
+  @@index([lastName, firstName, birthDate])
 }
 
 model Registration {
@@ -326,30 +320,8 @@ model RegistrationDocument {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   registration  Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  analysis       DocumentAnalysis?
 
   @@index([registrationId, type, status])
-}
-
-model DocumentAnalysis {
-  id               String                 @id @default(uuid()) @db.Uuid
-  documentId       String                 @unique @db.Uuid
-  status           DocumentAnalysisStatus @default(PENDING)
-  provider         String?
-  model            String?
-  confidence       Float?
-  extractedData    Json?
-  comparisonResult Json?
-  alerts           Json?
-  rawText          String?
-  analyzedAt       DateTime?
-  reviewedAt       DateTime?
-  reviewedByUserId String?                @db.Uuid
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  document         RegistrationDocument   @relation(fields: [documentId], references: [id], onDelete: Cascade)
-
-  @@index([status, confidence])
 }
 
 model Season {
@@ -407,82 +379,136 @@ model Venue {
   id           String   @id @default(uuid()) @db.Uuid
   name         String
   city         String
-  organizationId String? @db.Uuid
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  homeMatches  Match[]  @relation("MatchVenue")
+  address      String?
+  pitchSurface String?
+  capacity     Int?
+  approved     Boolean  @default(false)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  matches      Match[]
+  clubAssignments ClubVenue[]
+  unavailabilities VenueUnavailability[]
 
-  @@index([city, name])
+  @@unique([name, city])
+  @@index([city, approved, active])
+}
+
+model ClubVenue {
+  clubId      String              @db.Uuid
+  venueId     String              @db.Uuid
+  type        VenueAssignmentType @default(ALTERNATE)
+  priority    Int                 @default(1)
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  club        Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  venue       Venue               @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@id([clubId, venueId])
+  @@index([venueId, active])
+  @@index([clubId, type, priority])
+}
+
+model VenueUnavailability {
+  id        String   @id @default(uuid()) @db.Uuid
+  venueId   String   @db.Uuid
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@index([venueId, startsAt, endsAt])
 }
 
 model CompetitionRound {
   id            String      @id @default(uuid()) @db.Uuid
   competitionId String      @db.Uuid
   number        Int
-  name          String
-  startsAt      DateTime?
-  endsAt        DateTime?
-  status        RoundStatus @default(DRAFT)
+  name          String?
+  startDate     DateTime?   @db.Date
+  endDate       DateTime?   @db.Date
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   matches       Match[]
 
   @@unique([competitionId, number])
-  @@index([competitionId, status])
+  @@index([competitionId, startDate])
 }
 
 model Match {
-  id            String      @id @default(uuid()) @db.Uuid
-  competitionId String      @db.Uuid
-  roundId       String?     @db.Uuid
-  homeClubId    String      @db.Uuid
-  awayClubId    String      @db.Uuid
-  venueId       String?     @db.Uuid
-  kickoffAt     DateTime
-  status        MatchStatus @default(DRAFT)
-  homeScore     Int?
-  awayScore     Int?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  round         CompetitionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
-  homeClub      Club        @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
-  awayClub      Club        @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
-  venue         Venue?      @relation("MatchVenue", fields: [venueId], references: [id], onDelete: SetNull)
+  id              String           @id @default(uuid()) @db.Uuid
+  competitionId   String           @db.Uuid
+  roundId         String?          @db.Uuid
+  venueId         String?          @db.Uuid
+  homeClubId      String           @db.Uuid
+  awayClubId      String           @db.Uuid
+  kickoffAt       DateTime?
+  status          MatchStatus      @default(DRAFT)
+  homeScore       Int?
+  awayScore       Int?
+  postponementReason String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  competition     Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  round           CompetitionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  venue           Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  homeClub        Club             @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
+  awayClub        Club             @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
   officialAssignments MatchOfficialAssignment[]
 
-  @@index([competitionId, kickoffAt])
-  @@index([roundId, status])
+  @@index([competitionId, status, kickoffAt])
   @@index([homeClubId, kickoffAt])
   @@index([awayClubId, kickoffAt])
+  @@index([venueId, kickoffAt])
 }
 
 model MatchOfficialAssignment {
-  id             String            @id @default(uuid()) @db.Uuid
-  matchId        String            @db.Uuid
-  officialRegistrationId String    @db.Uuid
-  role           MatchOfficialRole
-  assignedAt     DateTime          @default(now())
-  match          Match             @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  official       OfficialProfile   @relation(fields: [officialRegistrationId], references: [registrationId], onDelete: Restrict)
+  id                String                        @id @default(uuid()) @db.Uuid
+  matchId           String                        @db.Uuid
+  officialProfileId String                        @db.Uuid
+  role              MatchOfficialRole
+  status            MatchOfficialAssignmentStatus @default(DRAFT)
+  responseReason    String?
+  sentAt            DateTime?
+  respondedAt       DateTime?
+  createdByUserId   String                        @db.Uuid
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  match             Match                         @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  officialProfile   OfficialProfile               @relation(fields: [officialProfileId], references: [registrationId], onDelete: Restrict)
+  createdByUser     User                          @relation("AssignmentCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
   @@unique([matchId, role])
-  @@index([officialRegistrationId, assignedAt])
+  @@unique([matchId, officialProfileId])
+  @@index([officialProfileId, status])
 }
 
 model ScheduleProposal {
-  id             String                 @id @default(uuid()) @db.Uuid
-  competitionId  String                 @db.Uuid
-  createdByUserId String                @db.Uuid
-  decidedByUserId String?               @db.Uuid
-  status         ScheduleProposalStatus @default(DRAFT)
-  rationale      String?
-  constraints    Json?
-  proposal       Json
-  createdAt      DateTime               @default(now())
-  decidedAt      DateTime?
-  competition    Competition            @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  createdBy      User                   @relation("ScheduleProposalCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  decidedBy      User?                  @relation("ScheduleProposalDecider", fields: [decidedByUserId], references: [id], onDelete: Restrict)
+  id                String                 @id @default(uuid()) @db.Uuid
+  competitionId     String                 @db.Uuid
+  version           Int
+  status            ScheduleProposalStatus @default(GENERATED)
+  generatedBy       String
+  generatedByUserId String                 @db.Uuid
+  qualityScore      Int
+  qualityReport     Json
+  payload           Json
+  submittedAt       DateTime?
+  decidedAt         DateTime?
+  decidedByUserId   String?                @db.Uuid
+  rejectionReason   String?
+  publishedAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  competition       Competition            @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  generatedByUser   User                   @relation("ProposalGenerator", fields: [generatedByUserId], references: [id], onDelete: Restrict)
+  decidedByUser     User?                  @relation("ProposalDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
 
+  @@unique([competitionId, version])
   @@index([competitionId, status, createdAt])
 }
 
@@ -495,9 +521,9 @@ model AuditLog {
   resourceId     String?
   metadata       Json?
   createdAt      DateTime      @default(now())
-  actor          User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  actor          User?         @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, createdAt])
-  @@index([resourceType, resourceId])
+  @@index([actorUserId, createdAt])
 }
