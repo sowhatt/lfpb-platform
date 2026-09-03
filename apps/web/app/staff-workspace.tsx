@@ -8,12 +8,12 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 type StaffRegistration = {
   id: string;
   status: string;
-  startDate: string;
+  startDate?: string;
   endDate?: string | null;
   person: {
     firstName: string;
     lastName: string;
-    birthDate: string;
+    birthDate?: string;
     nationality?: string | null;
   };
   staffProfile?: { function: string; qualification?: string | null } | null;
