@@ -64,9 +64,10 @@ export class LicensesService {
     this.statusWorkflow.assertTransition(license.status, LicenseStatus.SUBMITTED_TO_LEAGUE);
 
     const documents = await this.prisma.registrationDocument.findMany({ where: { registrationId: license.registrationId } });
+    const invalidStatuses = new Set<DocumentStatus>([DocumentStatus.REJECTED, DocumentStatus.EXPIRED]);
     const acceptedCodes = new Set(
       documents
-        .filter((document) => ![DocumentStatus.REJECTED, DocumentStatus.EXPIRED].includes(document.status))
+        .filter((document) => !invalidStatuses.has(document.status))
         .map((document) => this.documentCode(document.storageKey, document.type)),
     );
     const missing = REQUIRED_PLAYER_DOCUMENTS.filter((requirement) => !acceptedCodes.has(requirement.code));
