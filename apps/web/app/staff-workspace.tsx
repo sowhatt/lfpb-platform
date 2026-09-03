@@ -95,7 +95,7 @@ function formatFrenchDate(iso: string) {
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
-function SmartDateField({ name, birthDate = false, initialValue = '' }: { name: string; birthDate?: boolean; initialValue?: string }) {
+function SmartDateField({ name, birthDate = false, initialValue = '' }: { name: string; birthDate?: boolean; initialValue?: string | null }) {
   const today = new Date();
   const initialIso = normalizeIsoDate(initialValue);
   const initialDate = initialIso ? new Date(`${initialIso}T00:00:00`) : today;
