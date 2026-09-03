@@ -1,11 +1,17 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { LicenseStatus, Prisma, RegistrationCategory } from '@prisma/client';
+import { DocumentStatus, DocumentType, LicenseStatus, Prisma, RegistrationCategory } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { FederationDecisionDto, LeagueReviewDto } from './dto/license-decision.dto';
 import { LicenseStatusService } from './license-status.service';
+
+const REQUIRED_PLAYER_DOCUMENTS: { type: DocumentType; label: string }[] = [
+  { type: DocumentType.IDENTITY, label: "Passeport / pièce d'identité" },
+  { type: DocumentType.PHOTO, label: "Photo d'identité récente" },
+  { type: DocumentType.MEDICAL_CERTIFICATE, label: 'Certificat médical' },
+];
 
 @Injectable()
 export class LicensesService {
@@ -21,11 +27,7 @@ export class LicensesService {
       where: { registration: { organizationId } },
       include: {
         registration: {
-          include: {
-            person: true,
-            playerProfile: true,
-            documents: true,
-          },
+          include: { person: true, playerProfile: true, documents: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -33,41 +35,22 @@ export class LicensesService {
   }
 
   async create(actor: AuthenticatedActor, input: CreateLicenseDto) {
-    const registration = await this.prisma.registration.findUnique({
-      where: { id: input.registrationId },
-    });
+    const registration = await this.prisma.registration.findUnique({ where: { id: input.registrationId } });
     if (!registration) throw new NotFoundException('Inscription introuvable');
     this.tenantAccess.assertOrganizationAccess(actor, registration.organizationId);
-
     if (registration.category !== RegistrationCategory.PLAYER) {
       throw new BadRequestException('Un dossier de licence joueur doit être rattaché à un joueur');
     }
-
     const season = input.season.trim();
-    const existing = await this.prisma.license.findFirst({
-      where: { registrationId: input.registrationId, season },
-    });
-    if (existing) {
-      throw new BadRequestException('Un dossier de licence existe déjà pour ce joueur et cette saison');
-    }
+    const existing = await this.prisma.license.findFirst({ where: { registrationId: input.registrationId, season } });
+    if (existing) throw new BadRequestException('Un dossier de licence existe déjà pour ce joueur et cette saison');
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const license = await tx.license.create({
-        data: {
-          registrationId: input.registrationId,
-          season,
-          validFrom: input.validFrom ? new Date(input.validFrom) : undefined,
-          validUntil: input.validUntil ? new Date(input.validUntil) : undefined,
-        },
+        data: { registrationId: input.registrationId, season },
       });
       await tx.auditLog.create({
-        data: {
-          actorUserId: actor.userId,
-          organizationId: registration.organizationId,
-          action: 'LICENSE_CREATED',
-          resourceType: 'License',
-          resourceId: license.id,
-        },
+        data: { actorUserId: actor.userId, organizationId: registration.organizationId, action: 'LICENSE_CREATED', resourceType: 'License', resourceId: license.id },
       });
       return license;
     });
@@ -77,17 +60,24 @@ export class LicensesService {
     const license = await this.getWithRegistration(licenseId);
     this.tenantAccess.assertOrganizationAccess(actor, license.registration.organizationId);
     this.statusWorkflow.assertTransition(license.status, LicenseStatus.SUBMITTED_TO_LEAGUE);
+
+    const documents = await this.prisma.registrationDocument.findMany({
+      where: { registrationId: license.registrationId },
+    });
+    const missing = REQUIRED_PLAYER_DOCUMENTS.filter((requirement) =>
+      !documents.some((document) => document.type === requirement.type && [DocumentStatus.PENDING, DocumentStatus.VALID].includes(document.status)),
+    );
+    if (missing.length) {
+      throw new BadRequestException(`Dossier incomplet : pièces obligatoires manquantes : ${missing.map((item) => item.label).join(', ')}`);
+    }
+
     return this.changeStatus(actor, license, LicenseStatus.SUBMITTED_TO_LEAGUE);
   }
 
   async reviewByLeague(actor: AuthenticatedActor, licenseId: string, input: LeagueReviewDto) {
     const license = await this.getWithRegistration(licenseId);
     this.statusWorkflow.assertTransition(license.status, input.decision);
-
-    if (input.decision === LicenseStatus.INCOMPLETE && !input.reason?.trim()) {
-      throw new BadRequestException('Les compléments demandés doivent être précisés');
-    }
-
+    if (input.decision === LicenseStatus.INCOMPLETE && !input.reason?.trim()) throw new BadRequestException('Les compléments demandés doivent être précisés');
     return this.changeStatus(actor, license, input.decision, input.reason);
   }
 
@@ -97,21 +87,11 @@ export class LicensesService {
     return this.changeStatus(actor, license, LicenseStatus.TRANSMITTED_TO_FBF);
   }
 
-  async decideByFederation(
-    actor: AuthenticatedActor,
-    licenseId: string,
-    input: FederationDecisionDto,
-  ) {
+  async decideByFederation(actor: AuthenticatedActor, licenseId: string, input: FederationDecisionDto) {
     const license = await this.getWithRegistration(licenseId);
     this.statusWorkflow.assertTransition(license.status, input.decision);
-
-    if (input.decision === LicenseStatus.ISSUED_BY_FBF && !input.number?.trim()) {
-      throw new BadRequestException('Le numéro de licence FBF est obligatoire');
-    }
-    if (input.decision === LicenseStatus.REJECTED_BY_FBF && !input.reason?.trim()) {
-      throw new BadRequestException('Le motif du refus fédéral est obligatoire');
-    }
-
+    if (input.decision === LicenseStatus.ISSUED_BY_FBF && !input.number?.trim()) throw new BadRequestException('Le numéro de licence FBF est obligatoire');
+    if (input.decision === LicenseStatus.REJECTED_BY_FBF && !input.reason?.trim()) throw new BadRequestException('Le motif du refus fédéral est obligatoire');
     return this.changeStatus(actor, license, input.decision, input.reason, {
       number: input.number?.trim().toUpperCase(),
       validFrom: input.validFrom ? new Date(input.validFrom) : undefined,
@@ -132,10 +112,7 @@ export class LicensesService {
   }
 
   private async getWithRegistration(licenseId: string) {
-    const license = await this.prisma.license.findUnique({
-      where: { id: licenseId },
-      include: { registration: true },
-    });
+    const license = await this.prisma.license.findUnique({ where: { id: licenseId }, include: { registration: true } });
     if (!license) throw new NotFoundException('Licence introuvable');
     return license;
   }
@@ -145,33 +122,19 @@ export class LicensesService {
     license: Awaited<ReturnType<LicensesService['getWithRegistration']>>,
     status: LicenseStatus,
     reason?: string,
-    federationData?: {
-      number?: string;
-      validFrom?: Date;
-      validUntil?: Date;
-    },
+    federationData?: { number?: string; validFrom?: Date; validUntil?: Date },
   ) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.license.update({
         where: { id: license.id },
         data: {
           status,
-          rejectionReason:
-            status === LicenseStatus.INCOMPLETE || status === LicenseStatus.REJECTED_BY_FBF
-              ? reason?.trim()
-              : null,
+          rejectionReason: status === LicenseStatus.INCOMPLETE || status === LicenseStatus.REJECTED_BY_FBF ? reason?.trim() : null,
           ...federationData,
         },
       });
       await tx.auditLog.create({
-        data: {
-          actorUserId: actor.userId,
-          organizationId: license.registration.organizationId,
-          action: `LICENSE_${status}`,
-          resourceType: 'License',
-          resourceId: license.id,
-          metadata: reason ? { reason: reason.trim() } : undefined,
-        },
+        data: { actorUserId: actor.userId, organizationId: license.registration.organizationId, action: `LICENSE_${status}`, resourceType: 'License', resourceId: license.id, metadata: reason ? { reason: reason.trim() } : undefined },
       });
       return updated;
     });
