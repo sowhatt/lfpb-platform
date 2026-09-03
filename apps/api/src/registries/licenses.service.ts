@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { LicenseStatus, Prisma } from '@prisma/client';
+import { LicenseStatus, Prisma, RegistrationCategory } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
@@ -20,7 +20,13 @@ export class LicensesService {
     return this.prisma.license.findMany({
       where: { registration: { organizationId } },
       include: {
-        registration: { include: { person: true, playerProfile: true } },
+        registration: {
+          include: {
+            person: true,
+            playerProfile: true,
+            documents: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -33,12 +39,23 @@ export class LicensesService {
     if (!registration) throw new NotFoundException('Inscription introuvable');
     this.tenantAccess.assertOrganizationAccess(actor, registration.organizationId);
 
+    if (registration.category !== RegistrationCategory.PLAYER) {
+      throw new BadRequestException('Un dossier de licence joueur doit être rattaché à un joueur');
+    }
+
+    const season = input.season.trim();
+    const existing = await this.prisma.license.findFirst({
+      where: { registrationId: input.registrationId, season },
+    });
+    if (existing) {
+      throw new BadRequestException('Un dossier de licence existe déjà pour ce joueur et cette saison');
+    }
+
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const license = await tx.license.create({
         data: {
           registrationId: input.registrationId,
-          number: input.number?.trim().toUpperCase(),
-          season: input.season.trim(),
+          season,
           validFrom: input.validFrom ? new Date(input.validFrom) : undefined,
           validUntil: input.validUntil ? new Date(input.validUntil) : undefined,
         },
