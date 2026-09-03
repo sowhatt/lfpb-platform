@@ -21,6 +21,7 @@ import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { DocumentDecisionDto } from './dto/document-decision.dto';
 import { UpdatePlayerPhotoDto } from './dto/update-player-photo.dto';
+import { UpdateStaffDto } from './dto/update-staff.dto';
 import { REGISTRY_REFERENCE_DATA } from './reference-data';
 import { RegistriesService } from './registries.service';
 
@@ -87,6 +88,16 @@ export class RegistriesController {
     @Body() input: CreateStaffDto,
   ) {
     return this.registries.createStaff(actor, input);
+  }
+
+  @Patch('staff/:registrationId')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  updateStaff(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @Body() input: UpdateStaffDto,
+  ) {
+    return this.registries.updateStaff(actor, registrationId, input);
   }
 
   @Get('officials')
