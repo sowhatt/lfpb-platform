@@ -24,11 +24,15 @@ import { UpdatePlayerPhotoDto } from './dto/update-player-photo.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { REGISTRY_REFERENCE_DATA } from './reference-data';
 import { RegistriesService } from './registries.service';
+import { StaffLifecycleService } from './staff-lifecycle.service';
 
 @Controller('registries')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class RegistriesController {
-  constructor(private readonly registries: RegistriesService) {}
+  constructor(
+    private readonly registries: RegistriesService,
+    private readonly staffLifecycle: StaffLifecycleService,
+  ) {}
 
   @Get('references')
   references() {
@@ -92,11 +96,12 @@ export class RegistriesController {
 
   @Patch('staff/:registrationId')
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
-  updateStaff(
+  async updateStaff(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('registrationId', ParseUUIDPipe) registrationId: string,
     @Body() input: UpdateStaffDto,
   ) {
+    await this.staffLifecycle.assertStaffEditable(actor, registrationId);
     return this.registries.updateStaff(actor, registrationId, input);
   }
 
