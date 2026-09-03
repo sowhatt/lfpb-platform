@@ -6,6 +6,7 @@ import { extname, join } from 'node:path';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
+import { DocumentIntelligenceService } from './document-intelligence.service';
 
 type ChecklistItem = {
   code: string;
@@ -40,12 +41,14 @@ export class LicenseDocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantAccess: TenantAccessService,
+    private readonly documentIntelligence: DocumentIntelligenceService,
   ) {}
 
   async checklist(actor: AuthenticatedActor, registrationId: string) {
     const registration = await this.getPlayerRegistration(actor, registrationId);
     const documents = await this.prisma.registrationDocument.findMany({
       where: { registrationId },
+      include: { analysis: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -56,6 +59,9 @@ export class LicenseDocumentsService {
         present: Boolean(document),
         documentId: document?.id ?? null,
         status: document?.status ?? null,
+        analysisStatus: document?.analysis?.status ?? null,
+        analysisConfidence: document?.analysis?.confidence ?? null,
+        analysisAlerts: document?.analysis?.alerts ?? null,
         expiresAt: document?.expiresAt ?? null,
         createdAt: document?.createdAt ?? null,
       };
@@ -102,6 +108,8 @@ export class LicenseDocumentsService {
       },
     });
 
+    const analysis = await this.documentIntelligence.ensurePending(document.id);
+
     await this.prisma.auditLog.create({
       data: {
         actorUserId: actor.userId,
@@ -113,7 +121,7 @@ export class LicenseDocumentsService {
       },
     });
 
-    return { document, checklist: await this.checklist(actor, registrationId) };
+    return { document: { ...document, analysis }, checklist: await this.checklist(actor, registrationId) };
   }
 
   private documentCode(storageKey: string, type: DocumentType) {
