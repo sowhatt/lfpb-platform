@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import { OfficialVoiceAssistant } from './official-voice-assistant';
 import { StaffWorkspace } from './staff-workspace';
+import { ClubLicenseWorkspace } from './club-license-workspace';
 import { navigationForSpace, resolveSpace } from './space-policy';
 import type { Space } from './space-policy';
 
@@ -229,7 +230,9 @@ export default function HomePage() {
         {active === 'Calendrier RKJO' && <PlannerView proposals={proposals} />}
         {active === 'Effectif' && currentOrganizationId && <PlayersWorkspace registrations={players} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
         {active === 'Staff' && currentOrganizationId && <StaffWorkspace registrations={staff} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
-        {active === 'Licences' && <LicenseWorkflowView authority={space} licenses={licenses} clubs={clubs} token={token} onChanged={() => loadDashboard(token, actor)} />}
+        {active === 'Licences' && (space === 'CLUB'
+          ? <ClubLicenseWorkspace players={players} licenses={licenses} token={token} onChanged={() => loadDashboard(token, actor)} />
+          : <LicenseWorkflowView authority={space} licenses={licenses} clubs={clubs} token={token} onChanged={() => loadDashboard(token, actor)} />)}
         {active === 'Officiels' && <RegistrationsView title="Arbitres et officiels" registrations={officials} profile="official" />}
         {active === 'Calendrier' && <MatchesView matches={visibleMatches} />}
         {active === 'Mes rencontres' && <MatchesView matches={visibleMatches} />}
