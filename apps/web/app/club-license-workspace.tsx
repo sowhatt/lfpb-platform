@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+const DEFAULT_SEASON = '2026-2027';
 
 type Registration = {
   id: string;
@@ -68,20 +69,29 @@ async function request(path: string, token: string, init?: RequestInit) {
 export function ClubLicenseWorkspace({ players, licenses, token, onChanged }: Props) {
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<License | null>(null);
+  const [season, setSeason] = useState(DEFAULT_SEASON);
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
   const [messageIsError, setMessageIsError] = useState(false);
-  const licensedIds = new Set(licenses.map((license) => license.registration?.id).filter(Boolean));
-  const availablePlayers = players.filter((player) => !licensedIds.has(player.id));
+
+  const normalizedSeason = season.trim();
+  const licensedIdsForSeason = new Set(
+    licenses
+      .filter((license) => license.season.trim() === normalizedSeason)
+      .map((license) => license.registration?.id)
+      .filter(Boolean),
+  );
+  const availablePlayers = players.filter((player) => !licensedIdsForSeason.has(player.id));
 
   async function createLicense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const requestedSeason = String(form.get('season') ?? '').trim();
     setBusy('create'); setMessage(''); setMessageIsError(false);
     try {
       await request('/licenses', token, {
         method: 'POST',
-        body: JSON.stringify({ registrationId: form.get('registrationId'), season: String(form.get('season') ?? '').trim() }),
+        body: JSON.stringify({ registrationId: form.get('registrationId'), season: requestedSeason }),
       });
       setCreating(false);
       setMessage('Dossier de licence créé en brouillon.');
@@ -109,8 +119,9 @@ export function ClubLicenseWorkspace({ players, licenses, token, onChanged }: Pr
 
   function progressIndex(status: string) {
     if (status === 'INCOMPLETE') return 1;
-    if (status === 'REJECTED_BY_FBF') return 4;
-    if (['SUSPENDED', 'CANCELLED', 'EXPIRED'].includes(status)) return 5;
+    if (status === 'REJECTED_BY_FBF') return 3;
+    if (status === 'SUSPENDED') return 4;
+    if (['CANCELLED', 'EXPIRED'].includes(status)) return 4;
     return Math.max(0, STATUS_ORDER.indexOf(status));
   }
 
@@ -124,9 +135,9 @@ export function ClubLicenseWorkspace({ players, licenses, token, onChanged }: Pr
 
     {creating && <form className="entity-form" onSubmit={createLicense}>
       <div><label>Joueur *</label><select name="registrationId" required defaultValue=""><option value="" disabled>Choisir un joueur</option>{availablePlayers.map((player) => <option key={player.id} value={player.id}>{player.person.firstName} {player.person.lastName}</option>)}</select></div>
-      <div><label>Saison *</label><input name="season" defaultValue="2026-2027" required maxLength={20} /></div>
+      <div><label>Saison *</label><input name="season" value={season} onChange={(event) => setSeason(event.target.value)} required maxLength={20} /></div>
       <div><label>Numéro FBF</label><input value="Attribué uniquement par la FBF" disabled /></div>
-      <button disabled={busy === 'create' || availablePlayers.length === 0}>{busy === 'create' ? 'Création…' : availablePlayers.length === 0 ? 'Tous les joueurs ont un dossier' : 'Créer le dossier'}</button>
+      <button disabled={busy === 'create' || availablePlayers.length === 0 || !normalizedSeason}>{busy === 'create' ? 'Création…' : availablePlayers.length === 0 ? `Tous les joueurs ont un dossier ${normalizedSeason || ''}` : 'Créer le dossier'}</button>
     </form>}
 
     {selected && <section className="player-profile">
