@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DocumentStatus, DocumentType, LicenseStatus, Prisma, RegistrationCategory } from '@prisma/client';
+import { DocumentStatus, LicenseStatus, Prisma, RegistrationCategory } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
@@ -7,11 +7,15 @@ import { CreateLicenseDto } from './dto/create-license.dto';
 import { FederationDecisionDto, LeagueReviewDto } from './dto/license-decision.dto';
 import { LicenseStatusService } from './license-status.service';
 
-const REQUIRED_PLAYER_DOCUMENTS: { type: DocumentType; label: string }[] = [
-  { type: DocumentType.IDENTITY, label: "Passeport / pièce d'identité" },
-  { type: DocumentType.PHOTO, label: "Photo d'identité récente" },
-  { type: DocumentType.MEDICAL_CERTIFICATE, label: 'Certificat médical' },
-];
+const REQUIRED_PLAYER_DOCUMENTS = [
+  { code: 'LICENSE_FORM', label: 'Formulaire de demande de licence signé' },
+  { code: 'PAYMENT_PROOF', label: 'Preuve de paiement' },
+  { code: 'CLUB_LICENSE_NOTIFICATION', label: 'Notification Licence Nationale du Club' },
+  { code: 'MEDICAL_CERTIFICATE', label: 'Certificat médical' },
+  { code: 'PHOTO', label: "Photo d'identité récente" },
+  { code: 'IDENTITY', label: "Passeport / pièce d'identité" },
+  { code: 'INSURANCE', label: "Justificatif d'assurance" },
+] as const;
 
 @Injectable()
 export class LicensesService {
@@ -46,9 +50,7 @@ export class LicensesService {
     if (existing) throw new BadRequestException('Un dossier de licence existe déjà pour ce joueur et cette saison');
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const license = await tx.license.create({
-        data: { registrationId: input.registrationId, season },
-      });
+      const license = await tx.license.create({ data: { registrationId: input.registrationId, season } });
       await tx.auditLog.create({
         data: { actorUserId: actor.userId, organizationId: registration.organizationId, action: 'LICENSE_CREATED', resourceType: 'License', resourceId: license.id },
       });
@@ -61,12 +63,13 @@ export class LicensesService {
     this.tenantAccess.assertOrganizationAccess(actor, license.registration.organizationId);
     this.statusWorkflow.assertTransition(license.status, LicenseStatus.SUBMITTED_TO_LEAGUE);
 
-    const documents = await this.prisma.registrationDocument.findMany({
-      where: { registrationId: license.registrationId },
-    });
-    const missing = REQUIRED_PLAYER_DOCUMENTS.filter((requirement) =>
-      !documents.some((document) => document.type === requirement.type && [DocumentStatus.PENDING, DocumentStatus.VALID].includes(document.status)),
+    const documents = await this.prisma.registrationDocument.findMany({ where: { registrationId: license.registrationId } });
+    const acceptedCodes = new Set(
+      documents
+        .filter((document) => ![DocumentStatus.REJECTED, DocumentStatus.EXPIRED].includes(document.status))
+        .map((document) => this.documentCode(document.storageKey, document.type)),
     );
+    const missing = REQUIRED_PLAYER_DOCUMENTS.filter((requirement) => !acceptedCodes.has(requirement.code));
     if (missing.length) {
       throw new BadRequestException(`Dossier incomplet : pièces obligatoires manquantes : ${missing.map((item) => item.label).join(', ')}`);
     }
@@ -109,6 +112,17 @@ export class LicensesService {
     const license = await this.getWithRegistration(licenseId);
     this.statusWorkflow.assertTransition(license.status, LicenseStatus.CANCELLED);
     return this.changeStatus(actor, license, LicenseStatus.CANCELLED, reason);
+  }
+
+  private documentCode(storageKey: string, type: string) {
+    const marker = storageKey.indexOf('::');
+    if (marker > 0) return storageKey.slice(0, marker);
+    if (type === 'IDENTITY') return 'IDENTITY';
+    if (type === 'PHOTO') return 'PHOTO';
+    if (type === 'MEDICAL_CERTIFICATE') return 'MEDICAL_CERTIFICATE';
+    if (type === 'CONTRACT') return 'CONTRACT';
+    if (type === 'TRANSFER_CLEARANCE') return 'TRANSFER_CLEARANCE';
+    return 'OTHER';
   }
 
   private async getWithRegistration(licenseId: string) {
