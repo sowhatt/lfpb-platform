@@ -9,6 +9,7 @@ import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { DocumentDecisionDto } from './dto/document-decision.dto';
 import { UpdatePlayerPhotoDto } from './dto/update-player-photo.dto';
+import { UpdateStaffDto } from './dto/update-staff.dto';
 import { buildPlayerDeduplicationKey, parseStrictDate } from './player-registration.rules';
 
 @Injectable()
@@ -246,6 +247,81 @@ export class RegistriesService {
     });
   }
 
+  async updateStaff(
+    actor: AuthenticatedActor,
+    registrationId: string,
+    input: UpdateStaffDto,
+  ) {
+    const registration = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      select: {
+        personId: true,
+        organizationId: true,
+        category: true,
+      },
+    });
+
+    if (!registration || registration.category !== RegistrationCategory.STAFF) {
+      throw new NotFoundException('Membre du staff introuvable');
+    }
+    this.tenantAccess.assertOrganizationAccess(actor, registration.organizationId);
+
+    const birthDate = parseStrictDate(input.birthDate, 'La date de naissance', {
+      forbidFuture: true,
+    });
+    const startDate = parseStrictDate(input.startDate, 'La date d’arrivée');
+    const endDate = input.endDate
+      ? parseStrictDate(input.endDate, 'La date de fin')
+      : null;
+
+    if (endDate && endDate < startDate) {
+      throw new BadRequestException(
+        'La date de fin ne peut pas précéder la date d’arrivée',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.person.update({
+        where: { id: registration.personId },
+        data: {
+          firstName: input.firstName.trim(),
+          lastName: input.lastName.trim(),
+          birthDate,
+          nationality: input.nationality?.trim() || null,
+        },
+      });
+
+      await tx.registration.update({
+        where: { id: registrationId },
+        data: { startDate, endDate },
+      });
+
+      await tx.staffProfile.update({
+        where: { registrationId },
+        data: {
+          function: input.function,
+          qualification: input.qualification?.trim() || null,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          organizationId: registration.organizationId,
+          action: 'STAFF_UPDATED',
+          resourceType: 'Registration',
+          resourceId: registrationId,
+          metadata: { function: input.function },
+        },
+      });
+
+      return tx.registration.findUnique({
+        where: { id: registrationId },
+        include: { person: true, staffProfile: true },
+      });
+    });
+  }
+
   async createOfficial(actor: AuthenticatedActor, input: CreateOfficialDto) {
     await this.assertOrganizationType(input.organizationId, OrganizationType.LEAGUE);
     this.tenantAccess.assertOrganizationAccess(actor, input.organizationId);
@@ -307,7 +383,6 @@ export class RegistriesService {
       return document;
     });
   }
-
 
   async decideDocument(
     actor: AuthenticatedActor,
