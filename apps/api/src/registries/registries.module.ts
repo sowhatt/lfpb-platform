@@ -8,6 +8,8 @@ import { LicenseDocumentsService } from './license-documents.service';
 import { LicenseStatusService } from './license-status.service';
 import { LicensesController } from './licenses.controller';
 import { LicensesService } from './licenses.service';
+import { OfficialMatchPlayerAccessController } from './official-match-player-access.controller';
+import { OfficialMatchPlayerAccessService } from './official-match-player-access.service';
 import { PlayerResolverService } from './player-resolver.service';
 import { RegistrationStatusService } from './registration-status.service';
 import { RegistriesController } from './registries.controller';
@@ -23,6 +25,7 @@ import { StaffLifecycleService } from './staff-lifecycle.service';
     LicensesController,
     LicenseDocumentsController,
     AiAssistantController,
+    OfficialMatchPlayerAccessController,
     StaffLifecycleController,
   ],
   providers: [
@@ -34,6 +37,7 @@ import { StaffLifecycleService } from './staff-lifecycle.service';
     LicenseDocumentsService,
     PlayerResolverService,
     RkjoAiAdapterService,
+    OfficialMatchPlayerAccessService,
     StaffLifecycleService,
   ],
 })
