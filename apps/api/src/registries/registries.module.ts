@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { IamModule } from '../iam/iam.module';
+import { DocumentIntelligenceService } from './document-intelligence.service';
 import { LicenseDocumentsController } from './license-documents.controller';
 import { LicenseDocumentsService } from './license-documents.service';
 import { LicenseStatusService } from './license-status.service';
@@ -25,6 +26,7 @@ import { StaffLifecycleService } from './staff-lifecycle.service';
     RegistrationStatusService,
     LicensesService,
     LicenseStatusService,
+    DocumentIntelligenceService,
     LicenseDocumentsService,
     StaffLifecycleService,
   ],
