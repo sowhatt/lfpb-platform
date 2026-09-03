@@ -79,4 +79,18 @@ describe('StaffLifecycleService', () => {
       ForbiddenException,
     );
   });
+
+  it('autorise la modification d’un membre actif du même club', async () => {
+    const { service } = makeService(RegistrationStatus.DRAFT);
+
+    await expect(service.assertStaffEditable(actor, registrationId)).resolves.toBeUndefined();
+  });
+
+  it('refuse la modification d’un membre archivé', async () => {
+    const { service } = makeService(RegistrationStatus.ARCHIVED);
+
+    await expect(service.assertStaffEditable(actor, registrationId)).rejects.toThrow(
+      BadRequestException,
+    );
+  });
 });
