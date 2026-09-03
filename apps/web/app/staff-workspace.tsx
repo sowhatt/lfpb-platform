@@ -276,6 +276,7 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<StaffRegistration | null>(null);
   const [saving, setSaving] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [messageIsError, setMessageIsError] = useState(false);
   const submitting = useRef(false);
@@ -293,9 +294,37 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
   }
 
   function startEdit(registration: StaffRegistration) {
+    if (registration.status === 'ARCHIVED') return;
     setCreating(false);
     setEditing(registration);
     setMessage('');
+  }
+
+  async function archiveStaff(registration: StaffRegistration) {
+    if (registration.status === 'ARCHIVED' || archivingId) return;
+
+    const confirmed = window.confirm(
+      `Archiver ${registration.person.firstName} ${registration.person.lastName} ?\n\nLe membre restera dans l’historique et ne sera pas supprimé définitivement.`,
+    );
+    if (!confirmed) return;
+
+    setArchivingId(registration.id);
+    setMessage('');
+    setMessageIsError(false);
+
+    try {
+      await request(`/registries/staff/${registration.id}/archive`, token, {
+        method: 'PATCH',
+      });
+      if (editing?.id === registration.id) closeForm();
+      setMessage('Membre du staff archivé avec succès.');
+      await onCreated();
+    } catch (reason) {
+      setMessageIsError(true);
+      setMessage(reason instanceof Error ? reason.message : 'Archivage impossible');
+    } finally {
+      setArchivingId(null);
+    }
   }
 
   async function saveStaff(event: FormEvent<HTMLFormElement>) {
@@ -387,7 +416,41 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
           ) : (
             <table>
               <thead><tr><th>Nom</th><th>Fonction</th><th>Qualification / niveau</th><th>Statut</th><th>Actions</th></tr></thead>
-              <tbody>{registrations.map((registration) => <tr key={registration.id}><td><strong>{registration.person.firstName} {registration.person.lastName}</strong></td><td>{translateFunction(registration.staffProfile?.function)}</td><td>{registration.staffProfile?.qualification ?? '—'}</td><td><span className={`badge ${registration.status.toLowerCase()}`}>{statusLabel(registration.status)}</span></td><td><button type="button" onClick={() => startEdit(registration)} style={{ border: '1px solid #d8e0e7', background: '#fff', borderRadius: 8, padding: '0.45rem 0.7rem', cursor: 'pointer', fontWeight: 700 }}>Modifier</button></td></tr>)}</tbody>
+              <tbody>
+                {registrations.map((registration) => {
+                  const archived = registration.status === 'ARCHIVED';
+                  return (
+                    <tr key={registration.id}>
+                      <td><strong>{registration.person.firstName} {registration.person.lastName}</strong></td>
+                      <td>{translateFunction(registration.staffProfile?.function)}</td>
+                      <td>{registration.staffProfile?.qualification ?? '—'}</td>
+                      <td><span className={`badge ${registration.status.toLowerCase()}`}>{statusLabel(registration.status)}</span></td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            disabled={archived || Boolean(archivingId)}
+                            onClick={() => startEdit(registration)}
+                            style={{ border: '1px solid #d8e0e7', background: archived ? '#f3f5f7' : '#fff', color: archived ? '#89939d' : 'inherit', borderRadius: 8, padding: '0.45rem 0.7rem', cursor: archived ? 'not-allowed' : 'pointer', fontWeight: 700 }}
+                          >
+                            Modifier
+                          </button>
+                          {!archived && (
+                            <button
+                              type="button"
+                              disabled={Boolean(archivingId)}
+                              onClick={() => archiveStaff(registration)}
+                              style={{ border: '1px solid #d9a6a6', background: '#fff', color: '#8b1f1f', borderRadius: 8, padding: '0.45rem 0.7rem', cursor: archivingId ? 'wait' : 'pointer', fontWeight: 700 }}
+                            >
+                              {archivingId === registration.id ? 'Archivage…' : 'Archiver'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           )}
         </div>
