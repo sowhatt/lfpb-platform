@@ -120,6 +120,15 @@ enum DocumentStatus {
   EXPIRED
 }
 
+enum DocumentAnalysisStatus {
+  PENDING
+  PROCESSING
+  REVIEW_REQUIRED
+  CONSISTENT
+  NON_COMPLIANT
+  FAILED
+}
+
 enum SeasonStatus {
   DRAFT
   ACTIVE
@@ -237,8 +246,8 @@ model Person {
   birthDate      DateTime       @db.Date
   nationality    String?
   federationId   String?        @unique
-  photoData       Bytes?
-  photoMimeType   String?
+  photoData      Bytes?
+  photoMimeType  String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   registrations  Registration[]
@@ -247,23 +256,23 @@ model Person {
 }
 
 model Registration {
-  id             String               @id @default(uuid()) @db.Uuid
-  personId       String               @db.Uuid
-  organizationId String               @db.Uuid
-  category       RegistrationCategory
+  id               String               @id @default(uuid()) @db.Uuid
+  personId         String               @db.Uuid
+  organizationId   String               @db.Uuid
+  category         RegistrationCategory
   deduplicationKey String?              @unique
-  status         RegistrationStatus   @default(DRAFT)
-  startDate      DateTime             @db.Date
-  endDate        DateTime?            @db.Date
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  person         Person               @relation(fields: [personId], references: [id], onDelete: Restrict)
-  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  playerProfile  PlayerProfile?
-  staffProfile   StaffProfile?
-  officialProfile OfficialProfile?
-  licenses       License[]
-  documents      RegistrationDocument[]
+  status           RegistrationStatus   @default(DRAFT)
+  startDate        DateTime             @db.Date
+  endDate          DateTime?            @db.Date
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  person           Person               @relation(fields: [personId], references: [id], onDelete: Restrict)
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  playerProfile    PlayerProfile?
+  staffProfile     StaffProfile?
+  officialProfile  OfficialProfile?
+  licenses         License[]
+  documents        RegistrationDocument[]
 
   @@index([organizationId, category, status])
   @@index([personId, status])
@@ -295,17 +304,17 @@ model OfficialProfile {
 }
 
 model License {
-  id             String        @id @default(uuid()) @db.Uuid
-  registrationId String        @db.Uuid
-  number         String?       @unique
-  season         String
-  status         LicenseStatus @default(DRAFT)
-  validFrom      DateTime?     @db.Date
-  validUntil     DateTime?     @db.Date
+  id               String        @id @default(uuid()) @db.Uuid
+  registrationId   String        @db.Uuid
+  number           String?       @unique
+  season           String
+  status           LicenseStatus @default(DRAFT)
+  validFrom        DateTime?     @db.Date
+  validUntil       DateTime?     @db.Date
   rejectionReason String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  registration  Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  registration    Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
   @@index([registrationId, season, status])
 }
@@ -319,9 +328,31 @@ model RegistrationDocument {
   expiresAt      DateTime?      @db.Date
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  registration  Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  registration   Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  analysis       DocumentAnalysis?
 
   @@index([registrationId, type, status])
+}
+
+model DocumentAnalysis {
+  id               String                 @id @default(uuid()) @db.Uuid
+  documentId       String                 @unique @db.Uuid
+  status           DocumentAnalysisStatus @default(PENDING)
+  provider         String?
+  model            String?
+  confidence       Float?
+  extractedData    Json?
+  comparisonResult Json?
+  alerts           Json?
+  rawText          String?
+  analyzedAt       DateTime?
+  reviewedAt       DateTime?
+  reviewedByUserId String?                @db.Uuid
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  document         RegistrationDocument   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([status, confidence])
 }
 
 model Season {
@@ -338,25 +369,25 @@ model Season {
 }
 
 model Competition {
-  id             String            @id @default(uuid()) @db.Uuid
-  organizationId String            @db.Uuid
-  seasonId       String            @db.Uuid
-  name           String
-  code           String
-  division       Division?
-  format         CompetitionFormat
-  status         CompetitionStatus @default(DRAFT)
-  minRestHours   Int               @default(72)
-  maxConsecutiveHome Int            @default(2)
-  maxConsecutiveAway Int            @default(2)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  season         Season            @relation(fields: [seasonId], references: [id], onDelete: Restrict)
-  entries        CompetitionClub[]
-  rounds         CompetitionRound[]
-  matches        Match[]
-  scheduleProposals ScheduleProposal[]
+  id                 String            @id @default(uuid()) @db.Uuid
+  organizationId     String            @db.Uuid
+  seasonId           String            @db.Uuid
+  name               String
+  code               String
+  division           Division?
+  format             CompetitionFormat
+  status             CompetitionStatus @default(DRAFT)
+  minRestHours       Int               @default(72)
+  maxConsecutiveHome Int               @default(2)
+  maxConsecutiveAway Int               @default(2)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  season             Season            @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  entries            CompetitionClub[]
+  rounds             CompetitionRound[]
+  matches            Match[]
+  scheduleProposals  ScheduleProposal[]
 
   @@unique([seasonId, code])
   @@index([organizationId, status])
@@ -376,34 +407,34 @@ model CompetitionClub {
 }
 
 model Venue {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String
-  city         String
-  address      String?
-  pitchSurface String?
-  capacity     Int?
-  approved     Boolean  @default(false)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  matches      Match[]
-  clubAssignments ClubVenue[]
-  unavailabilities VenueUnavailability[]
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String
+  city              String
+  address           String?
+  pitchSurface      String?
+  capacity          Int?
+  approved          Boolean  @default(false)
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  matches           Match[]
+  clubAssignments   ClubVenue[]
+  unavailabilities  VenueUnavailability[]
 
   @@unique([name, city])
   @@index([city, approved, active])
 }
 
 model ClubVenue {
-  clubId      String              @db.Uuid
-  venueId     String              @db.Uuid
-  type        VenueAssignmentType @default(ALTERNATE)
-  priority    Int                 @default(1)
-  active      Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  club        Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  venue       Venue               @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  clubId    String              @db.Uuid
+  venueId   String              @db.Uuid
+  type      VenueAssignmentType @default(ALTERNATE)
+  priority  Int                 @default(1)
+  active    Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  club      Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  venue     Venue               @relation(fields: [venueId], references: [id], onDelete: Cascade)
 
   @@id([clubId, venueId])
   @@index([venueId, active])
@@ -440,24 +471,24 @@ model CompetitionRound {
 }
 
 model Match {
-  id              String           @id @default(uuid()) @db.Uuid
-  competitionId   String           @db.Uuid
-  roundId         String?          @db.Uuid
-  venueId         String?          @db.Uuid
-  homeClubId      String           @db.Uuid
-  awayClubId      String           @db.Uuid
-  kickoffAt       DateTime?
-  status          MatchStatus      @default(DRAFT)
-  homeScore       Int?
-  awayScore       Int?
-  postponementReason String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  competition     Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  round           CompetitionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
-  venue           Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  homeClub        Club             @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
-  awayClub        Club             @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
+  id                  String            @id @default(uuid()) @db.Uuid
+  competitionId       String            @db.Uuid
+  roundId             String?           @db.Uuid
+  venueId             String?           @db.Uuid
+  homeClubId          String            @db.Uuid
+  awayClubId          String            @db.Uuid
+  kickoffAt           DateTime?
+  status              MatchStatus       @default(DRAFT)
+  homeScore           Int?
+  awayScore           Int?
+  postponementReason  String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  competition         Competition       @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  round               CompetitionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  venue               Venue?            @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  homeClub            Club              @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
+  awayClub            Club              @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
   officialAssignments MatchOfficialAssignment[]
 
   @@index([competitionId, status, kickoffAt])
