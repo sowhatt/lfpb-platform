@@ -7,15 +7,18 @@ import { LicensesService } from './licenses.service';
 import { RegistrationStatusService } from './registration-status.service';
 import { RegistriesController } from './registries.controller';
 import { RegistriesService } from './registries.service';
+import { StaffLifecycleController } from './staff-lifecycle.controller';
+import { StaffLifecycleService } from './staff-lifecycle.service';
 
 @Module({
   imports: [AuthModule, IamModule],
-  controllers: [RegistriesController, LicensesController],
+  controllers: [RegistriesController, LicensesController, StaffLifecycleController],
   providers: [
     RegistriesService,
     RegistrationStatusService,
     LicensesService,
     LicenseStatusService,
+    StaffLifecycleService,
   ],
 })
 export class RegistriesModule {}
