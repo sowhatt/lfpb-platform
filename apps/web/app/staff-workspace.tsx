@@ -8,8 +8,15 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 type StaffRegistration = {
   id: string;
   status: string;
-  person: { firstName: string; lastName: string };
-  staffProfile?: { function: string; qualification?: string } | null;
+  startDate: string;
+  endDate?: string | null;
+  person: {
+    firstName: string;
+    lastName: string;
+    birthDate: string;
+    nationality?: string | null;
+  };
+  staffProfile?: { function: string; qualification?: string | null } | null;
 };
 
 type Props = {
@@ -49,6 +56,12 @@ function statusLabel(value: string) {
   } as Record<string, string>)[value] ?? value.replaceAll('_', ' ');
 }
 
+function normalizeIsoDate(value?: string | null) {
+  if (!value) return '';
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : '';
+}
+
 function toIsoDate(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return '';
@@ -82,14 +95,16 @@ function formatFrenchDate(iso: string) {
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
-function SmartDateField({ name, birthDate = false }: { name: string; birthDate?: boolean }) {
+function SmartDateField({ name, birthDate = false, initialValue = '' }: { name: string; birthDate?: boolean; initialValue?: string }) {
   const today = new Date();
-  const [displayValue, setDisplayValue] = useState('');
-  const [isoValue, setIsoValue] = useState('');
+  const initialIso = normalizeIsoDate(initialValue);
+  const initialDate = initialIso ? new Date(`${initialIso}T00:00:00`) : today;
+  const [displayValue, setDisplayValue] = useState(initialIso ? formatFrenchDate(initialIso) : '');
+  const [isoValue, setIsoValue] = useState(initialIso);
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<'calendar' | 'months' | 'years'>('calendar');
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear, setViewYear] = useState(initialDate.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initialDate.getMonth());
 
   const minYear = birthDate ? today.getFullYear() - 100 : today.getFullYear() - 5;
   const maxYear = birthDate ? today.getFullYear() : today.getFullYear() + 15;
@@ -259,12 +274,31 @@ async function request(path: string, token: string, init?: RequestInit) {
 
 export function StaffWorkspace({ registrations, organizationId, token, onCreated }: Props) {
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<StaffRegistration | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [messageIsError, setMessageIsError] = useState(false);
   const submitting = useRef(false);
+  const formOpen = creating || Boolean(editing);
 
-  async function createStaff(event: FormEvent<HTMLFormElement>) {
+  function closeForm() {
+    setCreating(false);
+    setEditing(null);
+  }
+
+  function startCreate() {
+    setEditing(null);
+    setCreating(true);
+    setMessage('');
+  }
+
+  function startEdit(registration: StaffRegistration) {
+    setCreating(false);
+    setEditing(registration);
+    setMessage('');
+  }
+
+  async function saveStaff(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
 
@@ -280,29 +314,36 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
       const birthDate = readSmartDate(form, 'birthDate', true);
       const startDate = readSmartDate(form, 'startDate', true);
       const endDate = readSmartDate(form, 'endDate', false);
+      const payload = {
+        firstName: String(form.get('firstName') ?? '').trim(),
+        lastName: String(form.get('lastName') ?? '').trim(),
+        birthDate,
+        nationality: String(form.get('nationality') ?? '').trim() || undefined,
+        function: form.get('function'),
+        qualification: String(form.get('qualification') ?? '').trim() || undefined,
+        startDate,
+        endDate,
+      };
 
-      await request('/registries/staff', token, {
-        method: 'POST',
-        body: JSON.stringify({
-          organizationId,
-          firstName: String(form.get('firstName') ?? '').trim(),
-          lastName: String(form.get('lastName') ?? '').trim(),
-          birthDate,
-          nationality: String(form.get('nationality') ?? '').trim() || undefined,
-          function: form.get('function'),
-          qualification: String(form.get('qualification') ?? '').trim() || undefined,
-          startDate,
-          endDate,
-        }),
-      });
+      if (editing) {
+        await request(`/registries/staff/${editing.id}`, token, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        });
+        setMessage('Membre du staff modifié avec succès.');
+      } else {
+        await request('/registries/staff', token, {
+          method: 'POST',
+          body: JSON.stringify({ organizationId, ...payload }),
+        });
+        setMessage('Membre du staff ajouté avec succès.');
+      }
 
-      formElement.reset();
-      setCreating(false);
-      setMessage('Membre du staff ajouté avec succès.');
+      closeForm();
       await onCreated();
     } catch (reason) {
       setMessageIsError(true);
-      setMessage(reason instanceof Error ? reason.message : 'Création impossible');
+      setMessage(reason instanceof Error ? reason.message : 'Enregistrement impossible');
     } finally {
       submitting.current = false;
       setSaving(false);
@@ -315,26 +356,26 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
         <div>
           <label>GESTION DU STAFF</label>
           <h2>Staff technique et médical</h2>
-          <p>Ajoutez les entraîneurs, membres du staff médical et responsables d’équipe du club.</p>
+          <p>Ajoutez et mettez à jour les entraîneurs, membres du staff médical et responsables d’équipe du club.</p>
         </div>
-        <button className="primary" type="button" onClick={() => setCreating((value) => !value)}>
-          {creating ? 'Fermer' : '+ Ajouter un membre'}
+        <button className="primary" type="button" onClick={formOpen ? closeForm : startCreate}>
+          {formOpen ? 'Fermer' : '+ Ajouter un membre'}
         </button>
       </section>
 
       {message && <div className={messageIsError ? 'api-error' : 'success-message'}>{message}</div>}
 
-      {creating && (
-        <form className="entity-form" onSubmit={createStaff}>
-          <div><label>Prénom *</label><input name="firstName" required maxLength={80} /></div>
-          <div><label>Nom *</label><input name="lastName" required maxLength={80} /></div>
-          <div><label>Date de naissance *</label><SmartDateField name="birthDate" birthDate /></div>
-          <div><label>Nationalité</label><input name="nationality" defaultValue="Béninoise" maxLength={80} /></div>
-          <div><label>Fonction *</label><select name="function" required defaultValue="HEAD_COACH">{STAFF_FUNCTIONS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div>
-          <div><label>Qualification / niveau</label><input name="qualification" maxLength={160} placeholder="Ex. Licence A CAF" /></div>
-          <div><label>Date d’arrivée *</label><SmartDateField name="startDate" /></div>
-          <div><label>Date de fin</label><SmartDateField name="endDate" /></div>
-          <button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer le membre'}</button>
+      {formOpen && (
+        <form key={editing?.id ?? 'new'} className="entity-form" onSubmit={saveStaff}>
+          <div><label>Prénom *</label><input name="firstName" required maxLength={80} defaultValue={editing?.person.firstName ?? ''} /></div>
+          <div><label>Nom *</label><input name="lastName" required maxLength={80} defaultValue={editing?.person.lastName ?? ''} /></div>
+          <div><label>Date de naissance *</label><SmartDateField name="birthDate" birthDate initialValue={editing?.person.birthDate} /></div>
+          <div><label>Nationalité</label><input name="nationality" defaultValue={editing?.person.nationality ?? 'Béninoise'} maxLength={80} /></div>
+          <div><label>Fonction *</label><select name="function" required defaultValue={editing?.staffProfile?.function ?? 'HEAD_COACH'}>{STAFF_FUNCTIONS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div>
+          <div><label>Qualification / niveau</label><input name="qualification" maxLength={160} placeholder="Ex. Licence A CAF" defaultValue={editing?.staffProfile?.qualification ?? ''} /></div>
+          <div><label>Date d’arrivée *</label><SmartDateField name="startDate" initialValue={editing?.startDate} /></div>
+          <div><label>Date de fin</label><SmartDateField name="endDate" initialValue={editing?.endDate} /></div>
+          <button disabled={saving}>{saving ? 'Enregistrement…' : editing ? 'Enregistrer les modifications' : 'Enregistrer le membre'}</button>
         </form>
       )}
 
@@ -345,8 +386,8 @@ export function StaffWorkspace({ registrations, organizationId, token, onCreated
             <div className="empty">Aucune donnée enregistrée</div>
           ) : (
             <table>
-              <thead><tr><th>Nom</th><th>Fonction</th><th>Qualification / niveau</th><th>Statut</th></tr></thead>
-              <tbody>{registrations.map((registration) => <tr key={registration.id}><td><strong>{registration.person.firstName} {registration.person.lastName}</strong></td><td>{translateFunction(registration.staffProfile?.function)}</td><td>{registration.staffProfile?.qualification ?? '—'}</td><td><span className={`badge ${registration.status.toLowerCase()}`}>{statusLabel(registration.status)}</span></td></tr>)}</tbody>
+              <thead><tr><th>Nom</th><th>Fonction</th><th>Qualification / niveau</th><th>Statut</th><th>Actions</th></tr></thead>
+              <tbody>{registrations.map((registration) => <tr key={registration.id}><td><strong>{registration.person.firstName} {registration.person.lastName}</strong></td><td>{translateFunction(registration.staffProfile?.function)}</td><td>{registration.staffProfile?.qualification ?? '—'}</td><td><span className={`badge ${registration.status.toLowerCase()}`}>{statusLabel(registration.status)}</span></td><td><button type="button" onClick={() => startEdit(registration)} style={{ border: '1px solid #d8e0e7', background: '#fff', borderRadius: 8, padding: '0.45rem 0.7rem', cursor: 'pointer', fontWeight: 700 }}>Modifier</button></td></tr>)}</tbody>
             </table>
           )}
         </div>
