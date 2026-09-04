@@ -32,6 +32,29 @@ type PlayerDetails = {
   licenses?: Array<{ id: string; number?: string | null; season: string; status: string }>;
   documents?: Array<{ id: string; type: string; status: string }>;
 };
+type ChecklistItem = {
+  code: string;
+  label: string;
+  type: string;
+  required: boolean;
+  condition?: string;
+  present: boolean;
+  documentId?: string | null;
+  status?: string | null;
+};
+type Checklist = {
+  registrationId: string;
+  totalRequired: number;
+  completedRequired: number;
+  complete: boolean;
+  items: ChecklistItem[];
+};
+type AssistantAnswer = {
+  title: string;
+  summary: string;
+  missing: ChecklistItem[];
+  present: ChecklistItem[];
+};
 
 type SpeechRecognitionResultLike = { 0: { transcript: string }; isFinal: boolean };
 type SpeechRecognitionEventLike = { results: ArrayLike<SpeechRecognitionResultLike> };
@@ -54,6 +77,15 @@ async function apiRequest<T>(path: string, token: string): Promise<T> {
   return data as T;
 }
 
+function normalize(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function wantsDossierAnswer(value: string) {
+  const text = normalize(value);
+  return ['piece', 'pieces', 'dossier', 'licence', 'complet', 'complete', 'conforme', 'manque', 'manquante', 'manquantes', 'certificat medical'].some((term) => text.includes(term));
+}
+
 export function ClubAiAssistant({ token, organizationId }: { token: string; organizationId: string }) {
   const [query, setQuery] = useState('');
   const [listening, setListening] = useState(false);
@@ -61,6 +93,7 @@ export function ClubAiAssistant({ token, organizationId }: { token: string; orga
   const [error, setError] = useState('');
   const [resolved, setResolved] = useState<ResolveResponse | null>(null);
   const [player, setPlayer] = useState<PlayerDetails | null>(null);
+  const [answer, setAnswer] = useState<AssistantAnswer | null>(null);
 
   const speechSupported = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -68,19 +101,38 @@ export function ClubAiAssistant({ token, organizationId }: { token: string; orga
     return Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition);
   }, []);
 
-  async function openPlayer(registrationId: string) {
+  async function loadDossierAnswer(registrationId: string, text: string) {
+    if (!wantsDossierAnswer(text)) {
+      setAnswer(null);
+      return;
+    }
+    const checklist = await apiRequest<Checklist>(`/license-documents/${registrationId}/checklist`, token);
+    const missing = checklist.items.filter((item) => item.required && !item.present);
+    const present = checklist.items.filter((item) => item.present);
+    setAnswer({
+      title: checklist.complete ? 'Dossier obligatoire complet' : 'Dossier à compléter',
+      summary: checklist.complete
+        ? `${checklist.completedRequired}/${checklist.totalRequired} pièces obligatoires sont déposées.`
+        : `${checklist.completedRequired}/${checklist.totalRequired} pièces obligatoires sont déposées. Il manque ${missing.length} pièce(s) obligatoire(s).`,
+      missing,
+      present,
+    });
+  }
+
+  async function openPlayer(registrationId: string, text = query) {
     const details = await apiRequest<PlayerDetails>(`/registries/players/${registrationId}`, token);
     setPlayer(details);
+    await loadDossierAnswer(registrationId, text);
   }
 
   async function resolvePlayer(text: string) {
     const value = text.trim();
     if (!value) return;
-    setLoading(true); setError(''); setPlayer(null);
+    setLoading(true); setError(''); setPlayer(null); setAnswer(null);
     try {
       const result = await apiRequest<ResolveResponse>(`/ai-assistant/players/resolve?organizationId=${encodeURIComponent(organizationId)}&q=${encodeURIComponent(value)}`, token);
       setResolved(result);
-      if (result.match) await openPlayer(result.match.registrationId);
+      if (result.match) await openPlayer(result.match.registrationId, value);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Recherche impossible');
     } finally { setLoading(false); }
@@ -99,15 +151,15 @@ export function ClubAiAssistant({ token, organizationId }: { token: string; orga
       const transcript = event.results[event.results.length - 1]?.[0]?.transcript?.trim() ?? '';
       if (transcript) { setQuery(transcript); void resolvePlayer(transcript); }
     };
-    recognition.onerror = () => { setListening(false); setError('Reconnaissance vocale interrompue. Vous pouvez saisir le nom au clavier.'); };
+    recognition.onerror = () => { setListening(false); setError('Reconnaissance vocale interrompue. Vous pouvez saisir la demande au clavier.'); };
     recognition.onend = () => setListening(false);
     setListening(true); recognition.start();
   }
 
   async function selectCandidate(candidate: Candidate) {
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setAnswer(null);
     try {
-      await openPlayer(candidate.registrationId);
+      await openPlayer(candidate.registrationId, query);
       setResolved((current) => current ? { ...current, match: candidate, ambiguous: false } : current);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Ouverture de la fiche impossible'); }
     finally { setLoading(false); }
@@ -117,11 +169,11 @@ export function ClubAiAssistant({ token, organizationId }: { token: string; orga
 
   return (
     <section className="data-panel">
-      <div className="workspace-actions"><div><h2>Assistant IA du club</h2><p>Dites « Ouvre la fiche de Cédric Dossou » ou saisissez directement un nom.</p></div></div>
+      <div className="workspace-actions"><div><h2>Assistant IA du club</h2><p>Essayez « Ouvre la fiche de Cédric Dossou » ou « Quelles pièces manquent à Cédric Dossou ? ».</p></div></div>
       <form className="entity-form" onSubmit={submit}>
-        <label>Recherche joueur<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ex. Ouvre la fiche de Cédric Dossou" autoComplete="off" /></label>
+        <label>Demande<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ex. Quelles pièces manquent à Cédric Dossou ?" autoComplete="off" /></label>
         <div className="workspace-actions">
-          <button type="submit" disabled={loading}>{loading ? 'Recherche…' : 'Rechercher'}</button>
+          <button type="submit" disabled={loading}>{loading ? 'Analyse…' : 'Rechercher'}</button>
           <button type="button" onClick={startVoice} disabled={!speechSupported || listening}>{listening ? '🎙 Écoute…' : '🎤 Parler'}</button>
         </div>
       </form>
@@ -129,6 +181,18 @@ export function ClubAiAssistant({ token, organizationId }: { token: string; orga
       {error && <div className="api-error">{error}</div>}
       {resolved && !resolved.match && resolved.alternatives.length === 0 && <p>Aucun joueur suffisamment proche de « {resolved.query} ».</p>}
       {resolved?.ambiguous && <div><h3>Plusieurs joueurs correspondent</h3><p>Choisissez le bon joueur avant d’ouvrir la fiche.</p><div className="workspace-actions">{resolved.alternatives.map((candidate) => <button key={candidate.registrationId} type="button" onClick={() => void selectCandidate(candidate)}>{candidate.fullName} · {Math.round(candidate.score * 100)} %</button>)}</div></div>}
+
+      {answer && (
+        <div className="data-panel" style={{ marginTop: 18 }}>
+          <label>RÉPONSE ASSISTANT</label>
+          <h3>{answer.title}</h3>
+          <p>{answer.summary}</p>
+          {answer.missing.length > 0 && <div style={{ marginTop: 12 }}><strong>Pièces obligatoires manquantes</strong><ul>{answer.missing.map((item) => <li key={item.code}>{item.label}</li>)}</ul></div>}
+          {answer.missing.length === 0 && <p style={{ marginTop: 12 }}>Aucune pièce obligatoire manquante selon la checklist actuelle.</p>}
+          <p style={{ marginTop: 12, fontSize: 12 }}>Cette réponse décrit l’état du dossier. Elle ne remplace pas la validation réglementaire humaine LFPB/FBF.</p>
+        </div>
+      )}
+
       {player && (
         <div className="data-panel">
           <div className="workspace-actions">
