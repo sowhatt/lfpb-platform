@@ -49,6 +49,11 @@ export function OfficialMissionsWorkspace({ token }: { token: string }) {
     }
   }
 
+  function openConnectedMatch(matchId: string) {
+    const target = `/official-match-control?matchId=${encodeURIComponent(matchId)}`;
+    window.location.assign(target);
+  }
+
   useEffect(() => {
     void load();
   }, [token]);
@@ -95,9 +100,13 @@ export function OfficialMissionsWorkspace({ token }: { token: string }) {
                   <td>{mission.match.venue ?? 'À définir'}</td>
                   <td>{roleLabel(mission.role)}</td>
                   <td>
-                    <a className="primary" href={`/official-match-control?matchId=${encodeURIComponent(mission.match.id)}`}>
+                    <button
+                      className="primary"
+                      type="button"
+                      onClick={() => openConnectedMatch(mission.match.id)}
+                    >
                       Contrôler les joueurs →
-                    </a>
+                    </button>
                   </td>
                 </tr>
               ))}
