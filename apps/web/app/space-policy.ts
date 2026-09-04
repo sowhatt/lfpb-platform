@@ -10,7 +10,7 @@ export function resolveSpace(role: string): Space {
 export function navigationForSpace(space: Space): string[] {
   if (space === 'FEDERATION') return ['Vue d’ensemble', 'Licences'];
   if (space === 'CLUB') {
-    return ['Vue d’ensemble', 'Effectif', 'Staff', 'Licences', 'Calendrier'];
+    return ['Vue d’ensemble', 'Effectif', 'Staff', 'Licences', 'Assistant IA', 'Calendrier'];
   }
   if (space === 'OFFICIEL') {
     return ['Vue d’ensemble', 'Mes rencontres', 'Assistant vocal', 'Stades'];
