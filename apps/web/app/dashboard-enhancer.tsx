@@ -16,32 +16,74 @@ export function DashboardEnhancer() {
   const [actor, setActor] = useState<Actor | null>(null);
 
   useEffect(() => {
-    setToken(sessionStorage.getItem('lfpb-token') ?? '');
-    const rawActor = sessionStorage.getItem('lfpb-actor');
-    if (rawActor) {
-      try { setActor(JSON.parse(rawActor) as Actor); } catch { setActor(null); }
-    }
+    let observer: MutationObserver | null = null;
 
-    const main = document.querySelector('main');
-    if (!main) return;
+    const syncSession = () => {
+      setToken(sessionStorage.getItem('lfpb-token') ?? '');
 
-    let enhancementHost = main.querySelector<HTMLElement>('[data-dashboard-enhancement-host]');
-    if (!enhancementHost) {
-      enhancementHost = document.createElement('div');
-      enhancementHost.dataset.dashboardEnhancementHost = 'true';
-      const header = main.querySelector('header');
-      if (header?.nextSibling) main.insertBefore(enhancementHost, header.nextSibling);
-      else main.appendChild(enhancementHost);
-    }
-    setHost(enhancementHost);
+      const rawActor = sessionStorage.getItem('lfpb-actor');
+      if (!rawActor) {
+        setActor(null);
+        return;
+      }
 
-    const readActive = () => setActive(main.querySelector('header h1')?.textContent?.trim() ?? '');
-    readActive();
-    const observer = new MutationObserver(readActive);
-    const title = main.querySelector('header h1');
-    if (title) observer.observe(title, { childList: true, characterData: true, subtree: true });
+      try {
+        setActor(JSON.parse(rawActor) as Actor);
+      } catch {
+        setActor(null);
+      }
+    };
 
-    return () => observer.disconnect();
+    const attachDashboard = () => {
+      syncSession();
+
+      const main = document.querySelector('main');
+      if (!main) return;
+
+      let enhancementHost =
+        main.querySelector<HTMLElement>('[data-dashboard-enhancement-host]');
+
+      if (!enhancementHost) {
+        enhancementHost = document.createElement('div');
+        enhancementHost.dataset.dashboardEnhancementHost = 'true';
+
+        const header = main.querySelector('header');
+        if (header?.nextSibling) {
+          main.insertBefore(enhancementHost, header.nextSibling);
+        } else {
+          main.appendChild(enhancementHost);
+        }
+      }
+
+      setHost(enhancementHost);
+
+      const readActive = () => {
+        syncSession();
+        setActive(
+          main.querySelector('header h1')?.textContent?.trim() ?? ''
+        );
+      };
+
+      readActive();
+
+      if (!observer) {
+        observer = new MutationObserver(readActive);
+        observer.observe(main, {
+          childList: true,
+          characterData: true,
+          subtree: true,
+        });
+      }
+    };
+
+    attachDashboard();
+
+    const timer = window.setInterval(attachDashboard, 300);
+
+    return () => {
+      window.clearInterval(timer);
+      observer?.disconnect();
+    };
   }, []);
 
   const membership = actor?.memberships?.[0];
