@@ -16,6 +16,23 @@ type Match = { id: string; kickoffAt?: string; status: string; homeClub: { id: s
 type Proposal = { id: string; version: number; status: string; qualityScore: number; generatedBy: string; createdAt: string };
 type Registration = { id: string; organizationId?: string; status: string; startDate?: string; person: { firstName: string; lastName: string; birthDate?: string; nationality?: string; federationId?: string; photoDataUrl?: string | null }; playerProfile?: { position: string; shirtNumber?: number } | null; staffProfile?: { function: string; qualification?: string } | null; officialProfile?: { function: string; level?: string } | null; licenses?: License[]; documents?: { id: string; type: string; status: string }[] };
 type License = { id: string; number?: string | null; season: string; status: string; rejectionReason?: string | null; registration?: Registration };
+type LicenseChecklistItem = {
+  code: string;
+  label: string;
+  type: string;
+  required: boolean;
+  condition?: string;
+  present: boolean;
+  documentId?: string | null;
+  status?: string | null;
+};
+type LicenseChecklist = {
+  registrationId: string;
+  totalRequired: number;
+  completedRequired: number;
+  complete: boolean;
+  items: LicenseChecklistItem[];
+};
 
 async function request<T>(path: string, token?: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API}${path}`, {
@@ -376,44 +393,484 @@ function RegistrationsView({ title, registrations, profile, onSelect }: { title:
 function LicenseWorkflowView({ authority, licenses, clubs, token, onChanged }: { authority: Space; licenses: License[]; clubs: Organization[]; token: string; onChanged: () => Promise<void> }) {
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
+  const [messageIsError, setMessageIsError] = useState(false);
+  const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
+  const [checklist, setChecklist] = useState<LicenseChecklist | null>(null);
+  const [checklistLoading, setChecklistLoading] = useState(false);
+
+  async function loadChecklist(license: License) {
+    if (!license.registration?.id) return;
+
+    setSelectedLicense(license);
+    setChecklist(null);
+    setChecklistLoading(true);
+    setMessage('');
+    setMessageIsError(false);
+
+    try {
+      const data = await request<LicenseChecklist>(
+        `/license-documents/${license.registration.id}/checklist`,
+        token,
+      );
+      setChecklist(data);
+    } catch (reason) {
+      setMessageIsError(true);
+      setMessage(
+        reason instanceof Error
+          ? reason.message
+          : 'Chargement des pièces impossible',
+      );
+    } finally {
+      setChecklistLoading(false);
+    }
+  }
+
+  async function refreshChecklist() {
+    if (!selectedLicense) return;
+    await loadChecklist(selectedLicense);
+  }
+
+  async function openDocument(documentId?: string | null) {
+    if (!documentId) return;
+
+    setMessage('');
+    setMessageIsError(false);
+
+    const targetWindow = window.open('', '_blank');
+
+    try {
+      const response = await fetch(
+        `${API}/license-documents/document/${documentId}/file`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(
+          (data as { message?: string }).message ??
+            `Ouverture impossible (${response.status})`,
+        );
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (targetWindow) {
+        targetWindow.location.href = url;
+      } else {
+        window.location.href = url;
+      }
+
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (reason) {
+      targetWindow?.close();
+      setMessageIsError(true);
+      setMessage(
+        reason instanceof Error
+          ? reason.message
+          : 'Ouverture du document impossible',
+      );
+    }
+  }
+
+  async function decideDocument(
+    item: LicenseChecklistItem,
+    decision: 'APPROVED' | 'REJECTED',
+  ) {
+    if (!item.documentId) return;
+
+    let reason: string | undefined;
+
+    if (decision === 'REJECTED') {
+      const value = window.prompt(
+        `Motif du rejet de la pièce « ${item.label} » :`,
+      );
+      if (!value?.trim()) return;
+      reason = value.trim();
+    } else {
+      const confirmed = window.confirm(
+        `Valider la pièce « ${item.label} » ?`,
+      );
+      if (!confirmed) return;
+    }
+
+    setBusy(`document-${item.documentId}`);
+    setMessage('');
+    setMessageIsError(false);
+
+    try {
+      await request(
+        `/registries/documents/${item.documentId}/decision`,
+        token,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            decision,
+            ...(reason ? { reason } : {}),
+          }),
+        },
+      );
+
+      setMessage(
+        decision === 'APPROVED'
+          ? `Pièce « ${item.label} » validée.`
+          : `Pièce « ${item.label} » rejetée.`,
+      );
+
+      await refreshChecklist();
+      await onChanged();
+    } catch (reason) {
+      setMessageIsError(true);
+      setMessage(
+        reason instanceof Error
+          ? reason.message
+          : 'Contrôle du document impossible',
+      );
+    } finally {
+      setBusy('');
+    }
+  }
+
   async function transition(license: License, action: 'submit' | 'favorable' | 'incomplete' | 'transmit' | 'issue' | 'reject') {
     let path = '';
     let body: Record<string, string> | undefined;
+
     if (action === 'submit') path = `/licenses/${license.id}/submit`;
-    if (action === 'favorable') { path = `/licenses/${license.id}/league-review`; body = { decision: 'LEAGUE_FAVORABLE' }; }
+
+    if (action === 'favorable') {
+      const confirmed = window.confirm(
+        'Confirmer l’avis favorable de la LFPB ? Toutes les pièces obligatoires doivent avoir été validées.',
+      );
+      if (!confirmed) return;
+
+      path = `/licenses/${license.id}/league-review`;
+      body = { decision: 'LEAGUE_FAVORABLE' };
+    }
+
     if (action === 'incomplete') {
-      const reason = window.prompt('Indiquez précisément les pièces ou informations manquantes :');
+      const reason = window.prompt(
+        'Indiquez précisément les pièces ou informations manquantes :',
+      );
       if (!reason) return;
-      path = `/licenses/${license.id}/league-review`; body = { decision: 'INCOMPLETE', reason };
+
+      path = `/licenses/${license.id}/league-review`;
+      body = { decision: 'INCOMPLETE', reason };
     }
-    if (action === 'transmit') path = `/licenses/${license.id}/transmit-fbf`;
+
+    if (action === 'transmit') {
+      path = `/licenses/${license.id}/transmit-fbf`;
+    }
+
     if (action === 'issue') {
-      const number = window.prompt('Numéro officiel de la licence délivrée par la FBF :');
+      const number = window.prompt(
+        'Numéro officiel de la licence délivrée par la FBF :',
+      );
       if (!number) return;
-      path = `/licenses/${license.id}/federation-decision`; body = { decision: 'ISSUED_BY_FBF', number };
+
+      path = `/licenses/${license.id}/federation-decision`;
+      body = { decision: 'ISSUED_BY_FBF', number };
     }
+
     if (action === 'reject') {
       const reason = window.prompt('Motif officiel du refus FBF :');
       if (!reason) return;
-      path = `/licenses/${license.id}/federation-decision`; body = { decision: 'REJECTED_BY_FBF', reason };
+
+      path = `/licenses/${license.id}/federation-decision`;
+      body = { decision: 'REJECTED_BY_FBF', reason };
     }
-    setBusy(license.id); setMessage('');
+
+    setBusy(license.id);
+    setMessage('');
+    setMessageIsError(false);
+
     try {
-      await request(path, token, { method: 'PATCH', ...(body ? { body: JSON.stringify(body) } : {}) });
+      await request(path, token, {
+        method: 'PATCH',
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+
       setMessage('Le dossier a été mis à jour avec succès.');
+      setSelectedLicense(null);
+      setChecklist(null);
       await onChanged();
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Mise à jour impossible'); }
-    finally { setBusy(''); }
+    } catch (reason) {
+      setMessageIsError(true);
+      setMessage(
+        reason instanceof Error
+          ? reason.message
+          : 'Mise à jour impossible',
+      );
+    } finally {
+      setBusy('');
+    }
   }
+
   function actions(license: License) {
-    if (authority === 'CLUB' && ['DRAFT', 'INCOMPLETE'].includes(license.status)) return <button disabled={busy === license.id} onClick={() => transition(license, 'submit')}>Soumettre à la LFPB</button>;
-    if (authority === 'LIGUE' && license.status === 'SUBMITTED_TO_LEAGUE') return <span className="row-actions"><button disabled={busy === license.id} onClick={() => transition(license, 'favorable')}>Avis favorable</button><button disabled={busy === license.id} onClick={() => transition(license, 'incomplete')}>À compléter</button></span>;
-    if (authority === 'LIGUE' && license.status === 'LEAGUE_FAVORABLE') return <button disabled={busy === license.id} onClick={() => transition(license, 'transmit')}>Transmettre à la FBF</button>;
-    if (authority === 'FEDERATION' && license.status === 'TRANSMITTED_TO_FBF') return <span className="row-actions"><button disabled={busy === license.id} onClick={() => transition(license, 'issue')}>Délivrer la licence</button><button disabled={busy === license.id} onClick={() => transition(license, 'reject')}>Refuser</button></span>;
+    if (authority === 'CLUB' && ['DRAFT', 'INCOMPLETE'].includes(license.status)) {
+      return (
+        <button
+          disabled={busy === license.id}
+          onClick={() => transition(license, 'submit')}
+        >
+          Soumettre à la LFPB
+        </button>
+      );
+    }
+
+    if (authority === 'LIGUE' && license.status === 'SUBMITTED_TO_LEAGUE') {
+      return (
+        <span className="row-actions">
+          <button
+            disabled={Boolean(busy)}
+            onClick={() => void loadChecklist(license)}
+          >
+            Contrôler les pièces
+          </button>
+          <button
+            disabled={busy === license.id}
+            onClick={() => transition(license, 'favorable')}
+          >
+            Avis favorable
+          </button>
+          <button
+            disabled={busy === license.id}
+            onClick={() => transition(license, 'incomplete')}
+          >
+            À compléter
+          </button>
+        </span>
+      );
+    }
+
+    if (authority === 'LIGUE' && license.status === 'LEAGUE_FAVORABLE') {
+      return (
+        <button
+          disabled={busy === license.id}
+          onClick={() => transition(license, 'transmit')}
+        >
+          Transmettre à la FBF
+        </button>
+      );
+    }
+
+    if (authority === 'FEDERATION' && license.status === 'TRANSMITTED_TO_FBF') {
+      return (
+        <span className="row-actions">
+          <button
+            disabled={busy === license.id}
+            onClick={() => transition(license, 'issue')}
+          >
+            Délivrer la licence
+          </button>
+          <button
+            disabled={busy === license.id}
+            onClick={() => transition(license, 'reject')}
+          >
+            Refuser
+          </button>
+        </span>
+      );
+    }
+
     return <span>—</span>;
   }
-  const title = authority === 'FEDERATION' ? 'Décision fédérale sur les licences' : authority === 'LIGUE' ? 'Contrôle des dossiers transmis par les clubs' : 'Dossiers de licence du club';
-  return <DataPanel title={title}>{message && <div className="success-message">{message}</div>}{licenses.length === 0 ? <Empty text="Aucun dossier de licence enregistré" /> : <table><thead><tr><th>Joueur</th><th>Club</th><th>Numéro FBF</th><th>Saison</th><th>Statut</th><th>Motif / complément</th><th>Action</th></tr></thead><tbody>{licenses.map((license) => { const registration = license.registration; const club = clubs.find((item) => item.id === registration?.organizationId); return <tr key={license.id}><td><strong>{registration ? `${registration.person.firstName} ${registration.person.lastName}` : '—'}</strong></td><td>{club?.name ?? (authority === 'CLUB' ? 'Mon club' : '—')}</td><td>{license.number ?? 'Attribué après décision FBF'}</td><td>{license.season}</td><td><Badge value={license.status} /></td><td>{license.rejectionReason ?? '—'}</td><td>{actions(license)}</td></tr>; })}</tbody></table>}</DataPanel>;
+
+  function documentStatus(value?: string | null) {
+    if (!value) return 'Non déposé';
+
+    return ({
+      PENDING: 'À contrôler',
+      VALID: 'Validé',
+      REJECTED: 'Rejeté',
+      EXPIRED: 'Expiré',
+    } as Record<string, string>)[value] ?? value;
+  }
+
+  const title =
+    authority === 'FEDERATION'
+      ? 'Décision fédérale sur les licences'
+      : authority === 'LIGUE'
+        ? 'Contrôle des dossiers transmis par les clubs'
+        : 'Dossiers de licence du club';
+
+  return (
+    <>
+      <DataPanel title={title}>
+        {message && (
+          <div className={messageIsError ? 'api-error' : 'success-message'}>
+            {message}
+          </div>
+        )}
+
+        {licenses.length === 0 ? (
+          <Empty text="Aucun dossier de licence enregistré" />
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Joueur</th>
+                <th>Club</th>
+                <th>Numéro FBF</th>
+                <th>Saison</th>
+                <th>Statut</th>
+                <th>Motif / complément</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {licenses.map((license) => {
+                const registration = license.registration;
+                const club = clubs.find(
+                  (item) => item.id === registration?.organizationId,
+                );
+
+                return (
+                  <tr key={license.id}>
+                    <td>
+                      <strong>
+                        {registration
+                          ? `${registration.person.firstName} ${registration.person.lastName}`
+                          : '—'}
+                      </strong>
+                    </td>
+                    <td>
+                      {club?.name ?? (authority === 'CLUB' ? 'Mon club' : '—')}
+                    </td>
+                    <td>{license.number ?? 'Attribué après décision FBF'}</td>
+                    <td>{license.season}</td>
+                    <td>
+                      <Badge value={license.status} />
+                    </td>
+                    <td>{license.rejectionReason ?? '—'}</td>
+                    <td>{actions(license)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </DataPanel>
+
+      {authority === 'LIGUE' && selectedLicense && (
+        <section className="data-panel">
+          <div className="title">
+            <span>
+              <label>CONTRÔLE DOCUMENTAIRE LFPB</label>
+              <h2>
+                {selectedLicense.registration
+                  ? `${selectedLicense.registration.person.firstName} ${selectedLicense.registration.person.lastName}`
+                  : 'Dossier joueur'}
+              </h2>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLicense(null);
+                setChecklist(null);
+              }}
+            >
+              Fermer
+            </button>
+          </div>
+
+          {checklistLoading ? (
+            <div className="empty">Chargement des pièces…</div>
+          ) : checklist ? (
+            <>
+              <p style={{ marginTop: 12, fontSize: 11, color: '#71808e' }}>
+                {checklist.completedRequired} / {checklist.totalRequired}{' '}
+                pièces obligatoires déposées
+              </p>
+
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pièce</th>
+                      <th>Obligation</th>
+                      <th>Statut</th>
+                      <th>Contrôle</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {checklist.items.map((item) => (
+                      <tr key={item.code}>
+                        <td>
+                          <strong>{item.label}</strong>
+                          {item.condition && (
+                            <div style={{ marginTop: 4, fontSize: 9 }}>
+                              {item.condition}
+                            </div>
+                          )}
+                        </td>
+
+                        <td>{item.required ? 'Obligatoire' : 'Selon situation'}</td>
+
+                        <td>
+                          <span
+                            className={`badge ${(item.status ?? 'missing').toLowerCase()}`}
+                          >
+                            {documentStatus(item.status)}
+                          </span>
+                        </td>
+
+                        <td>
+                          {!item.present || !item.documentId ? (
+                            <span>Non déposé</span>
+                          ) : (
+                            <span className="row-actions">
+                              <button
+                                type="button"
+                                onClick={() => void openDocument(item.documentId)}
+                              >
+                                Ouvrir
+                              </button>
+
+                              {item.status === 'PENDING' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={busy === `document-${item.documentId}`}
+                                    onClick={() =>
+                                      void decideDocument(item, 'APPROVED')
+                                    }
+                                  >
+                                    Valider
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={busy === `document-${item.documentId}`}
+                                    onClick={() =>
+                                      void decideDocument(item, 'REJECTED')
+                                    }
+                                  >
+                                    Rejeter
+                                  </button>
+                                </>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <Empty text="Aucune checklist disponible" />
+          )}
+        </section>
+      )}
+    </>
+  );
 }
 function OfficialVenuesNotice() { return <DataPanel title="Stades et accès"><Empty text="Les stades sont disponibles depuis l’API ; les consignes de mission seront reliées aux désignations." /></DataPanel>; }
 function DataPanel({ title, children }: { title: string; children: ReactNode }) { return <section className="data-panel"><div className="title"><span><label>DONNÉES RÉELLES</label><h2>{title}</h2></span></div><div className="table-wrap">{children}</div></section>; }

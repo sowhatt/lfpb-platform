@@ -81,7 +81,35 @@ export class LicensesService {
   async reviewByLeague(actor: AuthenticatedActor, licenseId: string, input: LeagueReviewDto) {
     const license = await this.getWithRegistration(licenseId);
     this.statusWorkflow.assertTransition(license.status, input.decision);
-    if (input.decision === LicenseStatus.INCOMPLETE && !input.reason?.trim()) throw new BadRequestException('Les compléments demandés doivent être précisés');
+
+    if (input.decision === LicenseStatus.INCOMPLETE && !input.reason?.trim()) {
+      throw new BadRequestException('Les compléments demandés doivent être précisés');
+    }
+
+    if (input.decision === LicenseStatus.LEAGUE_FAVORABLE) {
+      const documents = await this.prisma.registrationDocument.findMany({
+        where: { registrationId: license.registrationId },
+      });
+
+      const validatedCodes = new Set(
+        documents
+          .filter((document) => document.status === DocumentStatus.VALID)
+          .map((document) => this.documentCode(document.storageKey, document.type)),
+      );
+
+      const notValidated = REQUIRED_PLAYER_DOCUMENTS.filter(
+        (requirement) => !validatedCodes.has(requirement.code),
+      );
+
+      if (notValidated.length) {
+        throw new BadRequestException(
+          `Avis favorable impossible : pièces non validées : ${notValidated
+            .map((item) => item.label)
+            .join(', ')}`,
+        );
+      }
+    }
+
     return this.changeStatus(actor, license, input.decision, input.reason);
   }
 

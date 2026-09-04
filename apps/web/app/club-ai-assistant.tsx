@@ -44,6 +44,49 @@ export function ClubAiAssistant({ token, organizationId }: { token: string; orga
     setAnswer({ title: checklist.complete ? 'Dossier obligatoire complet' : 'Dossier à compléter', summary: checklist.complete ? `${checklist.completedRequired}/${checklist.totalRequired} pièces obligatoires sont déposées.` : `${checklist.completedRequired}/${checklist.totalRequired} pièces obligatoires sont déposées. Il manque ${missing.length} pièce(s) obligatoire(s).`, missing });
   }
 
+  async function openDocument(documentId: string) {
+    setError('');
+
+    const targetWindow = window.open('', '_blank');
+
+    try {
+      const response = await fetch(
+        `${API}/license-documents/document/${documentId}/file`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(
+          (data as { message?: string }).message ??
+            `Ouverture impossible (${response.status})`,
+        );
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (targetWindow) {
+        targetWindow.location.href = url;
+      } else {
+        window.location.href = url;
+      }
+
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (reason) {
+      targetWindow?.close();
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'Ouverture du document impossible',
+      );
+    }
+  }
+
   async function openPlayer(registrationId: string, text = query) { const details = await apiRequest<PlayerDetails>(`/registries/players/${registrationId}`, token); setPlayer(details); await loadContextAnswer(registrationId, text); }
   async function resolvePlayer(text: string) { const value = text.trim(); if (!value) return; setLoading(true); setError(''); setPlayer(null); setAnswer(null); try { const result = await apiRequest<ResolveResponse>(`/ai-assistant/players/resolve?organizationId=${encodeURIComponent(organizationId)}&q=${encodeURIComponent(value)}`, token); setResolved(result); if (result.match) await openPlayer(result.match.registrationId, value); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Recherche impossible'); } finally { setLoading(false); } }
   function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); void resolvePlayer(query); }
@@ -57,7 +100,7 @@ export function ClubAiAssistant({ token, organizationId }: { token: string; orga
     {!speechSupported && <p className="api-error">La reconnaissance vocale n’est pas disponible dans ce navigateur. La recherche texte reste active.</p>}{error && <div className="api-error">{error}</div>}
     {resolved && !resolved.match && resolved.alternatives.length === 0 && <p>Aucun joueur suffisamment proche de « {resolved.query} ».</p>}
     {resolved?.ambiguous && <div><h3>Plusieurs joueurs correspondent</h3><p>Choisissez le bon joueur avant d’ouvrir la fiche.</p><div className="workspace-actions">{resolved.alternatives.map((candidate) => <button key={candidate.registrationId} type="button" onClick={() => void selectCandidate(candidate)}>{candidate.fullName} · {Math.round(candidate.score * 100)} %</button>)}</div></div>}
-    {answer && <div className="data-panel" style={{ marginTop: 18 }}><label>RÉPONSE ASSISTANT</label><h3>{answer.title}</h3><p>{answer.summary}</p>{answer.missing && answer.missing.length > 0 && <div style={{ marginTop: 12 }}><strong>Pièces obligatoires manquantes</strong><ul>{answer.missing.map((item) => <li key={item.code}>{item.label}</li>)}</ul></div>}{answer.document?.present && <div style={{ marginTop: 12 }}><strong>État de la pièce</strong><p>Statut : {answer.document.status ?? '—'}{answer.document.analysisStatus ? ` · Analyse : ${answer.document.analysisStatus}` : ''}{answer.document.analysisConfidence != null ? ` · Confiance : ${Math.round(answer.document.analysisConfidence * 100)} %` : ''}</p></div>}<p style={{ marginTop: 12, fontSize: 12 }}>L’assistant vérifie ici la présence et l’état de la pièce. L’ouverture sécurisée du fichier sera activée via un endpoint documentaire dédié.</p></div>}
+    {answer && <div className="data-panel" style={{ marginTop: 18 }}><label>RÉPONSE ASSISTANT</label><h3>{answer.title}</h3><p>{answer.summary}</p>{answer.missing && answer.missing.length > 0 && <div style={{ marginTop: 12 }}><strong>Pièces obligatoires manquantes</strong><ul>{answer.missing.map((item) => <li key={item.code}>{item.label}</li>)}</ul></div>}{answer.document?.present && <div style={{ marginTop: 12 }}><strong>État de la pièce</strong><p>Statut : {answer.document.status ?? '—'}{answer.document.analysisStatus ? ` · Analyse : ${answer.document.analysisStatus}` : ''}{answer.document.analysisConfidence != null ? ` · Confiance : ${Math.round(answer.document.analysisConfidence * 100)} %` : ''}</p>{answer.document.documentId && <button type="button" onClick={() => void openDocument(answer.document!.documentId!)}>Ouvrir la pièce</button>}</div>}<p style={{ marginTop: 12, fontSize: 12 }}>{answer.document?.present ? 'L’ouverture est sécurisée et soumise aux droits d’accès du club.' : 'L’assistant vérifie la présence et l’état des pièces du dossier.'}</p></div>}
     {player && <div className="data-panel"><div className="workspace-actions"><div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>{player.person.photoDataUrl ? <img src={player.person.photoDataUrl} alt={`Photo de ${player.person.firstName} ${player.person.lastName}`} width={132} height={132} style={{ borderRadius: 18, objectFit: 'cover', border: '3px solid rgba(212,169,59,.65)' }} /> : <div aria-label="Photo non renseignée" style={{ width: 132, height: 132, borderRadius: 18, display: 'grid', placeItems: 'center', background: '#e9edf2', color: '#0b3555', fontSize: 36, fontWeight: 800 }}>{initials}</div>}<div><label>FICHE JOUEUR</label><h3>{player.person.firstName} {player.person.lastName}</h3><p>{player.person.photoDataUrl ? 'Identité visuelle enregistrée' : 'Photo non renseignée dans la fiche joueur'}</p></div></div></div><div className="table-wrap"><table><tbody><tr><th>Statut</th><td>{player.status}</td></tr><tr><th>Naissance</th><td>{player.person.birthDate ? new Date(player.person.birthDate).toLocaleDateString('fr-FR') : '—'}</td></tr><tr><th>Nationalité</th><td>{player.person.nationality ?? '—'}</td></tr><tr><th>Identifiant fédéral</th><td>{player.person.federationId ?? '—'}</td></tr><tr><th>Poste</th><td>{player.playerProfile?.position ?? '—'}</td></tr><tr><th>Numéro</th><td>{player.playerProfile?.shirtNumber ?? '—'}</td></tr><tr><th>Licences</th><td>{player.licenses?.length ?? 0}</td></tr><tr><th>Pièces du dossier</th><td>{player.documents?.length ?? 0}</td></tr></tbody></table></div></div>}
   </section>;
 }

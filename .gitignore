@@ -8,3 +8,6 @@ coverage/
 .env.local
 *.log
 .DS_Store
+
+# Documents locaux téléversés
+apps/api/storage/

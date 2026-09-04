@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -47,6 +48,20 @@ export class LicenseDocumentsController {
     @UploadedFile() file: any,
   ) {
     return this.documents.upload(actor, registrationId, itemCode, file);
+  }
+
+  @Get('document/:documentId/file')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  async openDocument(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+  ) {
+    const file = await this.documents.openDocument(actor, documentId);
+
+    return new StreamableFile(file.buffer, {
+      type: file.mimeType,
+      disposition: `inline; filename="${file.filename}"`,
+    });
   }
 
   @Get('analysis/:documentId')

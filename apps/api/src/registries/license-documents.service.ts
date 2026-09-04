@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DocumentStatus, DocumentType, RegistrationCategory } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { extname, join, resolve } from 'node:path';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
@@ -122,6 +122,79 @@ export class LicenseDocumentsService {
     });
 
     return { document: { ...document, analysis }, checklist: await this.checklist(actor, registrationId) };
+  }
+
+  async openDocument(actor: AuthenticatedActor, documentId: string) {
+    const document = await this.prisma.registrationDocument.findUnique({
+      where: { id: documentId },
+      include: { registration: true },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Pièce introuvable');
+    }
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      document.registration.organizationId,
+    );
+
+    const marker = document.storageKey.indexOf('::');
+    const relativePath =
+      marker > 0
+        ? document.storageKey.slice(marker + 2)
+        : document.storageKey;
+
+    const storageRoot = resolve(process.cwd(), 'storage', 'license-documents');
+    const absolutePath = resolve(process.cwd(), relativePath);
+
+    if (
+      absolutePath !== storageRoot &&
+      !absolutePath.startsWith(`${storageRoot}/`)
+    ) {
+      throw new BadRequestException('Chemin documentaire invalide');
+    }
+
+    let buffer: Buffer;
+
+    try {
+      buffer = await readFile(absolutePath);
+    } catch {
+      throw new NotFoundException('Fichier documentaire introuvable');
+    }
+
+    const extension = extname(absolutePath).toLowerCase();
+
+    const mimeType =
+      extension === '.pdf'
+        ? 'application/pdf'
+        : extension === '.png'
+          ? 'image/png'
+          : extension === '.webp'
+            ? 'image/webp'
+            : extension === '.jpg' || extension === '.jpeg'
+              ? 'image/jpeg'
+              : 'application/octet-stream';
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        organizationId: document.registration.organizationId,
+        action: 'LICENSE_DOCUMENT_OPENED',
+        resourceType: 'RegistrationDocument',
+        resourceId: document.id,
+        metadata: {
+          documentType: document.type,
+          mimeType,
+        },
+      },
+    });
+
+    return {
+      buffer,
+      mimeType,
+      filename: `document-${document.id}${extension}`,
+    };
   }
 
   private documentCode(storageKey: string, type: DocumentType) {
