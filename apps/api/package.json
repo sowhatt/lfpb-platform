@@ -15,6 +15,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:seed:document-review-test": "ts-node prisma/seed-document-review-test.ts",
+    "db:seed:approval-guard-test": "ts-node prisma/seed-license-approval-guard-test.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -32,7 +33,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
-    "@nestjs/schematics": "^11.0.7",
+    "@nestjs/schematics": "^11.1.6",
     "@nestjs/testing": "^11.1.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.0",
