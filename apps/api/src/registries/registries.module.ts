@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { IamModule } from '../iam/iam.module';
+import { LicenseNotificationService } from '../notifications/license-notification.service';
 import { AiAssistantController } from './ai-assistant.controller';
 import { DocumentIntelligenceService } from './document-intelligence.service';
 import { LicenseDocumentsController } from './license-documents.controller';
@@ -36,6 +37,7 @@ import { StaffLifecycleService } from './staff-lifecycle.service';
     RegistrationStatusService,
     LicensesService,
     LicenseStatusService,
+    LicenseNotificationService,
     DocumentIntelligenceService,
     LicenseDocumentsService,
     PlayerResolverService,
