@@ -3,6 +3,7 @@ import { DocumentStatus, LicenseStatus, Prisma, RegistrationCategory } from '@pr
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { TenantAccessService } from '../iam/tenant-access.service';
+import { LicenseNotificationService } from '../notifications/license-notification.service';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { FederationDecisionDto, LeagueReviewDto } from './dto/license-decision.dto';
 import { LicenseStatusService } from './license-status.service';
@@ -23,6 +24,7 @@ export class LicensesService {
     private readonly prisma: PrismaService,
     private readonly tenantAccess: TenantAccessService,
     private readonly statusWorkflow: LicenseStatusService,
+    private readonly notifications: LicenseNotificationService,
   ) {}
 
   async listFor(actor: AuthenticatedActor, organizationId: string) {
@@ -155,7 +157,10 @@ export class LicensesService {
   }
 
   private async getWithRegistration(licenseId: string) {
-    const license = await this.prisma.license.findUnique({ where: { id: licenseId }, include: { registration: true } });
+    const license = await this.prisma.license.findUnique({
+      where: { id: licenseId },
+      include: { registration: { include: { person: true } } },
+    });
     if (!license) throw new NotFoundException('Licence introuvable');
     return license;
   }
@@ -167,8 +172,8 @@ export class LicensesService {
     reason?: string,
     federationData?: { number?: string; validFrom?: Date; validUntil?: Date },
   ) {
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const updated = await tx.license.update({
+    const updated = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const result = await tx.license.update({
         where: { id: license.id },
         data: {
           status,
@@ -179,7 +184,24 @@ export class LicensesService {
       await tx.auditLog.create({
         data: { actorUserId: actor.userId, organizationId: license.registration.organizationId, action: `LICENSE_${status}`, resourceType: 'License', resourceId: license.id, metadata: reason ? { reason: reason.trim() } : undefined },
       });
-      return updated;
+      return result;
     });
+
+    if (
+      status === LicenseStatus.INCOMPLETE ||
+      status === LicenseStatus.LEAGUE_FAVORABLE ||
+      status === LicenseStatus.ISSUED_BY_FBF ||
+      status === LicenseStatus.REJECTED_BY_FBF
+    ) {
+      await this.notifications.notifyClub({
+        licenseId: license.id,
+        organizationId: license.registration.organizationId,
+        playerName: `${license.registration.person.firstName} ${license.registration.person.lastName}`,
+        status,
+        reason,
+      });
+    }
+
+    return updated;
   }
 }
