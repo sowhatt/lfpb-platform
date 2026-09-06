@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   ParseUUIDPipe,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +14,7 @@ import { CurrentActor } from '../iam/current-actor.decorator';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { Roles } from '../iam/roles.decorator';
 import { RolesGuard } from '../iam/roles.guard';
+import { AddMatchSheetPlayerDto } from './dto/add-match-sheet-player.dto';
 import { MatchSheetsService } from './match-sheets.service';
 
 @Controller('matches')
@@ -27,5 +30,24 @@ export class MatchSheetsController {
     @Query('clubId', ParseUUIDPipe) clubId: string,
   ) {
     return this.matchSheets.eligiblePlayers(actor, matchId, clubId);
+  }
+
+  @Get(':matchId/sheet')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
+  getSheet(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.matchSheets.getSheet(actor, matchId);
+  }
+
+  @Post(':matchId/sheet/players')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  addPlayer(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Body() input: AddMatchSheetPlayerDto,
+  ) {
+    return this.matchSheets.addPlayer(actor, matchId, input);
   }
 }
