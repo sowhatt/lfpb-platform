@@ -159,6 +159,27 @@ enum MatchStatus {
   CANCELLED
 }
 
+enum MatchSheetStatus {
+  DRAFT
+  SUBMITTED
+  LOCKED
+}
+
+enum MatchSheetSide {
+  HOME
+  AWAY
+}
+
+enum MatchSheetPlayerRole {
+  STARTER
+  SUBSTITUTE
+}
+
+enum MatchEligibilityStatus {
+  ELIGIBLE
+  INELIGIBLE
+}
+
 enum VenueAssignmentType {
   PRIMARY
   ALTERNATE
@@ -190,19 +211,20 @@ model Organization {
 }
 
 model Club {
-  id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @unique @db.Uuid
-  shortName      String
-  division       Division
-  city           String?
-  colors         String?
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  id                String             @id @default(uuid()) @db.Uuid
+  organizationId    String             @unique @db.Uuid
+  shortName         String
+  division          Division
+  city              String?
+  colors            String?
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   competitionEntries CompetitionClub[]
-  homeMatches    Match[]      @relation("HomeClub")
-  awayMatches    Match[]      @relation("AwayClub")
-  venueAssignments ClubVenue[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  homeMatches       Match[]            @relation("HomeClub")
+  awayMatches       Match[]            @relation("AwayClub")
+  venueAssignments  ClubVenue[]
+  matchSheetPlayers MatchSheetPlayer[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([division])
 }
@@ -256,23 +278,24 @@ model Person {
 }
 
 model Registration {
-  id               String               @id @default(uuid()) @db.Uuid
-  personId         String               @db.Uuid
-  organizationId   String               @db.Uuid
-  category         RegistrationCategory
-  deduplicationKey String?              @unique
-  status           RegistrationStatus   @default(DRAFT)
-  startDate        DateTime             @db.Date
-  endDate          DateTime?            @db.Date
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  person           Person               @relation(fields: [personId], references: [id], onDelete: Restrict)
-  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  playerProfile    PlayerProfile?
-  staffProfile     StaffProfile?
-  officialProfile  OfficialProfile?
-  licenses         License[]
-  documents        RegistrationDocument[]
+  id                String               @id @default(uuid()) @db.Uuid
+  personId          String               @db.Uuid
+  organizationId    String               @db.Uuid
+  category          RegistrationCategory
+  deduplicationKey  String?              @unique
+  status            RegistrationStatus   @default(DRAFT)
+  startDate         DateTime             @db.Date
+  endDate           DateTime?            @db.Date
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  person            Person               @relation(fields: [personId], references: [id], onDelete: Restrict)
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  playerProfile     PlayerProfile?
+  staffProfile      StaffProfile?
+  officialProfile   OfficialProfile?
+  licenses          License[]
+  documents         RegistrationDocument[]
+  matchSheetPlayers MatchSheetPlayer[]
 
   @@index([organizationId, category, status])
   @@index([personId, status])
@@ -490,11 +513,49 @@ model Match {
   homeClub            Club              @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
   awayClub            Club              @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
   officialAssignments MatchOfficialAssignment[]
+  matchSheet          MatchSheet?
 
   @@index([competitionId, status, kickoffAt])
   @@index([homeClubId, kickoffAt])
   @@index([awayClubId, kickoffAt])
   @@index([venueId, kickoffAt])
+}
+
+model MatchSheet {
+  id              String           @id @default(uuid()) @db.Uuid
+  matchId         String           @unique @db.Uuid
+  status          MatchSheetStatus @default(DRAFT)
+  homeSubmittedAt DateTime?
+  awaySubmittedAt DateTime?
+  validatedAt     DateTime?
+  lockedAt        DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  match           Match            @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  players         MatchSheetPlayer[]
+
+  @@index([status, updatedAt])
+}
+
+model MatchSheetPlayer {
+  id                String                  @id @default(uuid()) @db.Uuid
+  matchSheetId      String                  @db.Uuid
+  registrationId   String                  @db.Uuid
+  clubId            String                  @db.Uuid
+  side              MatchSheetSide
+  role              MatchSheetPlayerRole
+  shirtNumber       Int
+  eligibilityStatus MatchEligibilityStatus @default(ELIGIBLE)
+  eligibilityReason String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  matchSheet        MatchSheet              @relation(fields: [matchSheetId], references: [id], onDelete: Cascade)
+  registration      Registration            @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  club              Club                    @relation(fields: [clubId], references: [id], onDelete: Restrict)
+
+  @@unique([matchSheetId, registrationId])
+  @@unique([matchSheetId, clubId, shirtNumber])
+  @@index([matchSheetId, clubId, role])
 }
 
 model MatchOfficialAssignment {
