@@ -67,6 +67,18 @@ export class LicensesController {
     return this.licenses.transmitToFederation(actor, licenseId);
   }
 
+  // Retour FBF saisi par la Ligue lorsque la décision est reçue hors Digital Foot.
+  // Ce point d'entrée restera compatible avec un futur connecteur API FebefootConnect.
+  @Patch(':licenseId/federation-return')
+  @Roles(Role.LIGUE_ADMIN)
+  recordFederationReturn(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('licenseId', ParseUUIDPipe) licenseId: string,
+    @Body() input: FederationDecisionDto,
+  ) {
+    return this.licenses.decideByFederation(actor, licenseId, input);
+  }
+
   @Patch(':licenseId/federation-decision')
   @Roles(Role.FEDERATION_AGENT)
   decideByFederation(
