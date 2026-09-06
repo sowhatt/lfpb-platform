@@ -1,7 +1,20 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { LicenseStatus, RegistrationCategory, RegistrationStatus, Role } from '@prisma/client';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  LicenseStatus,
+  MatchEligibilityStatus,
+  MatchSheetSide,
+  RegistrationCategory,
+  RegistrationStatus,
+  Role,
+} from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
+import { AddMatchSheetPlayerDto } from './dto/add-match-sheet-player.dto';
 
 @Injectable()
 export class MatchSheetsService {
@@ -134,5 +147,133 @@ export class MatchSheetsService {
         };
       }),
     };
+  }
+
+  async getSheet(actor: AuthenticatedActor, matchId: string) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        homeClub: true,
+        awayClub: true,
+      },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Rencontre introuvable');
+    }
+
+    const hasLeagueOrOfficialAccess = actor.memberships.some(
+      (membership) =>
+        membership.role === Role.LIGUE_ADMIN || membership.role === Role.OFFICIEL,
+    );
+    const participatingOrganizationIds = [
+      match.homeClub.organizationId,
+      match.awayClub.organizationId,
+    ];
+    const hasClubAccess = actor.memberships.some(
+      (membership) =>
+        membership.role === Role.CLUB_ADMIN &&
+        participatingOrganizationIds.includes(membership.organizationId),
+    );
+
+    if (!hasLeagueOrOfficialAccess && !hasClubAccess) {
+      throw new ForbiddenException('Accès interdit à cette feuille de match');
+    }
+
+    return this.prisma.matchSheet.findUnique({
+      where: { matchId },
+      include: {
+        players: {
+          include: {
+            registration: {
+              include: { person: true, playerProfile: true },
+            },
+            club: { include: { organization: true } },
+          },
+          orderBy: [{ side: 'asc' }, { role: 'asc' }, { shirtNumber: 'asc' }],
+        },
+      },
+    });
+  }
+
+  async addPlayer(
+    actor: AuthenticatedActor,
+    matchId: string,
+    input: AddMatchSheetPlayerDto,
+  ) {
+    const eligibility = await this.eligiblePlayers(actor, matchId, input.clubId);
+    const player = eligibility.players.find(
+      (candidate) => candidate.registrationId === input.registrationId,
+    );
+
+    if (!player) {
+      throw new BadRequestException("Le joueur n'appartient pas à ce club pour cette rencontre");
+    }
+
+    if (!player.eligible) {
+      throw new BadRequestException(
+        `Joueur non éligible : ${player.reasons.join(' ; ')}`,
+      );
+    }
+
+    const side =
+      eligibility.match.homeClubId === input.clubId
+        ? MatchSheetSide.HOME
+        : MatchSheetSide.AWAY;
+
+    const sheet = await this.prisma.matchSheet.upsert({
+      where: { matchId },
+      update: {},
+      create: { matchId },
+    });
+
+    const savedPlayer = await this.prisma.matchSheetPlayer.upsert({
+      where: {
+        matchSheetId_registrationId: {
+          matchSheetId: sheet.id,
+          registrationId: input.registrationId,
+        },
+      },
+      update: {
+        clubId: input.clubId,
+        side,
+        role: input.role,
+        shirtNumber: input.shirtNumber,
+        eligibilityStatus: MatchEligibilityStatus.ELIGIBLE,
+        eligibilityReason: null,
+      },
+      create: {
+        matchSheetId: sheet.id,
+        registrationId: input.registrationId,
+        clubId: input.clubId,
+        side,
+        role: input.role,
+        shirtNumber: input.shirtNumber,
+        eligibilityStatus: MatchEligibilityStatus.ELIGIBLE,
+      },
+      include: {
+        registration: { include: { person: true, playerProfile: true } },
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        organizationId: eligibility.club.organizationId,
+        action: 'MATCH_SHEET_PLAYER_SAVED',
+        resourceType: 'MatchSheet',
+        resourceId: sheet.id,
+        metadata: {
+          matchId,
+          clubId: input.clubId,
+          registrationId: input.registrationId,
+          side,
+          role: input.role,
+          shirtNumber: input.shirtNumber,
+        },
+      },
+    });
+
+    return savedPlayer;
   }
 }
