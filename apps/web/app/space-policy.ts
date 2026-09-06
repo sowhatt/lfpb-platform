@@ -21,7 +21,6 @@ export function navigationForSpace(space: Space): string[] {
     'Calendrier RKJO',
     'Clubs',
     'Licences',
-    'Retours FBF',
     'Officiels',
     'Rencontres',
   ];
