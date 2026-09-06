@@ -157,69 +157,97 @@ export default function FbfReturnPage() {
   }
 
   return (
-    <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32, fontFamily: 'Arial, sans-serif' }}>
-      <section style={{ marginBottom: 24 }}>
-        <small style={{ fontWeight: 800, color: '#657789' }}>LFPB · CONNECTEUR FBF V1</small>
-        <h1 style={{ margin: '8px 0' }}>Retours de la Fédération</h1>
-        <p style={{ color: '#657789', maxWidth: 760 }}>
-          La FBF conserve sa propre application. Cet écran permet à la Ligue d’enregistrer dans Digital Foot
-          la décision reçue après transmission du dossier.
-        </p>
-        <button type="button" onClick={() => token && void load(token)} disabled={loading}>
-          {loading ? 'Actualisation…' : '↻ Actualiser'}
-        </button>
-      </section>
+    <div className="shell">
+      <aside>
+        <div className="brand"><b>LF</b><span><strong>LFPB</strong><small>Football professionnel</small></span></div>
+        <div className="space-chip">ESPACE LIGUE</div>
+        <div className="connected"><i /> Connecté à l’API</div>
+        <nav>
+          <button type="button" onClick={() => window.location.assign('/')}>⌂ Vue d’ensemble</button>
+          <button type="button" onClick={() => window.location.assign('/')}>◫ Compétitions</button>
+          <button type="button" onClick={() => window.location.assign('/')}>✦ Calendrier RKJO</button>
+          <button type="button" onClick={() => window.location.assign('/')}>◆ Clubs</button>
+          <button type="button" onClick={() => window.location.assign('/')}>◉ Licences</button>
+          <button type="button" className="active">✓ Retours FBF</button>
+          <button type="button" onClick={() => window.location.assign('/')}>⬡ Officiels</button>
+          <button type="button" onClick={() => window.location.assign('/')}>◫ Rencontres</button>
+        </nav>
+        <div className="user"><b>LF</b><span><strong>Ligue</strong><small>Administration LFPB</small></span><button type="button" onClick={() => window.location.assign('/')}>↩</button></div>
+      </aside>
 
-      {error && <div style={{ padding: 12, background: '#fff0f0', borderRadius: 8, marginBottom: 16 }}>{error}</div>}
-      {message && <div style={{ padding: 12, background: '#eef8f2', borderRadius: 8, marginBottom: 16 }}>{message}</div>}
+      <main>
+        <header>
+          <div>
+            <label>DONNÉES TEMPS RÉEL · API LFPB</label>
+            <h1>Retours FBF</h1>
+            <p>{loading ? 'Actualisation des dossiers…' : `${visible.length} dossier(s) fédéraux suivi(s)`}</p>
+          </div>
+          <div className="actions">
+            <button type="button" onClick={() => token && void load(token)} disabled={loading}>↻ Actualiser</button>
+            <button type="button" className="primary" onClick={() => window.location.assign('/')}>Retour à Digital Foot</button>
+          </div>
+        </header>
 
-      <section style={{ overflowX: 'auto', border: '1px solid #dfe7ec', borderRadius: 12 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ textAlign: 'left', background: '#f5f7f9' }}>
-              <th style={{ padding: 12 }}>Joueur</th><th style={{ padding: 12 }}>Club</th><th style={{ padding: 12 }}>Saison</th><th style={{ padding: 12 }}>Statut</th><th style={{ padding: 12 }}>N° FBF</th><th style={{ padding: 12 }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((license) => (
-              <tr key={license.id} style={{ borderTop: '1px solid #e5ebef' }}>
-                <td style={{ padding: 12, fontWeight: 700 }}>{license.registration ? `${license.registration.person.firstName} ${license.registration.person.lastName}` : '—'}</td>
-                <td style={{ padding: 12 }}>{clubName(license)}</td>
-                <td style={{ padding: 12 }}>{license.season}</td>
-                <td style={{ padding: 12 }}>{STATUS_LABELS[license.status] ?? license.status}</td>
-                <td style={{ padding: 12 }}>{license.number ?? '—'}</td>
-                <td style={{ padding: 12 }}>
-                  {license.status === 'TRANSMITTED_TO_FBF' ? (
-                    <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => { setSelected(license); setMode('ISSUE'); setError(''); setMessage(''); }}>Enregistrer une délivrance</button>
-                      <button type="button" onClick={() => { setSelected(license); setMode('REJECT'); setError(''); setMessage(''); }}>Enregistrer un refus</button>
-                    </span>
-                  ) : 'Traité'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!loading && visible.length === 0 && <div style={{ padding: 24 }}>Aucun dossier FBF à afficher.</div>}
-      </section>
+        <section className="workspace-actions">
+          <div>
+            <label>CONNECTEUR FBF V1</label>
+            <h2>Retours de la Fédération</h2>
+            <p>La FBF conserve sa propre application. La Ligue enregistre ici la décision reçue après transmission du dossier.</p>
+          </div>
+        </section>
 
-      {selected && mode === 'ISSUE' && (
-        <form onSubmit={submitIssue} style={{ marginTop: 24, padding: 20, border: '1px solid #dfe7ec', borderRadius: 12, display: 'grid', gap: 14, maxWidth: 680 }}>
-          <div><small>RETOUR FBF · DÉLIVRANCE</small><h2 style={{ margin: '4px 0' }}>{selected.registration ? `${selected.registration.person.firstName} ${selected.registration.person.lastName}` : 'Licence'}</h2></div>
-          <label>Numéro officiel FBF *<input name="number" required minLength={3} maxLength={40} style={{ display: 'block', width: '100%', marginTop: 5, padding: 10 }} /></label>
-          <label>Date de début de validité *<input name="validFrom" type="date" required style={{ display: 'block', width: '100%', marginTop: 5, padding: 10 }} /></label>
-          <label>Date de fin de validité *<input name="validUntil" type="date" required style={{ display: 'block', width: '100%', marginTop: 5, padding: 10 }} /></label>
-          <div style={{ display: 'flex', gap: 8 }}><button disabled={busy}>{busy ? 'Enregistrement…' : 'Confirmer la délivrance'}</button><button type="button" onClick={() => { setSelected(null); setMode(null); }}>Annuler</button></div>
-        </form>
-      )}
+        {error && <div className="api-error">{error}</div>}
+        {message && <div className="success-message">{message}</div>}
 
-      {selected && mode === 'REJECT' && (
-        <form onSubmit={submitReject} style={{ marginTop: 24, padding: 20, border: '1px solid #dfe7ec', borderRadius: 12, display: 'grid', gap: 14, maxWidth: 680 }}>
-          <div><small>RETOUR FBF · REFUS</small><h2 style={{ margin: '4px 0' }}>{selected.registration ? `${selected.registration.person.firstName} ${selected.registration.person.lastName}` : 'Licence'}</h2></div>
-          <label>Motif officiel du refus *<textarea name="reason" required minLength={3} maxLength={500} rows={4} style={{ display: 'block', width: '100%', marginTop: 5, padding: 10 }} /></label>
-          <div style={{ display: 'flex', gap: 8 }}><button disabled={busy}>{busy ? 'Enregistrement…' : 'Confirmer le refus'}</button><button type="button" onClick={() => { setSelected(null); setMode(null); }}>Annuler</button></div>
-        </form>
-      )}
-    </main>
+        <section className="data-panel">
+          <div className="title"><span><label>SUIVI FÉDÉRAL</label><h2>Dossiers transmis à la FBF</h2></span></div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Joueur</th><th>Club</th><th>Saison</th><th>Statut</th><th>N° FBF</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                {visible.map((license) => (
+                  <tr key={license.id}>
+                    <td><strong>{license.registration ? `${license.registration.person.firstName} ${license.registration.person.lastName}` : '—'}</strong></td>
+                    <td>{clubName(license)}</td>
+                    <td>{license.season}</td>
+                    <td><span className={`badge ${license.status.toLowerCase()}`}>{STATUS_LABELS[license.status] ?? license.status}</span></td>
+                    <td>{license.number ?? '—'}</td>
+                    <td>
+                      {license.status === 'TRANSMITTED_TO_FBF' ? (
+                        <span className="row-actions">
+                          <button type="button" onClick={() => { setSelected(license); setMode('ISSUE'); setError(''); setMessage(''); }}>Enregistrer une délivrance</button>
+                          <button type="button" onClick={() => { setSelected(license); setMode('REJECT'); setError(''); setMessage(''); }}>Enregistrer un refus</button>
+                        </span>
+                      ) : 'Traité'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!loading && visible.length === 0 && <div className="empty">Aucun dossier FBF à afficher.</div>}
+          </div>
+        </section>
+
+        {selected && mode === 'ISSUE' && (
+          <form onSubmit={submitIssue} className="entity-form">
+            <div><label>Numéro officiel FBF *</label><input name="number" required minLength={3} maxLength={40} /></div>
+            <div><label>Date de début de validité *</label><input name="validFrom" type="date" required /></div>
+            <div><label>Date de fin de validité *</label><input name="validUntil" type="date" required /></div>
+            <button disabled={busy}>{busy ? 'Enregistrement…' : 'Confirmer la délivrance'}</button>
+            <button type="button" onClick={() => { setSelected(null); setMode(null); }}>Annuler</button>
+          </form>
+        )}
+
+        {selected && mode === 'REJECT' && (
+          <form onSubmit={submitReject} className="entity-form">
+            <div style={{ gridColumn: '1 / span 3' }}><label>Motif officiel du refus *</label><input name="reason" required minLength={3} maxLength={500} /></div>
+            <button disabled={busy}>{busy ? 'Enregistrement…' : 'Confirmer le refus'}</button>
+            <button type="button" onClick={() => { setSelected(null); setMode(null); }}>Annuler</button>
+          </form>
+        )}
+      </main>
+    </div>
   );
 }
