@@ -124,8 +124,28 @@ export class LicensesService {
   async decideByFederation(actor: AuthenticatedActor, licenseId: string, input: FederationDecisionDto) {
     const license = await this.getWithRegistration(licenseId);
     this.statusWorkflow.assertTransition(license.status, input.decision);
-    if (input.decision === LicenseStatus.ISSUED_BY_FBF && !input.number?.trim()) throw new BadRequestException('Le numéro de licence FBF est obligatoire');
-    if (input.decision === LicenseStatus.REJECTED_BY_FBF && !input.reason?.trim()) throw new BadRequestException('Le motif du refus fédéral est obligatoire');
+
+    if (input.decision === LicenseStatus.ISSUED_BY_FBF) {
+      if (!input.number?.trim()) {
+        throw new BadRequestException('Le numéro de licence FBF est obligatoire');
+      }
+      if (!input.validFrom || !input.validUntil) {
+        throw new BadRequestException('Les dates de validité de la licence FBF sont obligatoires');
+      }
+      const validFrom = new Date(input.validFrom);
+      const validUntil = new Date(input.validUntil);
+      if (Number.isNaN(validFrom.getTime()) || Number.isNaN(validUntil.getTime())) {
+        throw new BadRequestException('Les dates de validité FBF sont invalides');
+      }
+      if (validUntil.getTime() < validFrom.getTime()) {
+        throw new BadRequestException('La date de fin de validité doit être postérieure ou égale à la date de début');
+      }
+    }
+
+    if (input.decision === LicenseStatus.REJECTED_BY_FBF && !input.reason?.trim()) {
+      throw new BadRequestException('Le motif du refus fédéral est obligatoire');
+    }
+
     return this.changeStatus(actor, license, input.decision, input.reason, {
       number: input.number?.trim().toUpperCase(),
       validFrom: input.validFrom ? new Date(input.validFrom) : undefined,
