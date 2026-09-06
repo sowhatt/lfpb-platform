@@ -37,11 +37,11 @@ export class FederationDecisionDto {
   @Length(3, 500)
   reason?: string;
 
-  @IsOptional()
+  @ValidateIf((input: FederationDecisionDto) => input.decision === LicenseStatus.ISSUED_BY_FBF)
   @IsDateString()
   validFrom?: string;
 
-  @IsOptional()
+  @ValidateIf((input: FederationDecisionDto) => input.decision === LicenseStatus.ISSUED_BY_FBF)
   @IsDateString()
   validUntil?: string;
 }
