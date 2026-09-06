@@ -32,8 +32,9 @@ export class MatchSheetsService {
       throw new ForbiddenException("Le club ne participe pas à cette rencontre");
     }
 
-    const isLeagueOrOfficial = actor.memberships.some((membership) =>
-      [Role.LIGUE_ADMIN, Role.OFFICIEL].includes(membership.role),
+    const isLeagueOrOfficial = actor.memberships.some(
+      (membership) =>
+        membership.role === Role.LIGUE_ADMIN || membership.role === Role.OFFICIEL,
     );
     const isClubAdminForOrganization = actor.memberships.some(
       (membership) =>
