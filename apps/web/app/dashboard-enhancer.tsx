@@ -90,6 +90,11 @@ export function DashboardEnhancer() {
   const enhanced = active === 'Assistant IA' || active === 'Mes rencontres';
 
   useEffect(() => {
+    if (active !== 'Retours FBF' || membership?.role !== 'LIGUE_ADMIN') return;
+    window.location.assign('/fbf-return');
+  }, [active, membership?.role]);
+
+  useEffect(() => {
     const main = document.querySelector('main');
     if (!main || !host) return;
 
