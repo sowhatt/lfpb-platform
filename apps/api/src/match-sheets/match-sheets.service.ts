@@ -7,6 +7,7 @@ import {
 import {
   LicenseStatus,
   MatchEligibilityStatus,
+  MatchOfficialAssignmentStatus,
   MatchSheetSide,
   MatchSheetStatus,
   RegistrationCategory,
@@ -382,6 +383,107 @@ export class MatchSheetsService {
           side,
           submittedAt: submittedAt.toISOString(),
           status,
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  async validateSheet(actor: AuthenticatedActor, matchId: string) {
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+    const isOfficial = actor.memberships.some(
+      (membership) => membership.role === Role.OFFICIEL,
+    );
+
+    if (!isLeagueAdmin && !isOfficial) {
+      throw new ForbiddenException('Seuls la Ligue ou un officiel peuvent valider la feuille de match');
+    }
+
+    if (isOfficial && !isLeagueAdmin) {
+      const officialProfile = await this.prisma.officialProfile.findUnique({
+        where: { userId: actor.userId },
+      });
+
+      if (!officialProfile) {
+        throw new ForbiddenException('Profil officiel introuvable');
+      }
+
+      const assignment = await this.prisma.matchOfficialAssignment.findUnique({
+        where: {
+          matchId_officialProfileId: {
+            matchId,
+            officialProfileId: officialProfile.registrationId,
+          },
+        },
+      });
+
+      if (!assignment || assignment.status !== MatchOfficialAssignmentStatus.ACCEPTED) {
+        throw new ForbiddenException('Cet officiel n’est pas affecté et confirmé sur cette rencontre');
+      }
+    }
+
+    const sheet = await this.prisma.matchSheet.findUnique({
+      where: { matchId },
+      include: {
+        players: { select: { id: true, side: true } },
+        match: {
+          include: {
+            competition: { select: { organizationId: true } },
+          },
+        },
+      },
+    });
+
+    if (!sheet) {
+      throw new NotFoundException('Feuille de match introuvable');
+    }
+
+    if (sheet.status !== MatchSheetStatus.SUBMITTED) {
+      throw new BadRequestException('La feuille de match doit être soumise par les deux clubs avant validation');
+    }
+
+    if (!sheet.homeSubmittedAt || !sheet.awaySubmittedAt) {
+      throw new BadRequestException('Les deux compositions doivent être soumises avant validation');
+    }
+
+    const hasHomePlayers = sheet.players.some((player) => player.side === MatchSheetSide.HOME);
+    const hasAwayPlayers = sheet.players.some((player) => player.side === MatchSheetSide.AWAY);
+
+    if (!hasHomePlayers || !hasAwayPlayers) {
+      throw new BadRequestException('Les deux compositions doivent contenir au moins un joueur');
+    }
+
+    const validatedAt = new Date();
+    const updated = await this.prisma.matchSheet.update({
+      where: { id: sheet.id },
+      data: { validatedAt },
+      include: {
+        players: {
+          include: {
+            registration: {
+              include: { person: true, playerProfile: true },
+            },
+            club: { include: { organization: true } },
+          },
+          orderBy: [{ side: 'asc' }, { role: 'asc' }, { shirtNumber: 'asc' }],
+        },
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        organizationId: sheet.match.competition.organizationId,
+        action: 'MATCH_SHEET_VALIDATED',
+        resourceType: 'MatchSheet',
+        resourceId: sheet.id,
+        metadata: {
+          matchId,
+          validatedAt: validatedAt.toISOString(),
+          validatedByRole: isLeagueAdmin ? Role.LIGUE_ADMIN : Role.OFFICIEL,
         },
       },
     });
