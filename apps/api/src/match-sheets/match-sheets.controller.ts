@@ -70,4 +70,13 @@ export class MatchSheetsController {
   ) {
     return this.matchSheets.validateSheet(actor, matchId);
   }
+
+  @Post(':matchId/sheet/lock')
+  @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
+  lock(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.matchSheets.lockSheet(actor, matchId);
+  }
 }
