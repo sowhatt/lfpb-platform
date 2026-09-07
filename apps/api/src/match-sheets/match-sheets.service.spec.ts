@@ -311,6 +311,63 @@ describe('MatchSheetsService', () => {
     expect(prisma.matchSheet.update).not.toHaveBeenCalled();
   });
 
+  it('locks a validated submitted match sheet', async () => {
+    const validatedAt = new Date('2026-10-10T14:10:00.000Z');
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.SUBMITTED,
+      validatedAt,
+      lockedAt: null,
+      match: { competition: { organizationId: 'league-org' } },
+    });
+    prisma.matchSheet.update.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'sheet', validatedAt, ...data, players: [] }),
+    );
+    prisma.auditLog.create.mockResolvedValue({ id: 'audit' });
+
+    const result = await service.lockSheet(leagueActor(), 'match');
+
+    expect(result.status).toBe(MatchSheetStatus.LOCKED);
+    expect(result.lockedAt).toBeInstanceOf(Date);
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: 'MATCH_SHEET_LOCKED' }),
+      }),
+    );
+  });
+
+  it('refuses to lock a sheet that has not been validated', async () => {
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.SUBMITTED,
+      validatedAt: null,
+      lockedAt: null,
+      match: { competition: { organizationId: 'league-org' } },
+    });
+
+    await expect(
+      service.lockSheet(leagueActor(), 'match'),
+    ).rejects.toThrow('La feuille de match doit être validée avant verrouillage');
+
+    expect(prisma.matchSheet.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses to lock an already locked sheet', async () => {
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.LOCKED,
+      validatedAt: new Date(),
+      lockedAt: new Date(),
+      match: { competition: { organizationId: 'league-org' } },
+    });
+
+    await expect(
+      service.lockSheet(leagueActor(), 'match'),
+    ).rejects.toThrow('La feuille de match est déjà verrouillée');
+
+    expect(prisma.matchSheet.update).not.toHaveBeenCalled();
+  });
+
   function clubActor() {
     return {
       userId: 'user',
