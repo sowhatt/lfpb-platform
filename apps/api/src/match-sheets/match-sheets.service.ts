@@ -391,39 +391,7 @@ export class MatchSheetsService {
   }
 
   async validateSheet(actor: AuthenticatedActor, matchId: string) {
-    const isLeagueAdmin = actor.memberships.some(
-      (membership) => membership.role === Role.LIGUE_ADMIN,
-    );
-    const isOfficial = actor.memberships.some(
-      (membership) => membership.role === Role.OFFICIEL,
-    );
-
-    if (!isLeagueAdmin && !isOfficial) {
-      throw new ForbiddenException('Seuls la Ligue ou un officiel peuvent valider la feuille de match');
-    }
-
-    if (isOfficial && !isLeagueAdmin) {
-      const officialProfile = await this.prisma.officialProfile.findUnique({
-        where: { userId: actor.userId },
-      });
-
-      if (!officialProfile) {
-        throw new ForbiddenException('Profil officiel introuvable');
-      }
-
-      const assignment = await this.prisma.matchOfficialAssignment.findUnique({
-        where: {
-          matchId_officialProfileId: {
-            matchId,
-            officialProfileId: officialProfile.registrationId,
-          },
-        },
-      });
-
-      if (!assignment || assignment.status !== MatchOfficialAssignmentStatus.ACCEPTED) {
-        throw new ForbiddenException('Cet officiel n’est pas affecté et confirmé sur cette rencontre');
-      }
-    }
+    const validatedByRole = await this.assertCanControlSheet(actor, matchId);
 
     const sheet = await this.prisma.matchSheet.findUnique({
       where: { matchId },
@@ -483,11 +451,113 @@ export class MatchSheetsService {
         metadata: {
           matchId,
           validatedAt: validatedAt.toISOString(),
-          validatedByRole: isLeagueAdmin ? Role.LIGUE_ADMIN : Role.OFFICIEL,
+          validatedByRole,
         },
       },
     });
 
     return updated;
+  }
+
+  async lockSheet(actor: AuthenticatedActor, matchId: string) {
+    const lockedByRole = await this.assertCanControlSheet(actor, matchId);
+
+    const sheet = await this.prisma.matchSheet.findUnique({
+      where: { matchId },
+      include: {
+        match: {
+          include: {
+            competition: { select: { organizationId: true } },
+          },
+        },
+      },
+    });
+
+    if (!sheet) {
+      throw new NotFoundException('Feuille de match introuvable');
+    }
+
+    if (sheet.status === MatchSheetStatus.LOCKED) {
+      throw new BadRequestException('La feuille de match est déjà verrouillée');
+    }
+
+    if (sheet.status !== MatchSheetStatus.SUBMITTED || !sheet.validatedAt) {
+      throw new BadRequestException('La feuille de match doit être validée avant verrouillage');
+    }
+
+    const lockedAt = new Date();
+    const updated = await this.prisma.matchSheet.update({
+      where: { id: sheet.id },
+      data: {
+        status: MatchSheetStatus.LOCKED,
+        lockedAt,
+      },
+      include: {
+        players: {
+          include: {
+            registration: {
+              include: { person: true, playerProfile: true },
+            },
+            club: { include: { organization: true } },
+          },
+          orderBy: [{ side: 'asc' }, { role: 'asc' }, { shirtNumber: 'asc' }],
+        },
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        organizationId: sheet.match.competition.organizationId,
+        action: 'MATCH_SHEET_LOCKED',
+        resourceType: 'MatchSheet',
+        resourceId: sheet.id,
+        metadata: {
+          matchId,
+          lockedAt: lockedAt.toISOString(),
+          lockedByRole,
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  private async assertCanControlSheet(actor: AuthenticatedActor, matchId: string) {
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+    const isOfficial = actor.memberships.some(
+      (membership) => membership.role === Role.OFFICIEL,
+    );
+
+    if (!isLeagueAdmin && !isOfficial) {
+      throw new ForbiddenException('Seuls la Ligue ou un officiel peuvent contrôler la feuille de match');
+    }
+
+    if (isOfficial && !isLeagueAdmin) {
+      const officialProfile = await this.prisma.officialProfile.findUnique({
+        where: { userId: actor.userId },
+      });
+
+      if (!officialProfile) {
+        throw new ForbiddenException('Profil officiel introuvable');
+      }
+
+      const assignment = await this.prisma.matchOfficialAssignment.findUnique({
+        where: {
+          matchId_officialProfileId: {
+            matchId,
+            officialProfileId: officialProfile.registrationId,
+          },
+        },
+      });
+
+      if (!assignment || assignment.status !== MatchOfficialAssignmentStatus.ACCEPTED) {
+        throw new ForbiddenException('Cet officiel n’est pas affecté et confirmé sur cette rencontre');
+      }
+    }
+
+    return isLeagueAdmin ? Role.LIGUE_ADMIN : Role.OFFICIEL;
   }
 }
