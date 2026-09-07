@@ -1,6 +1,8 @@
 import {
   LicenseStatus,
   MatchSheetPlayerRole,
+  MatchSheetSide,
+  MatchSheetStatus,
   RegistrationStatus,
   Role,
 } from '@prisma/client';
@@ -10,7 +12,7 @@ describe('MatchSheetsService', () => {
   const prisma = {
     match: { findUnique: jest.fn() },
     registration: { findMany: jest.fn() },
-    matchSheet: { findUnique: jest.fn(), upsert: jest.fn() },
+    matchSheet: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
     matchSheetPlayer: { upsert: jest.fn() },
     auditLog: { create: jest.fn() },
   } as any;
@@ -79,6 +81,7 @@ describe('MatchSheetsService', () => {
 
   it('persists an eligible starter on the home match sheet', async () => {
     prisma.registration.findMany.mockResolvedValue([eligibleRegistration()]);
+    prisma.matchSheet.findUnique.mockResolvedValue(null);
     prisma.matchSheet.upsert.mockResolvedValue({ id: 'sheet', matchId: 'match' });
     prisma.matchSheetPlayer.upsert.mockResolvedValue({
       id: 'sheet-player',
@@ -133,10 +136,104 @@ describe('MatchSheetsService', () => {
     expect(prisma.matchSheetPlayer.upsert).not.toHaveBeenCalled();
   });
 
+  it('submits the home composition while keeping the sheet in draft', async () => {
+    prisma.registration.findMany.mockResolvedValue([eligibleRegistration()]);
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.DRAFT,
+      homeSubmittedAt: null,
+      awaySubmittedAt: null,
+      players: [{ id: 'home-player' }],
+    });
+    prisma.matchSheet.update.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'sheet', ...data, players: [] }),
+    );
+    prisma.auditLog.create.mockResolvedValue({ id: 'audit' });
+
+    const result = await service.submitSide(clubActor(), 'match', 'home-club');
+
+    expect(result.status).toBe(MatchSheetStatus.DRAFT);
+    expect(result.homeSubmittedAt).toBeInstanceOf(Date);
+    expect(result.awaySubmittedAt).toBeNull();
+    expect(prisma.matchSheet.update).toHaveBeenCalled();
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: 'MATCH_SHEET_SIDE_SUBMITTED' }),
+      }),
+    );
+  });
+
+  it('moves the sheet to submitted when the away composition is the second submission', async () => {
+    prisma.registration.findMany.mockResolvedValue([eligibleRegistration()]);
+    const homeSubmittedAt = new Date('2026-10-10T14:00:00.000Z');
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.DRAFT,
+      homeSubmittedAt,
+      awaySubmittedAt: null,
+      players: [{ id: 'away-player' }],
+    });
+    prisma.matchSheet.update.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'sheet', ...data, players: [] }),
+    );
+    prisma.auditLog.create.mockResolvedValue({ id: 'audit' });
+
+    const result = await service.submitSide(leagueActor(), 'match', 'away-club');
+
+    expect(result.status).toBe(MatchSheetStatus.SUBMITTED);
+    expect(result.homeSubmittedAt).toEqual(homeSubmittedAt);
+    expect(result.awaySubmittedAt).toBeInstanceOf(Date);
+  });
+
+  it('refuses changes to a composition after that side has submitted', async () => {
+    prisma.registration.findMany.mockResolvedValue([eligibleRegistration()]);
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.DRAFT,
+      homeSubmittedAt: new Date(),
+      awaySubmittedAt: null,
+    });
+
+    await expect(
+      service.addPlayer(clubActor(), 'match', {
+        clubId: 'home-club',
+        registrationId: 'registration',
+        role: MatchSheetPlayerRole.STARTER,
+        shirtNumber: 4,
+      }),
+    ).rejects.toThrow('La composition domicile a déjà été soumise');
+
+    expect(prisma.matchSheetPlayer.upsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses submission when the side has no players', async () => {
+    prisma.registration.findMany.mockResolvedValue([eligibleRegistration()]);
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.DRAFT,
+      homeSubmittedAt: null,
+      awaySubmittedAt: null,
+      players: [],
+    });
+
+    await expect(
+      service.submitSide(clubActor(), 'match', 'home-club'),
+    ).rejects.toThrow('La composition doit contenir au moins un joueur');
+
+    expect(prisma.matchSheet.update).not.toHaveBeenCalled();
+  });
+
   function clubActor() {
     return {
       userId: 'user',
       memberships: [{ organizationId: 'home-org', role: Role.CLUB_ADMIN }],
+    };
+  }
+
+  function leagueActor() {
+    return {
+      userId: 'league-user',
+      memberships: [{ organizationId: 'league-org', role: Role.LIGUE_ADMIN }],
     };
   }
 
