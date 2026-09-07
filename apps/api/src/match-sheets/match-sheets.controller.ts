@@ -61,4 +61,13 @@ export class MatchSheetsController {
   ) {
     return this.matchSheets.submitSide(actor, matchId, input.clubId);
   }
+
+  @Post(':matchId/sheet/validate')
+  @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
+  validate(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.matchSheets.validateSheet(actor, matchId);
+  }
 }
