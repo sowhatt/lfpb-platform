@@ -8,6 +8,7 @@ import {
   LicenseStatus,
   MatchEligibilityStatus,
   MatchSheetSide,
+  MatchSheetStatus,
   RegistrationCategory,
   RegistrationStatus,
   Role,
@@ -42,7 +43,7 @@ export class MatchSheetsService {
           : null;
 
     if (!club) {
-      throw new ForbiddenException("Le club ne participe pas à cette rencontre");
+      throw new ForbiddenException('Le club ne participe pas à cette rencontre');
     }
 
     const isLeagueOrOfficial = actor.memberships.some(
@@ -56,7 +57,7 @@ export class MatchSheetsService {
     );
 
     if (!isLeagueOrOfficial && !isClubAdminForOrganization) {
-      throw new ForbiddenException("Accès interdit à la feuille de match de ce club");
+      throw new ForbiddenException('Accès interdit à la feuille de match de ce club');
     }
 
     const registrations = await this.prisma.registration.findMany({
@@ -221,6 +222,27 @@ export class MatchSheetsService {
         ? MatchSheetSide.HOME
         : MatchSheetSide.AWAY;
 
+    const existingSheet = await this.prisma.matchSheet.findUnique({
+      where: { matchId },
+    });
+
+    if (existingSheet) {
+      if (existingSheet.status === MatchSheetStatus.LOCKED) {
+        throw new BadRequestException('La feuille de match est verrouillée');
+      }
+
+      const sideAlreadySubmitted =
+        side === MatchSheetSide.HOME
+          ? Boolean(existingSheet.homeSubmittedAt)
+          : Boolean(existingSheet.awaySubmittedAt);
+
+      if (sideAlreadySubmitted) {
+        throw new BadRequestException(
+          `La composition ${side === MatchSheetSide.HOME ? 'domicile' : 'extérieur'} a déjà été soumise`,
+        );
+      }
+    }
+
     const sheet = await this.prisma.matchSheet.upsert({
       where: { matchId },
       update: {},
@@ -275,5 +297,95 @@ export class MatchSheetsService {
     });
 
     return savedPlayer;
+  }
+
+  async submitSide(actor: AuthenticatedActor, matchId: string, clubId: string) {
+    const eligibility = await this.eligiblePlayers(actor, matchId, clubId);
+    const side =
+      eligibility.match.homeClubId === clubId
+        ? MatchSheetSide.HOME
+        : MatchSheetSide.AWAY;
+
+    const sheet = await this.prisma.matchSheet.findUnique({
+      where: { matchId },
+      include: {
+        players: {
+          where: { clubId, side },
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!sheet) {
+      throw new BadRequestException('Aucune feuille de match à soumettre');
+    }
+
+    if (sheet.status === MatchSheetStatus.LOCKED) {
+      throw new BadRequestException('La feuille de match est verrouillée');
+    }
+
+    const alreadySubmitted =
+      side === MatchSheetSide.HOME
+        ? Boolean(sheet.homeSubmittedAt)
+        : Boolean(sheet.awaySubmittedAt);
+
+    if (alreadySubmitted) {
+      throw new BadRequestException(
+        `La composition ${side === MatchSheetSide.HOME ? 'domicile' : 'extérieur'} a déjà été soumise`,
+      );
+    }
+
+    if (sheet.players.length === 0) {
+      throw new BadRequestException('La composition doit contenir au moins un joueur');
+    }
+
+    const submittedAt = new Date();
+    const homeSubmittedAt =
+      side === MatchSheetSide.HOME ? submittedAt : sheet.homeSubmittedAt;
+    const awaySubmittedAt =
+      side === MatchSheetSide.AWAY ? submittedAt : sheet.awaySubmittedAt;
+    const status =
+      homeSubmittedAt && awaySubmittedAt
+        ? MatchSheetStatus.SUBMITTED
+        : MatchSheetStatus.DRAFT;
+
+    const updated = await this.prisma.matchSheet.update({
+      where: { id: sheet.id },
+      data: {
+        homeSubmittedAt,
+        awaySubmittedAt,
+        status,
+      },
+      include: {
+        players: {
+          include: {
+            registration: {
+              include: { person: true, playerProfile: true },
+            },
+            club: { include: { organization: true } },
+          },
+          orderBy: [{ side: 'asc' }, { role: 'asc' }, { shirtNumber: 'asc' }],
+        },
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        organizationId: eligibility.club.organizationId,
+        action: 'MATCH_SHEET_SIDE_SUBMITTED',
+        resourceType: 'MatchSheet',
+        resourceId: sheet.id,
+        metadata: {
+          matchId,
+          clubId,
+          side,
+          submittedAt: submittedAt.toISOString(),
+          status,
+        },
+      },
+    });
+
+    return updated;
   }
 }
