@@ -15,6 +15,7 @@ import { AuthenticatedActor } from '../iam/domain/actor';
 import { Roles } from '../iam/roles.decorator';
 import { RolesGuard } from '../iam/roles.guard';
 import { AddMatchSheetPlayerDto } from './dto/add-match-sheet-player.dto';
+import { SubmitMatchSheetDto } from './dto/submit-match-sheet.dto';
 import { MatchSheetsService } from './match-sheets.service';
 
 @Controller('matches')
@@ -49,5 +50,15 @@ export class MatchSheetsController {
     @Body() input: AddMatchSheetPlayerDto,
   ) {
     return this.matchSheets.addPlayer(actor, matchId, input);
+  }
+
+  @Post(':matchId/sheet/submit')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  submit(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Body() input: SubmitMatchSheetDto,
+  ) {
+    return this.matchSheets.submitSide(actor, matchId, input.clubId);
   }
 }
