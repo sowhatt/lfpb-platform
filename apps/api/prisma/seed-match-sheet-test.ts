@@ -144,6 +144,15 @@ async function main() {
     LicenseStatus.REJECTED_BY_FBF,
     14,
   );
+  const awayEligible = await ensurePlayer(
+    azizaOrg.id,
+    'TEST-MATCH-SHEET-AZIZA-ELIGIBLE',
+    'seed:test:match-sheet:aziza:eligible',
+    'Boris',
+    'Sossa',
+    LicenseStatus.ISSUED_BY_FBF,
+    10,
+  );
 
   const sheet = await prisma.matchSheet.upsert({
     where: { matchId: match.id },
@@ -162,15 +171,30 @@ async function main() {
       shirtNumber: 8,
     },
   });
+  await prisma.matchSheetPlayer.upsert({
+    where: { matchSheetId_registrationId: { matchSheetId: sheet.id, registrationId: awayEligible.id } },
+    update: { clubId: azizaOrg.club.id, side: 'AWAY', role: MatchSheetPlayerRole.STARTER, shirtNumber: 10 },
+    create: {
+      matchSheetId: sheet.id,
+      registrationId: awayEligible.id,
+      clubId: azizaOrg.club.id,
+      side: 'AWAY',
+      role: MatchSheetPlayerRole.STARTER,
+      shirtNumber: 10,
+    },
+  });
 
-  console.info('C1C prêt.');
+  console.info('C2A prêt.');
   console.info(`MATCH_ID=${match.id}`);
   console.info(`DRAGONS_CLUB_ID=${dragonsOrg.club.id}`);
+  console.info(`AZIZA_CLUB_ID=${azizaOrg.club.id}`);
   console.info(`ELIGIBLE_REGISTRATION_ID=${eligible.id}`);
   console.info(`REJECTED_REGISTRATION_ID=${rejected.id}`);
+  console.info(`AZIZA_ELIGIBLE_REGISTRATION_ID=${awayEligible.id}`);
   console.info(`MATCH_SHEET_ID=${sheet.id}`);
-  console.info('Cédric Dossou : licence ISSUED_BY_FBF, titulaire #8 persisté.');
-  console.info('Jean Adjovi : licence REJECTED_BY_FBF, doit être refusé par POST /matches/:matchId/sheet/players.');
+  console.info('Cédric Dossou : Dragons, titulaire HOME #8.');
+  console.info('Boris Sossa : Aziza, titulaire AWAY #10 avec licence ISSUED_BY_FBF.');
+  console.info('Jean Adjovi : licence REJECTED_BY_FBF, doit rester refusé.');
 }
 
 main()
