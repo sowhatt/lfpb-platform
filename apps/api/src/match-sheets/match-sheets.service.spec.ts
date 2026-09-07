@@ -1,5 +1,6 @@
 import {
   LicenseStatus,
+  MatchOfficialAssignmentStatus,
   MatchSheetPlayerRole,
   MatchSheetSide,
   MatchSheetStatus,
@@ -14,6 +15,8 @@ describe('MatchSheetsService', () => {
     registration: { findMany: jest.fn() },
     matchSheet: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
     matchSheetPlayer: { upsert: jest.fn() },
+    officialProfile: { findUnique: jest.fn() },
+    matchOfficialAssignment: { findUnique: jest.fn() },
     auditLog: { create: jest.fn() },
   } as any;
 
@@ -223,6 +226,91 @@ describe('MatchSheetsService', () => {
     expect(prisma.matchSheet.update).not.toHaveBeenCalled();
   });
 
+  it('validates a fully submitted match sheet as league admin', async () => {
+    const homeSubmittedAt = new Date('2026-10-10T14:00:00.000Z');
+    const awaySubmittedAt = new Date('2026-10-10T14:05:00.000Z');
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.SUBMITTED,
+      homeSubmittedAt,
+      awaySubmittedAt,
+      players: [
+        { id: 'home-player', side: MatchSheetSide.HOME },
+        { id: 'away-player', side: MatchSheetSide.AWAY },
+      ],
+      match: { competition: { organizationId: 'league-org' } },
+    });
+    prisma.matchSheet.update.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'sheet', status: MatchSheetStatus.SUBMITTED, ...data, players: [] }),
+    );
+    prisma.auditLog.create.mockResolvedValue({ id: 'audit' });
+
+    const result = await service.validateSheet(leagueActor(), 'match');
+
+    expect(result.validatedAt).toBeInstanceOf(Date);
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ action: 'MATCH_SHEET_VALIDATED' }),
+      }),
+    );
+  });
+
+  it('allows an assigned and accepted official to validate the sheet', async () => {
+    prisma.officialProfile.findUnique.mockResolvedValue({ registrationId: 'official-registration' });
+    prisma.matchOfficialAssignment.findUnique.mockResolvedValue({
+      id: 'assignment',
+      status: MatchOfficialAssignmentStatus.ACCEPTED,
+    });
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.SUBMITTED,
+      homeSubmittedAt: new Date(),
+      awaySubmittedAt: new Date(),
+      players: [
+        { id: 'home-player', side: MatchSheetSide.HOME },
+        { id: 'away-player', side: MatchSheetSide.AWAY },
+      ],
+      match: { competition: { organizationId: 'league-org' } },
+    });
+    prisma.matchSheet.update.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'sheet', status: MatchSheetStatus.SUBMITTED, ...data, players: [] }),
+    );
+    prisma.auditLog.create.mockResolvedValue({ id: 'audit' });
+
+    const result = await service.validateSheet(officialActor(), 'match');
+
+    expect(result.validatedAt).toBeInstanceOf(Date);
+    expect(prisma.matchOfficialAssignment.findUnique).toHaveBeenCalled();
+  });
+
+  it('refuses validation by an official who is not assigned and accepted', async () => {
+    prisma.officialProfile.findUnique.mockResolvedValue({ registrationId: 'official-registration' });
+    prisma.matchOfficialAssignment.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.validateSheet(officialActor(), 'match'),
+    ).rejects.toThrow('Cet officiel n’est pas affecté et confirmé sur cette rencontre');
+
+    expect(prisma.matchSheet.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses validation before both clubs have submitted', async () => {
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.DRAFT,
+      homeSubmittedAt: new Date(),
+      awaySubmittedAt: null,
+      players: [{ id: 'home-player', side: MatchSheetSide.HOME }],
+      match: { competition: { organizationId: 'league-org' } },
+    });
+
+    await expect(
+      service.validateSheet(leagueActor(), 'match'),
+    ).rejects.toThrow('La feuille de match doit être soumise par les deux clubs avant validation');
+
+    expect(prisma.matchSheet.update).not.toHaveBeenCalled();
+  });
+
   function clubActor() {
     return {
       userId: 'user',
@@ -234,6 +322,13 @@ describe('MatchSheetsService', () => {
     return {
       userId: 'league-user',
       memberships: [{ organizationId: 'league-org', role: Role.LIGUE_ADMIN }],
+    };
+  }
+
+  function officialActor() {
+    return {
+      userId: 'official-user',
+      memberships: [{ organizationId: 'league-org', role: Role.OFFICIEL }],
     };
   }
 
