@@ -58,7 +58,7 @@ importers:
         specifier: ^11.0.10
         version: 11.0.24(@types/node@24.13.3)(prettier@3.9.6)
       '@nestjs/schematics':
-        specifier: ^11.0.7
+        specifier: ^11.0.10
         version: 11.1.0(chokidar@4.0.3)(prettier@3.9.6)(typescript@5.9.3)
       '@nestjs/testing':
         specifier: ^11.1.6
