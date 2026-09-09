@@ -5,6 +5,7 @@ import { CompetitionsModule } from "./competitions/competitions.module";
 import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health.controller";
 import { IamModule } from "./iam/iam.module";
+import { MatchEventsModule } from "./match-events/match-events.module";
 import { MatchSheetsModule } from "./match-sheets/match-sheets.module";
 import { OrganizationsModule } from "./organizations/organizations.module";
 import { OfficialAssistantModule } from "./official-assistant/official-assistant.module";
@@ -21,6 +22,7 @@ import { RegistriesModule } from "./registries/registries.module";
     AuthModule,
     CompetitionsModule,
     IamModule,
+    MatchEventsModule,
     MatchSheetsModule,
     OrganizationsModule,
     OfficialAssistantModule,
