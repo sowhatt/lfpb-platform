@@ -234,7 +234,7 @@ export default function HomePage() {
         <div className="brand"><b>LF</b><span><strong>LFPB</strong><small>Football professionnel</small></span></div>
         <div className="space-chip">ESPACE {space}</div>
         <div className="connected"><i /> Connecté à l’API</div>
-        <nav>{nav.map((item, i) => <button key={item} className={active === item ? 'active' : ''} onClick={() => setActive(item)}><i>{['⌂', '◫', '✦', '◆', '◉', '✓', '⬡'][i]}</i>{item}</button>)}</nav>
+        <nav>{nav.map((item, i) => <button key={item} className={active === item ? 'active' : ''} onClick={() => setActive(item)}><i>{['⌂', '◫', '✦', '◆', '◉', '✓', '⬡'][i]}</i>{item}</button>)}<button className="mobile-logout" onClick={logout}><i>↪</i>Déconnexion</button></nav>
         <div className="user"><b>{actor.email.slice(0, 2).toUpperCase()}</b><span><strong>{actor.email}</strong><small>{actor.memberships[0]?.role.replaceAll('_', ' ')}</small></span><button onClick={logout}>↪</button></div>
       </aside>
       <main>
