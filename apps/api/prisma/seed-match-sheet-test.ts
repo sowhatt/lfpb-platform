@@ -3,7 +3,10 @@ import {
   CompetitionStatus,
   Division,
   LicenseStatus,
+  MatchOfficialAssignmentStatus,
+  MatchOfficialRole,
   MatchSheetPlayerRole,
+  MatchSheetStatus,
   MatchStatus,
   PlayerPosition,
   RegistrationCategory,
@@ -184,6 +187,50 @@ async function main() {
     },
   });
 
+  const currentSheet = await prisma.matchSheet.findUniqueOrThrow({ where: { id: sheet.id } });
+  if (currentSheet.status === MatchSheetStatus.DRAFT) {
+    const submittedAt = new Date();
+    await prisma.matchSheet.update({
+      where: { id: sheet.id },
+      data: {
+        homeSubmittedAt: currentSheet.homeSubmittedAt ?? submittedAt,
+        awaySubmittedAt: currentSheet.awaySubmittedAt ?? submittedAt,
+        status: MatchSheetStatus.SUBMITTED,
+      },
+    });
+  }
+
+  const officialEmail = (process.env.SEED_OFFICIAL_EMAIL ?? 'arbitre.demo@lfpb.bj').toLowerCase();
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? 'admin@lfpb.bj').toLowerCase();
+  const officialUser = await prisma.user.findUniqueOrThrow({ where: { email: officialEmail } });
+  const adminUser = await prisma.user.findUniqueOrThrow({ where: { email: adminEmail } });
+  const officialProfile = await prisma.officialProfile.findUniqueOrThrow({ where: { userId: officialUser.id } });
+  const now = new Date();
+  await prisma.matchOfficialAssignment.upsert({
+    where: {
+      matchId_officialProfileId: {
+        matchId: match.id,
+        officialProfileId: officialProfile.registrationId,
+      },
+    },
+    update: {
+      role: MatchOfficialRole.REFEREE,
+      status: MatchOfficialAssignmentStatus.ACCEPTED,
+      sentAt: now,
+      respondedAt: now,
+      responseReason: null,
+    },
+    create: {
+      matchId: match.id,
+      officialProfileId: officialProfile.registrationId,
+      role: MatchOfficialRole.REFEREE,
+      status: MatchOfficialAssignmentStatus.ACCEPTED,
+      sentAt: now,
+      respondedAt: now,
+      createdByUserId: adminUser.id,
+    },
+  });
+
   console.info('C2A prêt.');
   console.info(`MATCH_ID=${match.id}`);
   console.info(`DRAGONS_CLUB_ID=${dragonsOrg.club.id}`);
@@ -192,6 +239,8 @@ async function main() {
   console.info(`REJECTED_REGISTRATION_ID=${rejected.id}`);
   console.info(`AZIZA_ELIGIBLE_REGISTRATION_ID=${awayEligible.id}`);
   console.info(`MATCH_SHEET_ID=${sheet.id}`);
+  console.info(`OFFICIAL_EMAIL=${officialEmail}`);
+  console.info('Feuille de match soumise des deux côtés et arbitre de démonstration affecté/accepté.');
   console.info('Cédric Dossou : Dragons, titulaire HOME #8.');
   console.info('Boris Sossa : Aziza, titulaire AWAY #10 avec licence ISSUED_BY_FBF.');
   console.info('Jean Adjovi : licence REJECTED_BY_FBF, doit rester refusé.');
