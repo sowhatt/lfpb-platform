@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { OfficialLiveMatchControl } from '../official-live-match-control';
 import { OfficialMatchPlayerControl } from '../official-match-player-control';
 
 type Actor = {
@@ -37,5 +38,5 @@ export default function OfficialMatchControlPage() {
     return <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}><section className="data-panel"><h1>Connected Match</h1><p>Choisissez une rencontre depuis « Mes rencontres » pour lancer le contrôle des joueurs.</p><a href="/">Retour au portail officiel</a></section></main>;
   }
 
-  return <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}><div className="workspace-actions"><div><label>PORTAIL OFFICIEL</label><h1>Connected Match</h1><p>{actor.email}</p></div><a href="/">← Retour au portail</a></div><OfficialMatchPlayerControl token={token} matchId={matchId} /></main>;
+  return <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}><div className="workspace-actions"><div><label>PORTAIL OFFICIEL</label><h1>Connected Match</h1><p>{actor.email}</p></div><a href="/">← Retour au portail</a></div><OfficialLiveMatchControl token={token} matchId={matchId} /><OfficialMatchPlayerControl token={token} matchId={matchId} /></main>;
 }
