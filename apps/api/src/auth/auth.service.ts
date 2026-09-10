@@ -30,6 +30,10 @@ export class AuthService {
         ? await compare(input.password, user.passwordHash)
         : false;
 
+    this.logger.log(
+      `AUTH_PASSWORD_DIAG email=${input.email.trim().toLowerCase()} receivedLen=${input.password.length} envLen=${process.env.SEED_OFFICIAL_PASSWORD?.length ?? 0} inputMatchesEnv=${input.password === process.env.SEED_OFFICIAL_PASSWORD}`,
+    );
+
     if (!user?.active || !passwordMatches) {
       this.logger.warn(
         `AUTH_LOGIN_FAILED email=${input.email.trim().toLowerCase()} userFound=${Boolean(user)} active=${Boolean(user?.active)} passwordMatch=${passwordMatches}`,
