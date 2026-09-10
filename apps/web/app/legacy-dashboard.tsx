@@ -187,7 +187,10 @@ export default function HomePage() {
     const form = new FormData(event.currentTarget);
     try {
       const result = await request<{ accessToken: string; actor: Actor }>('/auth/login', undefined, {
-        method: 'POST', body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+        method: 'POST', body: JSON.stringify({
+        email: String(form.get('email') ?? '').trim().toLowerCase(),
+        password: String(form.get('password') ?? ''),
+      }),
       });
       setToken(result.accessToken); setActor(result.actor);
       sessionStorage.setItem('lfpb-token', result.accessToken);
@@ -261,7 +264,7 @@ export default function HomePage() {
 }
 
 function LoginScreen({ loading, error, onSubmit }: { loading: boolean; error: string; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <div className="login-page"><section className="login-brand"><div className="login-logo">LF</div><p>LIGUE DE FOOTBALL PROFESSIONNEL DU BÉNIN</p><h1>Le football béninois,<br />piloté numériquement.</h1><span>Compétitions · Clubs · Licences · Officiels</span></section><form className="login-card" onSubmit={onSubmit}><label>PLATEFORME SÉCURISÉE</label><h2>Connexion</h2><p>Accédez à votre espace Ligue ou Club.</p>{error && <div className="form-error">{error}</div>}<span>Adresse e-mail</span><input name="email" type="email" defaultValue="admin@lfpb.bj" required /><span>Mot de passe</span><input name="password" type="password" defaultValue="change-this-development-password" required /><button disabled={loading}>{loading ? 'Connexion…' : 'Se connecter →'}</button><small>Environnement local sécurisé · API port 3001</small></form></div>;
+  return <div className="login-page"><section className="login-brand"><div className="login-logo">LF</div><p>LIGUE DE FOOTBALL PROFESSIONNEL DU BÉNIN</p><h1>Le football béninois,<br />piloté numériquement.</h1><span>Compétitions · Clubs · Licences · Officiels</span></section><form className="login-card" onSubmit={onSubmit}><label>PLATEFORME SÉCURISÉE</label><h2>Connexion</h2><p>Accédez à votre espace Ligue ou Club.</p>{error && <div className="form-error">{error}</div>}<span>Adresse e-mail</span><input name="email" type="email" autoComplete="username" required /><span>Mot de passe</span><input name="password" type="password" autoComplete="current-password" required /><button disabled={loading}>{loading ? 'Connexion…' : 'Se connecter →'}</button><small>Environnement local sécurisé · API port 3001</small></form></div>;
 }
 
 function Overview({ clubs, competitions, matches, proposal }: { clubs: Organization[]; competitions: Competition[]; matches: Match[]; proposal?: Proposal }) {
