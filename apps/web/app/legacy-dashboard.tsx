@@ -186,11 +186,17 @@ export default function HomePage() {
     event.preventDefault(); setLoading(true); setError('');
     const form = new FormData(event.currentTarget);
     try {
+      const email = String(form.get('email') ?? '').trim().toLowerCase();
+      const password = String(form.get('password') ?? '');
+
+      console.log('AUTH_FORM_DEBUG', {
+        email,
+        passwordLength: password.length,
+      });
+
       const result = await request<{ accessToken: string; actor: Actor }>('/auth/login', undefined, {
-        method: 'POST', body: JSON.stringify({
-        email: String(form.get('email') ?? '').trim().toLowerCase(),
-        password: String(form.get('password') ?? ''),
-      }),
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
       });
       setToken(result.accessToken); setActor(result.actor);
       sessionStorage.setItem('lfpb-token', result.accessToken);
