@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { MembershipStatus } from '@prisma/client';
 import { compare } from 'bcryptjs';
@@ -7,6 +7,8 @@ import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -23,9 +25,21 @@ export class AuthService {
       },
     });
 
-    if (!user?.active || !(await compare(input.password, user.passwordHash))) {
+    const passwordMatches =
+      user?.active === true
+        ? await compare(input.password, user.passwordHash)
+        : false;
+
+    if (!user?.active || !passwordMatches) {
+      this.logger.warn(
+        `AUTH_LOGIN_FAILED email=${input.email.trim().toLowerCase()} userFound=${Boolean(user)} active=${Boolean(user?.active)} passwordMatch=${passwordMatches}`,
+      );
       throw new UnauthorizedException('Identifiants invalides');
     }
+
+    this.logger.log(
+      `AUTH_LOGIN_SUCCESS email=${user.email} memberships=${user.memberships.length}`,
+    );
 
     const actor = {
       userId: user.id,
