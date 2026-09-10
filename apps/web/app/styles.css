@@ -57,3 +57,35 @@
 .player-link:hover { color: #b88919; text-decoration: underline; }
 .profile-loading { margin: 18px 0; color: #657386; }
 .player-profile { position: relative; display: grid; grid-template-columns: 220px 1fr; gap: 32px; margin: 26px 0; padding: 34px; border: 1px solid #dbe3e8; border-radius: 20px; background: #fff; box-shadow:0 12px 30px #1c2e430d; }
+
+/* password visibility toggle */
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.login-card .password-field input {
+  width: 100%;
+  padding-right: 52px;
+}
+
+.login-card .password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+}
+
+.login-card .password-toggle:hover {
+  background: rgba(15, 45, 70, 0.06);
+  border-radius: 8px;
+}

@@ -264,7 +264,49 @@ export default function HomePage() {
 }
 
 function LoginScreen({ loading, error, onSubmit }: { loading: boolean; error: string; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <div className="login-page"><section className="login-brand"><div className="login-logo">LF</div><p>LIGUE DE FOOTBALL PROFESSIONNEL DU BÉNIN</p><h1>Le football béninois,<br />piloté numériquement.</h1><span>Compétitions · Clubs · Licences · Officiels</span></section><form className="login-card" onSubmit={onSubmit}><label>PLATEFORME SÉCURISÉE</label><h2>Connexion</h2><p>Accédez à votre espace Ligue ou Club.</p>{error && <div className="form-error">{error}</div>}<span>Adresse e-mail</span><input name="email" type="email" autoComplete="username" required /><span>Mot de passe</span><input name="password" type="password" autoComplete="current-password" required /><button disabled={loading}>{loading ? 'Connexion…' : 'Se connecter →'}</button><small>Environnement local sécurisé · API port 3001</small></form></div>;
+  const [showPassword, setShowPassword] = useState(false);
+
+  return <div className="login-page">
+    <section className="login-brand">
+      <div className="login-logo">LF</div>
+      <p>LIGUE DE FOOTBALL PROFESSIONNEL DU BÉNIN</p>
+      <h1>Le football béninois,<br />piloté numériquement.</h1>
+      <span>Compétitions · Clubs · Licences · Officiels</span>
+    </section>
+
+    <form className="login-card" onSubmit={onSubmit}>
+      <label>PLATEFORME SÉCURISÉE</label>
+      <h2>Connexion</h2>
+      <p>Accédez à votre espace Ligue ou Club.</p>
+
+      {error && <div className="form-error">{error}</div>}
+
+      <span>Adresse e-mail</span>
+      <input name="email" type="email" autoComplete="username" required />
+
+      <span>Mot de passe</span>
+      <div className="password-field">
+        <input
+          name="password"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="current-password"
+          required
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          onClick={() => setShowPassword((visible) => !visible)}
+          aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+        >
+          {showPassword ? '🙈' : '👁'}
+        </button>
+      </div>
+
+      <button disabled={loading}>{loading ? 'Connexion…' : 'Se connecter →'}</button>
+      <small>Environnement local sécurisé · API port 3001</small>
+    </form>
+  </div>;
 }
 
 function Overview({ clubs, competitions, matches, proposal }: { clubs: Organization[]; competitions: Competition[]; matches: Match[]; proposal?: Proposal }) {
