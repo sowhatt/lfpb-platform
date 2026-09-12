@@ -90,8 +90,14 @@ export function DashboardEnhancer() {
   const enhanced = active === 'Assistant IA' || active === 'Mes rencontres';
 
   useEffect(() => {
-    if (active !== 'Retours FBF' || membership?.role !== 'LIGUE_ADMIN') return;
-    window.location.assign('/fbf-return');
+    if (membership?.role !== 'LIGUE_ADMIN') return;
+    if (active === 'Retours FBF') {
+      window.location.assign('/fbf-return');
+      return;
+    }
+    if (active === 'Désignations') {
+      window.location.assign('/league-assignments');
+    }
   }, [active, membership?.role]);
 
   useEffect(() => {
