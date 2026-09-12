@@ -26,6 +26,18 @@ export interface VoiceEventDraft {
   needsConfirmation: true;
 }
 
+const AUDIO_TYPES: Record<string, { mimeType: string; extension: string }> = {
+  'audio/webm': { mimeType: 'audio/webm', extension: 'webm' },
+  'audio/ogg': { mimeType: 'audio/ogg', extension: 'ogg' },
+  'audio/mp4': { mimeType: 'audio/mp4', extension: 'mp4' },
+  'audio/x-m4a': { mimeType: 'audio/mp4', extension: 'm4a' },
+  'audio/m4a': { mimeType: 'audio/mp4', extension: 'm4a' },
+  'audio/mpeg': { mimeType: 'audio/mpeg', extension: 'mp3' },
+  'audio/mp3': { mimeType: 'audio/mpeg', extension: 'mp3' },
+  'audio/wav': { mimeType: 'audio/wav', extension: 'wav' },
+  'audio/x-wav': { mimeType: 'audio/wav', extension: 'wav' },
+};
+
 @Injectable()
 export class OfficialAssistantService {
   constructor(private readonly config: ConfigService) {}
@@ -70,21 +82,29 @@ export class OfficialAssistantService {
       throw new ServiceUnavailableException('Le service de transcription n’est pas configuré');
     }
 
-    const match =
-      /^data:(audio\/(?:webm|ogg|mp4|mpeg|wav))(?:;codecs=[A-Za-z0-9._,+-]+)?;base64,([A-Za-z0-9+/=]+)$/i.exec(
-        input.audioDataUrl,
-      );
-    if (!match) throw new BadRequestException('Format audio non pris en charge');
+    const commaIndex = input.audioDataUrl.indexOf(',');
+    if (commaIndex < 0) throw new BadRequestException('Format audio non pris en charge');
 
-    const mimeType = match[1].toLowerCase();
-    const bytes = Buffer.from(match[2], 'base64');
+    const header = input.audioDataUrl.slice(0, commaIndex).trim();
+    const encoded = input.audioDataUrl.slice(commaIndex + 1).replace(/\s/g, '');
+    const headerMatch = /^data:([^;,]+)(?:;[^,]*)?;base64$/i.exec(header);
+    if (!headerMatch || !encoded) throw new BadRequestException('Format audio non pris en charge');
+
+    const rawMimeType = headerMatch[1].toLowerCase();
+    const audioType = AUDIO_TYPES[rawMimeType];
+    if (!audioType) throw new BadRequestException('Format audio non pris en charge');
+
+    const bytes = Buffer.from(encoded, 'base64');
     if (bytes.byteLength === 0 || bytes.byteLength > 5_000_000) {
       throw new BadRequestException('L’enregistrement doit faire moins de 5 Mo');
     }
 
-    const extension = mimeType.split('/')[1];
     const form = new FormData();
-    form.append('file', new Blob([bytes], { type: mimeType }), `dictee.${extension}`);
+    form.append(
+      'file',
+      new Blob([bytes], { type: audioType.mimeType }),
+      `dictee.${audioType.extension}`,
+    );
     form.append('model', this.config.get<string>('TRANSCRIPTION_MODEL') ?? 'gpt-transcribe');
     form.append('language', input.language);
 
