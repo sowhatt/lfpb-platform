@@ -310,7 +310,7 @@ function LoginScreen({ loading, error, onSubmit }: { loading: boolean; error: st
       </div>
 
       <button disabled={loading}>{loading ? 'Connexion…' : 'Se connecter →'}</button>
-      <small>Environnement local sécurisé · API port 3001</small>
+      <small>Environnement sécurisé · API distante</small>
     </form>
   </div>;
 }
