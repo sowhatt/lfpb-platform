@@ -108,8 +108,9 @@ export default function LeagueAssignmentsPage() {
         }),
       });
       await request(`/official-assignments/${created.id}/send`, token, { method: 'PATCH' });
-      setMessage('Désignation envoyée à l’officiel. Elle attend maintenant sa réponse.');
+      setMessage('Désignation envoyée. L’officiel peut maintenant accepter ou refuser sa mission.');
       await load(token, actor);
+      event.currentTarget.reset();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Désignation impossible');
       setLoading(false);
@@ -120,21 +121,63 @@ export default function LeagueAssignmentsPage() {
     () => [...matches].sort((a, b) => String(a.kickoffAt ?? '').localeCompare(String(b.kickoffAt ?? ''))),
     [matches],
   );
+  const pending = assignments.filter((assignment) => assignment.status === 'SENT').length;
+  const accepted = assignments.filter((assignment) => assignment.status === 'ACCEPTED').length;
+  const refused = assignments.filter((assignment) => assignment.status === 'REFUSED').length;
 
   return (
-    <main style={{ maxWidth: 1180, margin: '0 auto', padding: 24 }}>
-      <p style={{ marginBottom: 4 }}>LFPB · ESPACE LIGUE</p>
-      <h1>Désignation des officiels</h1>
-      <p>La Ligue désigne un arbitre, Digital Foot lui envoie la mission, puis l’arbitre accepte ou refuse depuis son espace.</p>
+    <div className="shell">
+      <aside>
+        <div className="brand"><b>LF</b><span><strong>LFPB</strong><small>Football professionnel</small></span></div>
+        <div className="space-chip">ESPACE LIGUE</div>
+        <div className="connected"><i /> Connecté à l’API</div>
+        <nav>
+          <button onClick={() => window.location.assign('/')}><i>⌂</i>Vue d’ensemble</button>
+          <button onClick={() => window.location.assign('/')}><i>◫</i>Compétitions</button>
+          <button className="active"><i>✓</i>Désignations</button>
+          <button onClick={() => window.location.assign('/')}><i>⬡</i>Officiels</button>
+        </nav>
+        <div className="user">
+          <b>{actor?.email.slice(0, 2).toUpperCase() ?? 'LF'}</b>
+          <span><strong>{actor?.email ?? 'LFPB'}</strong><small>LIGUE ADMIN</small></span>
+        </div>
+      </aside>
 
-      {error && <div className="api-error">{error}</div>}
-      {message && <div className="connected" style={{ margin: '16px 0' }}>{message}</div>}
+      <main>
+        <header>
+          <div>
+            <label>LIGUE DE FOOTBALL PROFESSIONNEL DU BÉNIN</label>
+            <h1>Désignation des officiels</h1>
+            <p>Préparez, envoyez et suivez les désignations des arbitres et officiels.</p>
+          </div>
+          <div className="actions">
+            <button onClick={() => token && actor && void load(token, actor)} disabled={loading}>↻ Actualiser</button>
+            <button className="primary" onClick={() => window.location.assign('/')}>Retour Digital Foot</button>
+          </div>
+        </header>
 
-      <section className="data-panel" style={{ marginTop: 24 }}>
-        <h2>Nouvelle désignation</h2>
-        <form onSubmit={designate} className="workspace-actions" style={{ alignItems: 'end', flexWrap: 'wrap', gap: 12 }}>
-          <label style={{ minWidth: 260 }}>
-            Rencontre
+        {error && <div className="api-error">{error}</div>}
+        {message && <div className="success-message">{message}</div>}
+
+        <section className="stats">
+          <article><span>Officiels disponibles</span><strong>{officials.length}</strong><small>Référentiel Ligue</small><i className="symbol s1">◉</i></article>
+          <article><span>Désignations envoyées</span><strong>{pending}</strong><small>En attente de réponse</small><i className="symbol s2">↗</i></article>
+          <article><span>Missions acceptées</span><strong>{accepted}</strong><small>Confirmées par les officiels</small><i className="symbol">✓</i></article>
+          <article><span>Refus</span><strong>{refused}</strong><small>À replanifier</small><i className="symbol s3">!</i></article>
+        </section>
+
+        <section className="workspace-actions">
+          <div>
+            <label>WORKFLOW DE DÉSIGNATION</label>
+            <h2>Nouvelle mission officielle</h2>
+            <p>Sélectionnez la rencontre, l’officiel et son rôle. Digital Foot envoie ensuite la mission dans son espace.</p>
+          </div>
+          <span className="badge active">LIGUE → OFFICIEL</span>
+        </section>
+
+        <form onSubmit={designate} className="entity-form">
+          <div>
+            <label>RENCONTRE</label>
             <select name="matchId" required disabled={loading} defaultValue="">
               <option value="" disabled>Choisir une rencontre</option>
               {sortedMatches.map((match) => (
@@ -143,9 +186,9 @@ export default function LeagueAssignmentsPage() {
                 </option>
               ))}
             </select>
-          </label>
-          <label style={{ minWidth: 240 }}>
-            Officiel
+          </div>
+          <div>
+            <label>OFFICIEL</label>
             <select name="officialProfileId" required disabled={loading} defaultValue="">
               <option value="" disabled>Choisir un officiel</option>
               {officials.map((official) => (
@@ -154,50 +197,51 @@ export default function LeagueAssignmentsPage() {
                 </option>
               ))}
             </select>
-          </label>
-          <label style={{ minWidth: 210 }}>
-            Rôle
+          </div>
+          <div>
+            <label>RÔLE SUR LA RENCONTRE</label>
             <select name="role" required disabled={loading} defaultValue="REFEREE">
-              <option value="REFEREE">Arbitre</option>
+              <option value="REFEREE">Arbitre principal</option>
               <option value="ASSISTANT_REFEREE_1">Arbitre assistant 1</option>
               <option value="ASSISTANT_REFEREE_2">Arbitre assistant 2</option>
               <option value="FOURTH_OFFICIAL">Quatrième officiel</option>
               <option value="MATCH_COMMISSIONER">Commissaire au match</option>
               <option value="DELEGATE">Délégué</option>
             </select>
-          </label>
-          <button className="primary" type="submit" disabled={loading || !matches.length || !officials.length}>
-            Désigner et envoyer
+          </div>
+          <button type="submit" disabled={loading || !matches.length || !officials.length}>
+            {loading ? 'Traitement…' : 'Désigner et envoyer'}
           </button>
         </form>
-      </section>
 
-      <section className="data-panel" style={{ marginTop: 24 }}>
-        <div className="workspace-actions">
-          <div><h2>Suivi des désignations</h2><p>{assignments.length} désignation(s)</p></div>
-          <button type="button" disabled={loading || !token || !actor} onClick={() => token && actor && void load(token, actor)}>↻ Actualiser</button>
-        </div>
-        {!loading && assignments.length === 0 && <div className="empty">Aucune désignation.</div>}
-        {assignments.length > 0 && (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Rencontre</th><th>Officiel</th><th>Rôle</th><th>Statut</th><th>Date</th></tr></thead>
-              <tbody>
-                {assignments.map((assignment) => (
-                  <tr key={assignment.id}>
-                    <td><strong>{assignment.match.homeClub.shortName} — {assignment.match.awayClub.shortName}</strong></td>
-                    <td>{assignment.officialProfile.registration.person.firstName} {assignment.officialProfile.registration.person.lastName}</td>
-                    <td>{roleLabel(assignment.role)}</td>
-                    <td><strong>{statusLabel(assignment.status)}</strong></td>
-                    <td>{formatDate(assignment.match.kickoffAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <section className="data-panel">
+          <div className="title">
+            <div><label>SUIVI OPÉRATIONNEL</label><h2>Désignations en cours</h2></div>
+            <span className="badge">{assignments.length} mission(s)</span>
           </div>
-        )}
-      </section>
-    </main>
+          {!loading && assignments.length === 0 && <div className="empty">Aucune désignation enregistrée.</div>}
+          {assignments.length > 0 && (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Rencontre</th><th>Officiel</th><th>Rôle</th><th>Date</th><th>Stade</th><th>Statut</th></tr></thead>
+                <tbody>
+                  {assignments.map((assignment) => (
+                    <tr key={assignment.id}>
+                      <td><strong>{assignment.match.homeClub.shortName} — {assignment.match.awayClub.shortName}</strong></td>
+                      <td>{assignment.officialProfile.registration.person.firstName} {assignment.officialProfile.registration.person.lastName}</td>
+                      <td>{roleLabel(assignment.role)}</td>
+                      <td>{formatDate(assignment.match.kickoffAt)}</td>
+                      <td>{assignment.match.venue?.name ?? 'À définir'}</td>
+                      <td><span className={`badge ${statusClass(assignment.status)}`}>{statusLabel(assignment.status)}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
   );
 }
 
@@ -207,9 +251,16 @@ function formatDate(value?: string | null) {
 }
 
 function roleLabel(value: string) {
-  return ({ REFEREE: 'Arbitre', ASSISTANT_REFEREE_1: 'Assistant 1', ASSISTANT_REFEREE_2: 'Assistant 2', FOURTH_OFFICIAL: '4e officiel', MATCH_COMMISSIONER: 'Commissaire', DELEGATE: 'Délégué' } as Record<string, string>)[value] ?? value;
+  return ({ REFEREE: 'Arbitre principal', ASSISTANT_REFEREE_1: 'Assistant 1', ASSISTANT_REFEREE_2: 'Assistant 2', FOURTH_OFFICIAL: '4e officiel', MATCH_COMMISSIONER: 'Commissaire', DELEGATE: 'Délégué' } as Record<string, string>)[value] ?? value;
 }
 
 function statusLabel(value: string) {
-  return ({ DRAFT: 'Brouillon', SENT: 'Envoyée · réponse attendue', ACCEPTED: 'Acceptée', REFUSED: 'Refusée', CANCELLED: 'Annulée' } as Record<string, string>)[value] ?? value;
+  return ({ DRAFT: 'Brouillon', SENT: 'Réponse attendue', ACCEPTED: 'Acceptée', REFUSED: 'Refusée', CANCELLED: 'Annulée' } as Record<string, string>)[value] ?? value;
+}
+
+function statusClass(value: string) {
+  if (value === 'ACCEPTED') return 'active';
+  if (value === 'SENT' || value === 'DRAFT') return 'draft';
+  if (value === 'REFUSED' || value === 'CANCELLED') return 'rejected';
+  return '';
 }
