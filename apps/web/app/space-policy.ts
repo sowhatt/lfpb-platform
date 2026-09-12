@@ -23,6 +23,7 @@ export function navigationForSpace(space: Space): string[] {
     'Licences',
     'Retours FBF',
     'Officiels',
+    'Désignations',
     'Rencontres',
   ];
 }
