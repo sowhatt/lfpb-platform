@@ -81,6 +81,16 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+function preferredAudioMimeType(): string {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4;codecs=mp4a.40.2',
+    'audio/mp4',
+  ];
+  return candidates.find((value) => MediaRecorder.isTypeSupported(value)) ?? '';
+}
+
 async function apiRequest<T>(path: string, token: string, body: unknown): Promise<T> {
   const response = await fetch(`${API}${path}`, {
     method: 'POST',
@@ -145,61 +155,98 @@ export function OfficialVoiceAssistant({ token }: { token: string }) {
         if (queueId) await deleteQueuedVoice(queueId);
         setMessage('Transcription navigateur utilisée. Vérifiez-la attentivement avant confirmation.');
         return 'synced';
-      } else {
-        const id = queueId ?? crypto.randomUUID();
-        await queueVoice({ id, audioDataUrl, browserTranscript: '', createdAt: new Date().toISOString() });
-        setMessage(reason instanceof Error ? `${reason.message}. L’audio reste dans la file locale.` : 'Transcription indisponible.');
-        return 'retained';
       }
+
+      const id = queueId ?? crypto.randomUUID();
+      await queueVoice({ id, audioDataUrl, browserTranscript: '', createdAt: new Date().toISOString() });
+      setMessage(reason instanceof Error ? `${reason.message}. L’audio reste dans la file locale.` : 'Transcription indisponible.');
+      return 'retained';
     } finally {
       await refreshQueue();
     }
   }
 
   async function startRecording() {
-    setDraft(null); setTranscript(''); setMessage('Écoute en cours…'); browserTranscript.current = '';
+    setDraft(null);
+    setTranscript('');
+    setMessage('Écoute en cours…');
+    browserTranscript.current = '';
+
     try {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+        throw new Error('Le microphone n’est pas disponible dans ce navigateur');
+      }
+
       stream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      const mimeType = preferredAudioMimeType();
       const mediaRecorder = new MediaRecorder(stream.current, mimeType ? { mimeType } : undefined);
-      recorder.current = mediaRecorder; chunks.current = [];
-      mediaRecorder.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data); };
+      recorder.current = mediaRecorder;
+      chunks.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size) chunks.current.push(event.data);
+      };
       mediaRecorder.onstop = async () => {
         setBusy(true);
         try {
-          const blob = new Blob(chunks.current, { type: mediaRecorder.mimeType || 'audio/webm' });
+          const actualMimeType = mediaRecorder.mimeType || chunks.current[0]?.type || mimeType || 'audio/mp4';
+          const blob = new Blob(chunks.current, { type: actualMimeType });
           if (blob.size > 5_000_000) throw new Error('La dictée dépasse 5 Mo. Faites un enregistrement plus court.');
           await processAudio(await blobToDataUrl(blob), browserTranscript.current);
-        } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Traitement de la dictée impossible'); }
-        finally { setBusy(false); stream.current?.getTracks().forEach((track) => track.stop()); }
+        } catch (reason) {
+          setMessage(reason instanceof Error ? reason.message : 'Traitement de la dictée impossible');
+        } finally {
+          setBusy(false);
+          stream.current?.getTracks().forEach((track) => track.stop());
+          stream.current = null;
+        }
       };
 
-      const speechWindow = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
+      const speechWindow = window as unknown as {
+        SpeechRecognition?: new () => Recognition;
+        webkitSpeechRecognition?: new () => Recognition;
+      };
       const RecognitionClass = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
       if (RecognitionClass) {
         const speechRecognition = new RecognitionClass();
-        speechRecognition.lang = 'fr-FR'; speechRecognition.interimResults = false; speechRecognition.continuous = true;
+        speechRecognition.lang = 'fr-FR';
+        speechRecognition.interimResults = true;
+        speechRecognition.continuous = true;
         speechRecognition.onresult = (event) => {
-          browserTranscript.current = Array.from(event.results).map((result) => result[0].transcript).join(' ');
+          browserTranscript.current = Array.from(event.results)
+            .map((result) => result[0].transcript)
+            .join(' ')
+            .trim();
           setTranscript(browserTranscript.current);
         };
         recognition.current = speechRecognition;
         try { speechRecognition.start(); } catch { recognition.current = null; }
       }
-      mediaRecorder.start(500); setRecording(true);
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Autorisation du microphone refusée'); }
+
+      mediaRecorder.start(500);
+      setRecording(true);
+    } catch (reason) {
+      stream.current?.getTracks().forEach((track) => track.stop());
+      stream.current = null;
+      setRecording(false);
+      setMessage(reason instanceof Error ? reason.message : 'Autorisation du microphone refusée');
+    }
   }
 
   function stopRecording() {
-    recognition.current?.stop(); recognition.current = null;
-    recorder.current?.stop(); recorder.current = null; setRecording(false);
+    recognition.current?.stop();
+    recognition.current = null;
+    if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop();
+    recorder.current = null;
+    setRecording(false);
   }
 
   async function syncQueue() {
     if (!navigator.onLine || busy) return;
     const items = await queuedVoices();
     if (!items.length) return;
-    setBusy(true); setMessage(`Synchronisation de ${items.length} dictée(s)…`);
+    setBusy(true);
+    setMessage(`Synchronisation de ${items.length} dictée(s)…`);
     try {
       let synced = 0;
       for (const item of items) {
@@ -207,21 +254,32 @@ export function OfficialVoiceAssistant({ token }: { token: string }) {
         if (outcome === 'synced') synced += 1;
       }
       setMessage(voiceSyncSummary(items.length, synced));
-    } finally { setBusy(false); await refreshQueue(); }
+    } finally {
+      setBusy(false);
+      await refreshQueue();
+    }
   }
 
   function confirmDraft() {
     if (!draft) return;
     setMessage('Brouillon confirmé localement. Il sera rattaché à la feuille de match lorsque le module officiel sera activé.');
-    setDraft(null); setTranscript('');
+    setDraft(null);
+    setTranscript('');
   }
 
   return <section className="voice-assistant">
     <div className="voice-heading"><div><label>ASSISTANT TERRAIN</label><h2>Dictée vocale</h2><p>La voix prépare un brouillon. L’officiel conserve toujours la décision finale.</p></div><span className={online ? 'network-online' : 'network-offline'}>{online ? 'En ligne' : 'Hors ligne'}</span></div>
-    <div className="voice-grid"><div className="recorder-card"><button className={recording ? 'mic recording' : 'mic'} onClick={recording ? stopRecording : startRecording} disabled={busy}>{recording ? '■' : '●'}</button><strong>{recording ? 'Appuyez pour arrêter' : busy ? 'Traitement…' : 'Appuyez pour dicter'}</strong><small>But, carton, remplacement, incident ou observation</small><p>{message}</p>{pending > 0 && <button className="sync-button" onClick={() => void syncQueue()} disabled={!online || busy}>Synchroniser {pending} dictée(s)</button>}</div>
+    <div className="voice-grid"><div className="recorder-card"><button className={recording ? 'mic recording' : 'mic'} onClick={recording ? stopRecording : startRecording} disabled={busy} aria-label={recording ? 'Arrêter la dictée' : 'Démarrer la dictée'} title={recording ? 'Arrêter la dictée' : 'Démarrer la dictée'}>{recording ? '■' : <MicrophoneIcon />}</button><strong>{recording ? 'Appuyez pour arrêter' : busy ? 'Traitement…' : 'Appuyez pour dicter'}</strong><small>But, carton, remplacement, incident ou observation</small><p>{message}</p>{pending > 0 && <button className="sync-button" onClick={() => void syncQueue()} disabled={!online || busy}>Synchroniser {pending} dictée(s)</button>}</div>
       <div className="transcript-card"><label>TRANSCRIPTION MODIFIABLE</label><textarea value={transcript} onChange={(event) => { setTranscript(event.target.value); setDraft(null); }} placeholder="La transcription apparaîtra ici. Vous pouvez aussi saisir ou corriger le texte." rows={5} /><button onClick={() => void interpret(transcript)} disabled={busy || !transcript.trim()}>Analyser le texte</button></div></div>
     {draft && <div className="voice-draft"><div><label>ÉVÉNEMENT PROPOSÉ</label><h3>{voiceTypeLabel(draft.type)}</h3></div><dl><div><dt>Minute</dt><dd>{draft.minute ?? 'À préciser'}</dd></div><div><dt>Joueur</dt><dd>{draft.playerNumber ? `N° ${draft.playerNumber}` : 'À sélectionner'}</dd></div>{draft.replacementPlayerNumber && <div><dt>Second joueur</dt><dd>N° {draft.replacementPlayerNumber}</dd></div>}<div><dt>Confiance</dt><dd>{Math.round(draft.confidence * 100)} %</dd></div></dl><p>« {draft.transcript} »</p><div className="draft-warning">Confirmation humaine obligatoire : vérifiez le joueur, la minute et la nature de l’événement.</div><button onClick={confirmDraft}>Confirmer le brouillon</button></div>}
   </section>;
+}
+
+function MicrophoneIcon() {
+  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="2" />
+    <path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M9 21h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>;
 }
 
 function voiceTypeLabel(value: string) {
