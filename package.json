@@ -8,7 +8,7 @@
     "build": "turbo build",
     "build:api": "pnpm --filter @lfpb/api build",
     "build:web": "pnpm --filter @lfpb/web build",
-    "start:api": "pnpm --filter @lfpb/api start",
+    "start:api": "pnpm --filter @lfpb/api db:deploy && pnpm --filter @lfpb/api start",
     "start:web": "pnpm --filter @lfpb/web start",
     "db:deploy": "pnpm --filter @lfpb/api db:deploy",
     "lint": "turbo lint",
