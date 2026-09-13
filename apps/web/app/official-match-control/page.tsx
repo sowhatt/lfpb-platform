@@ -9,34 +9,104 @@ type Actor = {
   memberships: Array<{ organizationId: string; role: string }>;
 };
 
+type JwtPayload = { exp?: number };
+
+function tokenIsExpired(token: string) {
+  try {
+    const payloadPart = token.split('.')[1];
+    if (!payloadPart) return false;
+    const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    const payload = JSON.parse(atob(padded)) as JwtPayload;
+    return typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function goHome() {
+  sessionStorage.removeItem('lfpb-token');
+  sessionStorage.removeItem('lfpb-actor');
+  window.location.assign('/');
+}
+
+function SessionScreen({ title, message }: { title: string; message: string }) {
+  return (
+    <main style={{ maxWidth: 760, margin: '72px auto', padding: 24 }}>
+      <section className="data-panel" style={{ textAlign: 'center', padding: 40 }}>
+        <label>PORTAIL OFFICIEL</label>
+        <h1 style={{ marginTop: 10 }}>{title}</h1>
+        <p style={{ margin: '12px auto 24px', maxWidth: 520 }}>{message}</p>
+        <button type="button" onClick={goHome} style={{ minWidth: 220 }}>
+          ← Retour à l’accueil
+        </button>
+      </section>
+    </main>
+  );
+}
+
 export default function OfficialMatchControlPage() {
+  const [ready, setReady] = useState(false);
   const [token, setToken] = useState('');
   const [actor, setActor] = useState<Actor | null>(null);
   const [matchId, setMatchId] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
-    setToken(sessionStorage.getItem('lfpb-token') ?? '');
+    const savedToken = sessionStorage.getItem('lfpb-token') ?? '';
     const raw = sessionStorage.getItem('lfpb-actor');
-    if (raw) {
-      try { setActor(JSON.parse(raw) as Actor); } catch { setActor(null); }
-    }
     const params = new URLSearchParams(window.location.search);
+
+    setToken(savedToken);
     setMatchId(params.get('matchId') ?? '');
+    setSessionExpired(Boolean(savedToken) && tokenIsExpired(savedToken));
+
+    if (raw) {
+      try {
+        setActor(JSON.parse(raw) as Actor);
+      } catch {
+        setActor(null);
+      }
+    }
+    setReady(true);
   }, []);
 
-  const role = actor?.memberships?.[0]?.role;
+  if (!ready) {
+    return <main style={{ maxWidth: 760, margin: '72px auto', padding: 24 }}><section className="data-panel"><p>Chargement du portail officiel…</p></section></main>;
+  }
+
+  if (sessionExpired) {
+    return <SessionScreen title="Session expirée" message="Votre session de sécurité est arrivée à expiration. Revenez à l’accueil pour vous reconnecter avant de reprendre le match." />;
+  }
+
+  const role = actor?.memberships?.find((membership) => membership.role === 'OFFICIEL')?.role;
 
   if (!token || !actor) {
-    return <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}><section className="data-panel"><h1>Match connecté</h1><p>Connectez-vous d’abord à la plateforme LFPB.</p><a href="/">Retour à la connexion</a></section></main>;
+    return <SessionScreen title="Connexion requise" message="Connectez-vous à votre espace officiel pour accéder au match connecté." />;
   }
 
   if (role !== 'OFFICIEL') {
-    return <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}><section className="data-panel"><h1>Match connecté</h1><p>Cette vue est réservée aux officiels.</p><a href="/">Retour au tableau de bord</a></section></main>;
+    return <SessionScreen title="Accès réservé" message="Cette vue est réservée aux officiels désignés sur une rencontre." />;
   }
 
   if (!matchId) {
-    return <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}><section className="data-panel"><h1>Match connecté</h1><p>Choisissez une rencontre depuis « Mes rencontres » pour lancer le contrôle des joueurs.</p><a href="/">Retour au portail officiel</a></section></main>;
+    return <SessionScreen title="Aucune rencontre sélectionnée" message="Revenez à l’accueil, puis ouvrez « Mes rencontres » pour sélectionner une mission acceptée." />;
   }
 
-  return <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}><div className="workspace-actions"><div><label>PORTAIL OFFICIEL</label><h1>Match connecté</h1><p>{actor.email}</p></div><a href="/">← Retour au portail</a></div><OfficialLiveMatchControl token={token} matchId={matchId} /><OfficialMatchPlayerControl token={token} matchId={matchId} /></main>;
+  return (
+    <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}>
+      <div className="workspace-actions">
+        <div>
+          <label>PORTAIL OFFICIEL</label>
+          <h1>Match connecté</h1>
+          <p>{actor.email}</p>
+        </div>
+        <button type="button" onClick={() => window.location.assign('/')}>
+          ← Retour à l’accueil
+        </button>
+      </div>
+      <OfficialLiveMatchControl token={token} matchId={matchId} />
+      <OfficialMatchPlayerControl token={token} matchId={matchId} />
+    </main>
+  );
 }
