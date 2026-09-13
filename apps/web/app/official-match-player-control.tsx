@@ -133,7 +133,7 @@ export function OfficialMatchPlayerControl({ token, matchId }: { token: string; 
     <section className="data-panel">
       <div className="workspace-actions">
         <div>
-          <label>CONNECTED MATCH · CONTRÔLE IDENTITÉ</label>
+          <label>MATCH CONNECTÉ · CONTRÔLE D’IDENTITÉ</label>
           <h2>Vérifier un joueur du match</h2>
           <p>Recherche limitée aux deux équipes de la rencontre assignée à l’officiel.</p>
         </div>
