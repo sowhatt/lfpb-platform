@@ -544,16 +544,16 @@ export class MatchSheetsService {
         throw new ForbiddenException('Profil officiel introuvable');
       }
 
-      const assignment = await this.prisma.matchOfficialAssignment.findUnique({
+      const assignment = await this.prisma.matchOfficialAssignment.findFirst({
         where: {
-          matchId_officialProfileId: {
-            matchId,
-            officialProfileId: officialProfile.registrationId,
-          },
+          matchId,
+          officialProfileId: officialProfile.registrationId,
+          status: MatchOfficialAssignmentStatus.ACCEPTED,
         },
+        orderBy: { updatedAt: 'desc' },
       });
 
-      if (!assignment || assignment.status !== MatchOfficialAssignmentStatus.ACCEPTED) {
+      if (!assignment) {
         throw new ForbiddenException('Cet officiel n’est pas affecté et confirmé sur cette rencontre');
       }
     }
