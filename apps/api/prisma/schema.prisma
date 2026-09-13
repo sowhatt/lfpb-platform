@@ -51,7 +51,7 @@ enum RegistrationStatus {
 enum PlayerPosition {
   GOALKEEPER
   DEFENDER
-  MILIEU
+  MIDFIELDER
   FORWARD
 }
 
