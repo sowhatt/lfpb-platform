@@ -76,6 +76,21 @@ const eventLabels: Record<string, string> = {
   MATCH_END: 'Fin du match',
 };
 
+const sheetStatusLabels: Record<string, string> = {
+  DRAFT: 'Brouillon',
+  SUBMITTED: 'Soumise',
+  LOCKED: 'Verrouillée',
+};
+
+const matchStatusLabels: Record<string, string> = {
+  DRAFT: 'Brouillon',
+  SCHEDULED: 'Programmé',
+  POSTPONED: 'Reporté',
+  IN_PROGRESS: 'En cours',
+  COMPLETED: 'Terminé',
+  CANCELLED: 'Annulé',
+};
+
 export function OfficialLiveMatchControl({ token, matchId }: { token: string; matchId: string }) {
   const [sheet, setSheet] = useState<MatchSheet>(null);
   const [live, setLive] = useState<LiveState | null>(null);
@@ -143,9 +158,9 @@ export function OfficialLiveMatchControl({ token, matchId }: { token: string; ma
     <section className="data-panel" style={{ marginBottom: 20 }}>
       <div className="workspace-actions">
         <div>
-          <label>CONNECTED MATCH · LIVE</label>
+          <label>MATCH CONNECTÉ · EN DIRECT</label>
           <h2>{homeName} {match ? `${match.homeScore} – ${match.awayScore}` : '–'} {awayName}</h2>
-          <p>Feuille : <strong>{sheet?.status ?? '—'}</strong> · Match : <strong>{match?.status ?? '—'}</strong></p>
+          <p>Feuille : <strong>{sheet?.status ? sheetStatusLabels[sheet.status] ?? sheet.status : '—'}</strong> · Match : <strong>{match?.status ? matchStatusLabels[match.status] ?? match.status : '—'}</strong></p>
         </div>
         <button type="button" onClick={() => void refresh()} disabled={Boolean(busy)}>Actualiser</button>
       </div>
@@ -155,12 +170,12 @@ export function OfficialLiveMatchControl({ token, matchId }: { token: string; ma
 
       <div className="workspace-actions" style={{ marginTop: 12, alignItems: 'center' }}>
         {sheet?.status === 'SUBMITTED' && !sheet.validatedAt && (
-          <button type="button" disabled={Boolean(busy)} onClick={() => void action('Validation feuille', () => post(`/matches/${matchId}/sheet/validate`))}>
+          <button type="button" disabled={Boolean(busy)} onClick={() => void action('Validation de la feuille', () => post(`/matches/${matchId}/sheet/validate`))}>
             Valider la feuille
           </button>
         )}
         {sheet?.status === 'SUBMITTED' && sheet.validatedAt && (
-          <button type="button" disabled={Boolean(busy)} onClick={() => void action('Verrouillage feuille', () => post(`/matches/${matchId}/sheet/lock`))}>
+          <button type="button" disabled={Boolean(busy)} onClick={() => void action('Verrouillage de la feuille', () => post(`/matches/${matchId}/sheet/lock`))}>
             🔒 Verrouiller la feuille
           </button>
         )}
@@ -206,7 +221,7 @@ export function OfficialLiveMatchControl({ token, matchId }: { token: string; ma
       )}
 
       <div style={{ marginTop: 18 }}>
-        <h3>Événements live</h3>
+        <h3>Événements en direct</h3>
         {live?.events.length ? (
           <div className="fixtures-list">
             {[...live.events].reverse().map((event) => {
