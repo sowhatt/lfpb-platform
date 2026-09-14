@@ -86,6 +86,11 @@ export class OfficialAssistantService {
     const model = this.config.get<string>('TRANSCRIPTION_LIVE_MODEL')
       ?? 'gpt-live-transcribe';
 
+    // An SDP description is line-oriented and browsers terminate it with CRLF.
+    // Do not trim it: removing the final CRLF can make strict SDP parsers report EOF.
+    const normalizedSdp = sdp.replace(/\r?\n/g, '\r\n');
+    const framedSdp = normalizedSdp.endsWith('\r\n') ? normalizedSdp : `${normalizedSdp}\r\n`;
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -111,7 +116,7 @@ export class OfficialAssistantService {
         },
         transport: {
           type: 'webrtc',
-          sdp,
+          sdp: framedSdp,
         },
       }),
     });
@@ -144,7 +149,8 @@ export class OfficialAssistantService {
 
   async transcribe(input: TranscribeAudioDto): Promise<{ text: string } | { sessionId: string; sdp: string }> {
     if (input.sdp?.trim()) {
-      return this.createLiveSession(input.sdp.trim());
+      // Preserve the browser SDP byte framing; trim is only used above as an emptiness check.
+      return this.createLiveSession(input.sdp);
     }
 
     if (!input.audioDataUrl) {
