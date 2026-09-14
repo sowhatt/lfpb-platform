@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ClubAiAssistant } from './club-ai-assistant';
+import { ClubMatchSignaturesWorkspace } from './club-match-signatures-workspace';
 import { OfficialMissionsWorkspace } from './official-missions-workspace';
 
 type Actor = {
@@ -40,8 +41,7 @@ export function DashboardEnhancer() {
       const main = document.querySelector('main');
       if (!main) return;
 
-      let enhancementHost =
-        main.querySelector<HTMLElement>('[data-dashboard-enhancement-host]');
+      let enhancementHost = main.querySelector<HTMLElement>('[data-dashboard-enhancement-host]');
 
       if (!enhancementHost) {
         enhancementHost = document.createElement('div');
@@ -59,9 +59,7 @@ export function DashboardEnhancer() {
 
       const readActive = () => {
         syncSession();
-        setActive(
-          main.querySelector('header h1')?.textContent?.trim() ?? ''
-        );
+        setActive(main.querySelector('header h1')?.textContent?.trim() ?? '');
       };
 
       readActive();
@@ -77,7 +75,6 @@ export function DashboardEnhancer() {
     };
 
     attachDashboard();
-
     const timer = window.setInterval(attachDashboard, 300);
 
     return () => {
@@ -87,7 +84,7 @@ export function DashboardEnhancer() {
   }, []);
 
   const membership = actor?.memberships?.[0];
-  const enhanced = active === 'Assistant IA' || active === 'Mes rencontres';
+  const enhanced = active === 'Assistant IA' || active === 'Mes rencontres' || active === 'Feuilles de match';
 
   useEffect(() => {
     if (membership?.role !== 'LIGUE_ADMIN') return;
@@ -115,9 +112,7 @@ export function DashboardEnhancer() {
         }
         element.style.display = 'none';
       } else if (element.dataset.dashboardOriginalDisplay) {
-        element.style.display = element.dataset.dashboardOriginalDisplay === '__empty__'
-          ? ''
-          : element.dataset.dashboardOriginalDisplay;
+        element.style.display = element.dataset.dashboardOriginalDisplay === '__empty__' ? '' : element.dataset.dashboardOriginalDisplay;
         delete element.dataset.dashboardOriginalDisplay;
       }
     }
@@ -125,9 +120,7 @@ export function DashboardEnhancer() {
     return () => {
       for (const element of candidates) {
         if (element.dataset.dashboardOriginalDisplay) {
-          element.style.display = element.dataset.dashboardOriginalDisplay === '__empty__'
-            ? ''
-            : element.dataset.dashboardOriginalDisplay;
+          element.style.display = element.dataset.dashboardOriginalDisplay === '__empty__' ? '' : element.dataset.dashboardOriginalDisplay;
           delete element.dataset.dashboardOriginalDisplay;
         }
       }
@@ -138,6 +131,9 @@ export function DashboardEnhancer() {
     if (!token || !membership) return null;
     if (active === 'Assistant IA' && membership.role === 'CLUB_ADMIN') {
       return <ClubAiAssistant token={token} organizationId={membership.organizationId} />;
+    }
+    if (active === 'Feuilles de match' && membership.role === 'CLUB_ADMIN') {
+      return <ClubMatchSignaturesWorkspace token={token} membership={membership} />;
     }
     if (active === 'Mes rencontres' && membership.role === 'OFFICIEL') {
       return <OfficialMissionsWorkspace token={token} />;
