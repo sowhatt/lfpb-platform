@@ -183,7 +183,7 @@ export class OfficialAssistantService {
       new Blob([bytes], { type: audioType.mimeType }),
       `dictee.${audioType.extension}`,
     );
-    form.append('model', this.config.get<string>('TRANSCRIPTION_MODEL') ?? 'gpt-transcribe');
+    form.append('model', this.config.get<string>('TRANSCRIPTION_FILE_MODEL') ?? 'gpt-transcribe');
     form.append('language', input.language);
 
     const context = input.context?.trim();
