@@ -142,7 +142,15 @@ export class OfficialAssistantService {
     };
   }
 
-  async transcribe(input: TranscribeAudioDto): Promise<{ text: string }> {
+  async transcribe(input: TranscribeAudioDto): Promise<{ text: string } | { sessionId: string; sdp: string }> {
+    if (input.sdp?.trim()) {
+      return this.createLiveSession(input.sdp.trim());
+    }
+
+    if (!input.audioDataUrl) {
+      throw new BadRequestException('Un enregistrement audio ou une offre SDP est requis');
+    }
+
     const apiKey = this.config.get<string>('TRANSCRIPTION_API_KEY');
     const endpoint = this.config.get<string>('TRANSCRIPTION_API_URL');
     if (!apiKey || !endpoint) {
