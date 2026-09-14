@@ -46,11 +46,11 @@ export class OfficialMatchPlayerAccessService {
         season: context.competition.season.name,
         competition: context.competition.name,
         homeClub: {
-          id: context.homeClub.id,
+          id: context.homeClub.organizationId,
           name: context.homeClub.shortName,
         },
         awayClub: {
-          id: context.awayClub.id,
+          id: context.awayClub.organizationId,
           name: context.awayClub.shortName,
         },
       },
