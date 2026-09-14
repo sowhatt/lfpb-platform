@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { OfficialLiveMatchControl } from '../official-live-match-control';
-import { OfficialMatchPlayerControl } from '../official-match-player-control';
+import { OfficialMatchPlayerControlGpt } from '../official-match-player-control-gpt';
 
 type Actor = {
   email: string;
@@ -106,7 +106,7 @@ export default function OfficialMatchControlPage() {
         </button>
       </div>
       <OfficialLiveMatchControl token={token} matchId={matchId} />
-      <OfficialMatchPlayerControl token={token} matchId={matchId} />
+      <OfficialMatchPlayerControlGpt token={token} matchId={matchId} />
     </main>
   );
 }
