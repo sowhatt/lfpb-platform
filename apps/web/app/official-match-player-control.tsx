@@ -129,9 +129,9 @@ export function OfficialMatchPlayerControl({ token, matchId }: { token: string; 
 
   const teamPlayers = useMemo(
     () => players
-      .filter((player) => player.club.organizationId === teamId)
+      .filter((player) => player.club.organizationId === teamId && Boolean(controls[player.registrationId]))
       .sort((a, b) => (a.shirtNumber ?? 999) - (b.shirtNumber ?? 999)),
-    [players, teamId],
+    [players, teamId, controls],
   );
   const verifiedCount = teamPlayers.filter((player) => controls[player.registrationId]?.status === 'VERIFIED').length;
   const anomalyCount = teamPlayers.filter((player) => controls[player.registrationId]?.status === 'ANOMALY').length;
@@ -142,6 +142,9 @@ export function OfficialMatchPlayerControl({ token, matchId }: { token: string; 
     setLoading(true); setError(''); setMessage(''); setSelected(null);
     try {
       const response = await apiRequest<ResolveResponse>(`/official-match-access/${encodeURIComponent(matchId)}/players/resolve?q=${encodeURIComponent(value)}`, token);
+      if (response.match && !controls[response.match.registrationId]) {
+        throw new Error('Ce joueur ne figure pas sur la feuille de match soumise.');
+      }
       setResult(response);
       if (response.match) {
         setSelected(response.match);
@@ -239,7 +242,7 @@ export function OfficialMatchPlayerControl({ token, matchId }: { token: string; 
 
     {matchContext && <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
       {[matchContext.homeClub, matchContext.awayClub].map((club) => {
-        const clubPlayers = players.filter((player) => player.club.organizationId === club.id);
+        const clubPlayers = players.filter((player) => player.club.organizationId === club.id && Boolean(controls[player.registrationId]));
         const done = clubPlayers.filter((player) => controls[player.registrationId]?.status === 'VERIFIED').length;
         const anomalies = clubPlayers.filter((player) => controls[player.registrationId]?.status === 'ANOMALY').length;
         return <button key={club.id} type="button" onClick={() => { setTeamId(club.id); setSelected(null); }} style={{ padding: '10px 14px', border: teamId === club.id ? '2px solid #d7af47' : '1px solid #dce3e7', borderRadius: 9, background: teamId === club.id ? '#0b2c48' : '#fff', color: teamId === club.id ? '#fff' : '#203147', fontWeight: 900 }}>
@@ -283,7 +286,7 @@ export function OfficialMatchPlayerControl({ token, matchId }: { token: string; 
           <button type="button" onClick={startVoice} disabled={!speechSupported || listening} style={{ padding: '10px 13px', border: 0, borderRadius: 8, background: '#0d3150', color: '#fff', fontWeight: 900 }}>{listening ? '🎙' : '🎤 Parler'}</button>
         </form>
 
-        {result?.ambiguous && <div style={{ marginTop: 10 }}>{result.alternatives.map((candidate) => <button key={candidate.registrationId} type="button" onClick={() => openPlayer(candidate)} style={{ margin: 4, padding: '8px 10px' }}>{candidate.fullName}</button>)}</div>}
+        {result?.ambiguous && <div style={{ marginTop: 10 }}>{result.alternatives.filter((candidate) => controls[candidate.registrationId]).map((candidate) => <button key={candidate.registrationId} type="button" onClick={() => openPlayer(candidate)} style={{ margin: 4, padding: '8px 10px' }}>{candidate.fullName}</button>)}</div>}
 
         {selected ? <section style={{ display: 'grid', gridTemplateColumns: '150px minmax(0,1fr)', gap: 22, padding: 20, marginTop: 12, border: selectedControl?.status === 'ANOMALY' ? '1px solid #d66b64' : '1px solid #e2e7ea', borderRadius: 14, background: '#fff' }}>
           <div>
