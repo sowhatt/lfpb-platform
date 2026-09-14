@@ -17,12 +17,16 @@ import { RolesGuard } from '../iam/roles.guard';
 import { AddMatchSheetPlayerDto } from './dto/add-match-sheet-player.dto';
 import { ControlMatchSheetPlayerDto } from './dto/control-match-sheet-player.dto';
 import { SubmitMatchSheetDto } from './dto/submit-match-sheet.dto';
+import { MatchSheetPlayerControlsService } from './match-sheet-player-controls.service';
 import { MatchSheetsService } from './match-sheets.service';
 
 @Controller('matches')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class MatchSheetsController {
-  constructor(private readonly matchSheets: MatchSheetsService) {}
+  constructor(
+    private readonly matchSheets: MatchSheetsService,
+    private readonly playerControls: MatchSheetPlayerControlsService,
+  ) {}
 
   @Get(':matchId/eligible-players')
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
@@ -45,11 +49,11 @@ export class MatchSheetsController {
 
   @Get(':matchId/sheet/player-controls')
   @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
-  playerControls(
+  playerControlSummary(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('matchId', ParseUUIDPipe) matchId: string,
   ) {
-    return this.matchSheets.playerControls(actor, matchId);
+    return this.playerControls.list(actor, matchId);
   }
 
   @Post(':matchId/sheet/players')
@@ -70,7 +74,7 @@ export class MatchSheetsController {
     @Param('registrationId', ParseUUIDPipe) registrationId: string,
     @Body() input: ControlMatchSheetPlayerDto,
   ) {
-    return this.matchSheets.controlPlayer(actor, matchId, registrationId, input);
+    return this.playerControls.controlPlayer(actor, matchId, registrationId, input);
   }
 
   @Post(':matchId/sheet/submit')
@@ -94,10 +98,11 @@ export class MatchSheetsController {
 
   @Post(':matchId/sheet/lock')
   @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
-  lock(
+  async lock(
     @CurrentActor() actor: AuthenticatedActor,
     @Param('matchId', ParseUUIDPipe) matchId: string,
   ) {
+    await this.playerControls.assertAllVerified(actor, matchId);
     return this.matchSheets.lockSheet(actor, matchId);
   }
 }
