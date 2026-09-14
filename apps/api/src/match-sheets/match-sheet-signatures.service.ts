@@ -32,6 +32,15 @@ export class MatchSheetSignaturesService {
       matchId,
       sheetId: sheet.id,
       sheetStatus: sheet.status,
+      lockedAt: sheet.lockedAt,
+      homeClub: {
+        organizationId: sheet.match.homeClub.organizationId,
+        name: sheet.match.homeClub.shortName,
+      },
+      awayClub: {
+        organizationId: sheet.match.awayClub.organizationId,
+        name: sheet.match.awayClub.shortName,
+      },
       signatures,
       homeSigned: signatures.some((s) => s.role === MatchSheetSignatureRole.HOME_REPRESENTATIVE),
       awaySigned: signatures.some((s) => s.role === MatchSheetSignatureRole.AWAY_REPRESENTATIVE),
@@ -48,14 +57,10 @@ export class MatchSheetSignaturesService {
       where: { resourceType: 'MatchSheetSignature', resourceId: sheet.id, action: ACTION },
       orderBy: { createdAt: 'asc' },
     });
-    if (existing.some((log) => (log.metadata as SignatureMetadata)?.role === input.role)) {
-      throw new BadRequestException('Cette signature a déjà été enregistrée');
-    }
+    if (existing.some((log) => (log.metadata as SignatureMetadata)?.role === input.role)) throw new BadRequestException('Cette signature a déjà été enregistrée');
     if (input.role === MatchSheetSignatureRole.OFFICIAL) {
       const roles = existing.map((log) => (log.metadata as SignatureMetadata)?.role);
-      if (!roles.includes(MatchSheetSignatureRole.HOME_REPRESENTATIVE) || !roles.includes(MatchSheetSignatureRole.AWAY_REPRESENTATIVE)) {
-        throw new BadRequestException('Les représentants des deux clubs doivent signer avant l’officiel');
-      }
+      if (!roles.includes(MatchSheetSignatureRole.HOME_REPRESENTATIVE) || !roles.includes(MatchSheetSignatureRole.AWAY_REPRESENTATIVE)) throw new BadRequestException('Les représentants des deux clubs doivent signer avant l’officiel');
     }
 
     const fingerprintSource = JSON.stringify({
