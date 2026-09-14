@@ -83,16 +83,14 @@ export class OfficialAssistantService {
 
     const endpoint = this.config.get<string>('TRANSCRIPTION_LIVE_API_URL')
       ?? 'https://api.openai.com/v1/live/sessions';
-    // Live sessions require a Realtime/Live model. The speech-to-text model is
-    // configured as the input transcription model inside that Live session.
     const liveModel = this.config.get<string>('TRANSCRIPTION_LIVE_MODEL')
-      ?? 'gpt-live';
-    const transcriptionModel = this.config.get<string>('TRANSCRIPTION_MODEL')
-      ?? 'gpt-live-transcribe';
+      ?? 'gpt-live-1';
 
     const normalizedSdp = sdp.replace(/\r?\n/g, '\r\n');
     const framedSdp = normalizedSdp.endsWith('\r\n') ? normalizedSdp : `${normalizedSdp}\r\n`;
 
+    // Keep startup config intentionally minimal. WebRTC negotiates audio media
+    // itself, and Live emits session.input_transcript.delta for input speech.
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -104,14 +102,6 @@ export class OfficialAssistantService {
           model: liveModel,
           instructions: 'Transcris fidèlement en français les annonces d’arbitrage football. Préserve les noms de clubs, numéros de maillot et minutes annoncées.',
           store: false,
-          audio: {
-            input: {
-              transcription: {
-                model: transcriptionModel,
-                language: 'fr',
-              },
-            },
-          },
           client: {
             data_channel: {
               allowed_client_events: [],
