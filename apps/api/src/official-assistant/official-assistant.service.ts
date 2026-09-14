@@ -83,11 +83,13 @@ export class OfficialAssistantService {
 
     const endpoint = this.config.get<string>('TRANSCRIPTION_LIVE_API_URL')
       ?? 'https://api.openai.com/v1/live/sessions';
-    const model = this.config.get<string>('TRANSCRIPTION_LIVE_MODEL')
+    // Live sessions require a Realtime/Live model. The speech-to-text model is
+    // configured as the input transcription model inside that Live session.
+    const liveModel = this.config.get<string>('TRANSCRIPTION_LIVE_MODEL')
+      ?? 'gpt-live';
+    const transcriptionModel = this.config.get<string>('TRANSCRIPTION_MODEL')
       ?? 'gpt-live-transcribe';
 
-    // An SDP description is line-oriented and browsers terminate it with CRLF.
-    // Do not trim it: removing the final CRLF can make strict SDP parsers report EOF.
     const normalizedSdp = sdp.replace(/\r?\n/g, '\r\n');
     const framedSdp = normalizedSdp.endsWith('\r\n') ? normalizedSdp : `${normalizedSdp}\r\n`;
 
@@ -99,9 +101,17 @@ export class OfficialAssistantService {
       },
       body: JSON.stringify({
         session: {
-          model,
+          model: liveModel,
           instructions: 'Transcris fidèlement en français les annonces d’arbitrage football. Préserve les noms de clubs, numéros de maillot et minutes annoncées.',
           store: false,
+          audio: {
+            input: {
+              transcription: {
+                model: transcriptionModel,
+                language: 'fr',
+              },
+            },
+          },
           client: {
             data_channel: {
               allowed_client_events: [],
@@ -149,7 +159,6 @@ export class OfficialAssistantService {
 
   async transcribe(input: TranscribeAudioDto): Promise<{ text: string } | { sessionId: string; sdp: string }> {
     if (input.sdp?.trim()) {
-      // Preserve the browser SDP byte framing; trim is only used above as an emptiness check.
       return this.createLiveSession(input.sdp);
     }
 
