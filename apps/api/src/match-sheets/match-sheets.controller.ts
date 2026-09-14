@@ -15,6 +15,7 @@ import { AuthenticatedActor } from '../iam/domain/actor';
 import { Roles } from '../iam/roles.decorator';
 import { RolesGuard } from '../iam/roles.guard';
 import { AddMatchSheetPlayerDto } from './dto/add-match-sheet-player.dto';
+import { ControlMatchSheetPlayerDto } from './dto/control-match-sheet-player.dto';
 import { SubmitMatchSheetDto } from './dto/submit-match-sheet.dto';
 import { MatchSheetsService } from './match-sheets.service';
 
@@ -42,6 +43,15 @@ export class MatchSheetsController {
     return this.matchSheets.getSheet(actor, matchId);
   }
 
+  @Get(':matchId/sheet/player-controls')
+  @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
+  playerControls(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.matchSheets.playerControls(actor, matchId);
+  }
+
   @Post(':matchId/sheet/players')
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   addPlayer(
@@ -50,6 +60,17 @@ export class MatchSheetsController {
     @Body() input: AddMatchSheetPlayerDto,
   ) {
     return this.matchSheets.addPlayer(actor, matchId, input);
+  }
+
+  @Post(':matchId/sheet/players/:registrationId/control')
+  @Roles(Role.OFFICIEL)
+  controlPlayer(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @Body() input: ControlMatchSheetPlayerDto,
+  ) {
+    return this.matchSheets.controlPlayer(actor, matchId, registrationId, input);
   }
 
   @Post(':matchId/sheet/submit')
