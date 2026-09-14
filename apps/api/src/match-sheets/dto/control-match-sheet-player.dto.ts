@@ -18,4 +18,9 @@ export class ControlMatchSheetPlayerDto {
   @IsString()
   @MaxLength(500)
   note?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2_500_000)
+  evidencePhotoDataUrl?: string;
 }
