@@ -75,6 +75,73 @@ export class OfficialAssistantService {
     };
   }
 
+  async createLiveSession(sdp: string) {
+    const apiKey = this.config.get<string>('TRANSCRIPTION_API_KEY');
+    if (!apiKey) {
+      throw new ServiceUnavailableException('Le service de transcription Live n’est pas configuré');
+    }
+
+    const endpoint = this.config.get<string>('TRANSCRIPTION_LIVE_API_URL')
+      ?? 'https://api.openai.com/v1/live/sessions';
+    const model = this.config.get<string>('TRANSCRIPTION_LIVE_MODEL')
+      ?? 'gpt-live-transcribe';
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        session: {
+          model,
+          instructions: 'Transcris fidèlement en français les annonces d’arbitrage football. Préserve les noms de clubs, numéros de maillot et minutes annoncées.',
+          store: false,
+          client: {
+            data_channel: {
+              allowed_client_events: [],
+              allowed_server_events: [
+                { type: 'session.started' },
+                { type: 'session.input_transcript.delta' },
+                { type: 'session.closed' },
+                { type: 'error' },
+              ],
+            },
+          },
+        },
+        transport: {
+          type: 'webrtc',
+          sdp,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new BadGatewayException(
+        detail ? `Session Live indisponible : ${detail.slice(0, 300)}` : 'La session Live est momentanément indisponible',
+      );
+    }
+
+    const payload = await response.json() as {
+      session?: { id?: unknown };
+      transport?: { type?: unknown; sdp?: unknown };
+    };
+
+    if (
+      typeof payload.session?.id !== 'string'
+      || payload.transport?.type !== 'webrtc'
+      || typeof payload.transport?.sdp !== 'string'
+    ) {
+      throw new BadGatewayException('OpenAI a renvoyé une session Live invalide');
+    }
+
+    return {
+      sessionId: payload.session.id,
+      sdp: payload.transport.sdp,
+    };
+  }
+
   async transcribe(input: TranscribeAudioDto): Promise<{ text: string }> {
     const apiKey = this.config.get<string>('TRANSCRIPTION_API_KEY');
     const endpoint = this.config.get<string>('TRANSCRIPTION_API_URL');
