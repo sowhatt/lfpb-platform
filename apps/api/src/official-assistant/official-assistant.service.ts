@@ -89,8 +89,6 @@ export class OfficialAssistantService {
     const normalizedSdp = sdp.replace(/\r?\n/g, '\r\n');
     const framedSdp = normalizedSdp.endsWith('\r\n') ? normalizedSdp : `${normalizedSdp}\r\n`;
 
-    // Keep startup config intentionally minimal. WebRTC negotiates audio media
-    // itself, and Live emits session.input_transcript.delta for input speech.
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -188,12 +186,25 @@ export class OfficialAssistantService {
     form.append('model', this.config.get<string>('TRANSCRIPTION_MODEL') ?? 'gpt-transcribe');
     form.append('language', input.language);
 
+    const context = input.context?.trim();
+    if (context) {
+      form.append(
+        'prompt',
+        `Contexte football. Préserve exactement si possible les noms propres suivants : ${context.slice(0, 3500)}`,
+      );
+    }
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
     });
-    if (!response.ok) throw new BadGatewayException('La transcription est momentanément indisponible');
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new BadGatewayException(
+        detail ? `La transcription est momentanément indisponible : ${detail.slice(0, 240)}` : 'La transcription est momentanément indisponible',
+      );
+    }
 
     const payload = await response.json() as { text?: unknown };
     if (typeof payload.text !== 'string' || !payload.text.trim()) {
