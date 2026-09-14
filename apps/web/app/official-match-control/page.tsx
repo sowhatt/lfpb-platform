@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MatchSheetSignaturesPanel } from '../match-sheet-signatures-panel';
 import { OfficialLiveMatchControl } from '../official-live-match-control';
 import { OfficialMatchPlayerControlGpt } from '../official-match-player-control-gpt';
 import { OfficialPreMatchGate } from '../official-pre-match-gate';
@@ -109,6 +110,7 @@ export default function OfficialMatchControlPage() {
       <OfficialLiveMatchControl token={token} matchId={matchId} />
       <OfficialPreMatchGate token={token} matchId={matchId} />
       <OfficialMatchPlayerControlGpt token={token} matchId={matchId} />
+      <MatchSheetSignaturesPanel token={token} matchId={matchId} memberships={actor.memberships} />
     </main>
   );
 }
