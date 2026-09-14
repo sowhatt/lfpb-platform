@@ -1,6 +1,7 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { OfficialLiveTranscriber } from './official-live-transcriber';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -99,21 +100,6 @@ function teamTokens(name: string) {
   return normalize(name).split(/[^a-z0-9]+/).filter((token) => token.length >= 4 && !ignored.has(token));
 }
 
-function preferredAudioMimeType() {
-  if (typeof MediaRecorder === 'undefined') return undefined;
-  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mp4;codecs=mp4a.40.2'];
-  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate));
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('Lecture de l’enregistrement impossible'));
-    reader.readAsDataURL(blob);
-  });
-}
-
 export function OfficialLiveMatchControl({ token, matchId }: { token: string; matchId: string }) {
   const [sheet, setSheet] = useState<MatchSheet>(null);
   const [live, setLive] = useState<LiveState | null>(null);
@@ -123,10 +109,6 @@ export function OfficialLiveMatchControl({ token, matchId }: { token: string; ma
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [recording, setRecording] = useState(false);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
 
   const playersById = useMemo(() => {
     const map = new Map<string, SheetPlayer>();
@@ -145,9 +127,6 @@ export function OfficialLiveMatchControl({ token, matchId }: { token: string; ma
 
   useEffect(() => {
     void refresh().catch((reason) => setError(reason instanceof Error ? reason.message : 'Chargement impossible'));
-    return () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-    };
   }, [matchId, token]);
 
   async function action(label: string, fn: () => Promise<unknown>) {
@@ -233,68 +212,6 @@ export function OfficialLiveMatchControl({ token, matchId }: { token: string; ma
     await analyzeText(command);
   }
 
-  async function processRecording(blob: Blob) {
-    setBusy('Transcription'); setError(''); setMessage('');
-    try {
-      const audioDataUrl = await blobToDataUrl(blob);
-      const response = await post('/official-assistant/transcriptions', {
-        audioDataUrl,
-        language: 'fr',
-      }) as { text: string };
-      setCommand(response.text);
-      await analyzeText(response.text);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Transcription impossible');
-    } finally {
-      setBusy('');
-    }
-  }
-
-  async function toggleRecording() {
-    if (recording) {
-      recorderRef.current?.stop();
-      return;
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      setError('Le micro n’est pas disponible sur ce navigateur.');
-      return;
-    }
-
-    try {
-      setError(''); setMessage(''); setDraft(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      chunksRef.current = [];
-      const mimeType = preferredAudioMimeType();
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-      recorderRef.current = recorder;
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunksRef.current.push(event.data);
-      };
-      recorder.onstop = () => {
-        const actualType = recorder.mimeType || chunksRef.current[0]?.type || 'audio/webm';
-        const blob = new Blob(chunksRef.current, { type: actualType });
-        stream.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-        recorderRef.current = null;
-        setRecording(false);
-        if (blob.size > 0) void processRecording(blob);
-      };
-      recorder.onerror = () => {
-        stream.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-        recorderRef.current = null;
-        setRecording(false);
-        setError('Enregistrement vocal interrompu.');
-      };
-      recorder.start();
-      setRecording(true);
-    } catch {
-      setError('Autorisez l’accès au microphone pour dicter un événement.');
-    }
-  }
-
   async function confirmDraft() {
     if (!draft) return;
     const payload: Record<string, unknown> = { minute: draft.minute };
@@ -351,15 +268,25 @@ export function OfficialLiveMatchControl({ token, matchId }: { token: string; ma
       <div className="workspace-actions" style={{ marginTop: 20, display: 'block' }}>
         <label>ASSISTANT ARBITRE · CONTEXTE DE LA RENCONTRE</label>
         <h3>Préparer un événement</h3>
-        <p>Exemple : « Carton rouge numéro 8 Dragons à la 67e minute ».</p>
+        <p>Dictez en direct ou saisissez l’événement. Exemple : « Carton rouge numéro 8 Dragons à la 67e minute ».</p>
         <form onSubmit={analyzeCommand} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-          <input value={command} onChange={(event) => setCommand(event.target.value)} placeholder="Dictez ou saisissez l’événement…" style={{ flex: '1 1 420px' }} />
-          <button type="button" onClick={() => void toggleRecording()} disabled={Boolean(busy) && busy !== 'Transcription'}>
-            {recording ? '■ Arrêter' : '🎤 Parler'}
-          </button>
+          <input value={command} onChange={(event) => setCommand(event.target.value)} placeholder="La transcription Live apparaît ici…" style={{ flex: '1 1 420px' }} />
+          <OfficialLiveTranscriber
+            token={token}
+            disabled={Boolean(busy)}
+            onDelta={(text) => {
+              setError('');
+              setDraft(null);
+              setCommand(text);
+            }}
+            onFinal={async (text) => {
+              setCommand(text);
+              await analyzeText(text);
+            }}
+            onError={(liveError) => setError(liveError)}
+          />
           <button type="submit" disabled={Boolean(busy) || !command.trim()}>{busy === 'Analyse' ? 'Analyse…' : 'Analyser'}</button>
         </form>
-        {busy === 'Transcription' && <p style={{ marginTop: 8 }}>Transcription de la dictée…</p>}
         {draft && <div className="draft-warning" style={{ marginTop: 14 }}>
           <strong>À confirmer : {eventLabels[draft.type]}</strong>
           <div style={{ marginTop: 6 }}>
