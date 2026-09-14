@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { OfficialLiveMatchControl } from '../official-live-match-control';
 import { OfficialMatchPlayerControlGpt } from '../official-match-player-control-gpt';
+import { OfficialPreMatchGate } from '../official-pre-match-gate';
 
 type Actor = {
   email: string;
@@ -106,6 +107,7 @@ export default function OfficialMatchControlPage() {
         </button>
       </div>
       <OfficialLiveMatchControl token={token} matchId={matchId} />
+      <OfficialPreMatchGate token={token} matchId={matchId} />
       <OfficialMatchPlayerControlGpt token={token} matchId={matchId} />
     </main>
   );
