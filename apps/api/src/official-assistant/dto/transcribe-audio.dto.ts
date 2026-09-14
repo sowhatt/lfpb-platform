@@ -12,6 +12,11 @@ export class TranscribeAudioDto {
   sdp?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(4_000)
+  context?: string;
+
+  @IsOptional()
   @IsIn(['fr', 'en'])
   language: 'fr' | 'en' = 'fr';
 }
