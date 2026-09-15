@@ -19,20 +19,19 @@ function frenchNumber(raw: string): number | undefined {
   const text = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/-/g, ' ').replace(/\bet\b/g, ' ').replace(/\s+/g, ' ').trim();
   if (/^\d{1,3}$/.test(text)) return Number(text);
   if (FR_UNITS[text] !== undefined) return FR_UNITS[text];
-  const tokens = text.split(' ');
-  let total = 0; let current = 0;
-  for (const token of tokens) {
-    if (FR_UNITS[token] !== undefined) current += FR_UNITS[token];
-    else if (token === 'vingt') current += 20;
-    else if (token === 'trente') current += 30;
-    else if (token === 'quarante') current += 40;
-    else if (token === 'cinquante') current += 50;
-    else if (token === 'soixante') current += 60;
-    else if (token === 'cent') { current = Math.max(1, current) * 100; }
-    else if (token === 'quatre' && tokens.includes('vingt')) continue;
-    else return undefined;
+  const tokens = text.split(' ').filter(Boolean);
+  let total = 0;
+  for (let index = 0; index < tokens.length;) {
+    const token = tokens[index];
+    const next = tokens[index + 1];
+    if (token === 'quatre' && next === 'vingt') { total += 80; index += 2; continue; }
+    if (token === 'soixante' && next && FR_UNITS[next] !== undefined && FR_UNITS[next] >= 10) { total += 60 + FR_UNITS[next]; index += 2; continue; }
+    if (FR_UNITS[token] !== undefined) { total += FR_UNITS[token]; index += 1; continue; }
+    const tens: Record<string, number> = { vingt: 20, trente: 30, quarante: 40, cinquante: 50, soixante: 60 };
+    if (tens[token] !== undefined) { total += tens[token]; index += 1; continue; }
+    if (token === 'cent') { total = Math.max(1, total) * 100; index += 1; continue; }
+    return undefined;
   }
-  total += current;
   return total || undefined;
 }
 function extractMinute(normalized: string): number | undefined {
