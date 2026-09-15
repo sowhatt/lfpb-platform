@@ -5,6 +5,20 @@ import { MatchSheetSignaturesPanel } from './match-sheet-signatures-panel';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
+const MATCH_STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: 'Programmé',
+  IN_PROGRESS: 'En cours',
+  COMPLETED: 'Terminé',
+  CANCELLED: 'Annulé',
+  POSTPONED: 'Reporté',
+  SUSPENDED: 'Suspendu',
+  ABANDONED: 'Abandonné',
+};
+
+function matchStatusLabel(status: string) {
+  return MATCH_STATUS_LABELS[status] ?? status.replaceAll('_', ' ').toLowerCase();
+}
+
 type Membership = { organizationId: string; role: string };
 type Organization = { id: string; club?: { id: string; shortName: string } | null };
 type Competition = { id: string; name: string; code: string };
@@ -101,7 +115,7 @@ export function ClubMatchSignaturesWorkspace({ token, membership }: Props) {
               >
                 <strong>{match.homeClub.shortName} — {match.awayClub.shortName}</strong>
                 <div style={{ marginTop: 4, opacity: .75 }}>
-                  {match.kickoffAt ? new Date(match.kickoffAt).toLocaleString('fr-FR') : 'Horaire à définir'} · {match.status}
+                  {match.kickoffAt ? new Date(match.kickoffAt).toLocaleString('fr-FR') : 'Horaire à définir'} · {matchStatusLabel(match.status)}
                 </div>
               </button>
             ))}
