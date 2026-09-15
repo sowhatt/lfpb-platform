@@ -16,6 +16,16 @@ describe('OfficialAssistantService', () => {
     });
   });
 
+  it.each([
+    ['Carton jaune numéro 5 Dragons à la quatre-vingtième minute', 80],
+    ['Carton jaune numéro 5 Dragons à la quatre-vingt-dixième minute', 90],
+    ['Carton jaune numéro 5 Dragons à la quatre-vingt-neuvième minute', 89],
+    ['Carton rouge numéro 10 Aziza à la soixante-quinzième minute', 75],
+    ['But numéro 8 Dragons à la soixante-dixième minute', 70],
+  ])('interprète correctement la minute parlée: %s', (transcript, minute) => {
+    expect(service.interpret(transcript)).toMatchObject({ minute });
+  });
+
   it('identifie les deux joueurs d’un remplacement', () => {
     expect(service.interpret('Le numéro 18 remplace le numéro 7 à la 62e minute')).toMatchObject({
       type: 'SUBSTITUTION',
