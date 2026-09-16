@@ -1,0 +1,54 @@
+/* Official portal mobile-first polish. Desktop remains unchanged. */
+@media (max-width: 720px) {
+  .official-missions { margin-top: 20px; padding: 0; border: 0; background: transparent; box-shadow: none; }
+  .official-missions-summary { margin: 0 0 24px; padding: 18px; flex-direction: row; align-items: center; border-radius: 16px; }
+  .official-missions-summary h2 { font-size: 21px; }
+  .official-missions-summary button { min-height: 44px; white-space: nowrap; }
+  .mission-section { margin-top: 22px; }
+  .mission-section > h3 { margin: 0 0 12px; font-size: 20px; }
+  .mission-table { margin-top: 0; overflow: visible; }
+  .mission-table table, .mission-table tbody { display: block; width: 100%; }
+  .mission-table thead { display: none; }
+  .mission-table tr { display: block; margin-bottom: 14px; padding: 18px; border: 1px solid #e1e7eb; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px #1c2e430d; }
+  .mission-table td { display: grid; grid-template-columns: 92px minmax(0,1fr); gap: 10px; align-items: start; width: 100%; padding: 7px 0; border: 0; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+  .mission-table td::before { content: attr(data-label); color: #83909d; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+  .mission-table td[data-label="Rencontre"] { display: block; padding: 0 0 13px; margin-bottom: 6px; border-bottom: 1px solid #edf0f2; }
+  .mission-table td[data-label="Rencontre"]::before { display: none; }
+  .mission-table td[data-label="Rencontre"] strong { display: block; color: #17283d; font-size: 17px; line-height: 1.25; }
+  .mission-table td[data-label="Rencontre"] small { display: block; margin-top: 5px; color: #7b8997; font-size: 11px; }
+  .mission-table td.mission-open, .mission-table td[data-label="Réponse"] { display: block; padding-top: 14px; }
+  .mission-table td.mission-open::before, .mission-table td[data-label="Réponse"]::before { display: none; }
+  .mission-table .primary, .mission-actions button { min-height: 46px; border: 0; border-radius: 10px; font-weight: 900; }
+  .mission-table .mission-open .primary { width: 100%; background: #0d3150; color: #fff; }
+  .mission-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mission-actions .primary { background: #0d3150; color: #fff; }
+  .mission-actions button:not(.primary) { border: 1px solid #dce3e7; background: #fff; color: #526275; }
+
+  .voice-assistant { margin-top: 18px; }
+  .voice-heading { display: block; margin-bottom: 18px; }
+  .voice-heading h2 { margin: 6px 0 8px; font-size: 30px; line-height: 1.05; }
+  .voice-heading p { margin: 0 0 12px; max-width: none; font-size: 14px; line-height: 1.45; }
+  .voice-heading > span { display: inline-flex; align-items: center; min-height: 30px; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+  .voice-grid { display: grid !important; grid-template-columns: 1fr !important; gap: 14px !important; }
+  .recorder-card, .transcript-card { width: 100%; min-width: 0; padding: 20px !important; border: 1px solid #e1e7eb; border-radius: 16px; background: #fff; }
+  .recorder-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .recorder-card .mic { width: 78px !important; height: 78px !important; min-width: 78px; margin: 2px auto 14px; display: grid; place-items: center; border-radius: 50% !important; }
+  .recorder-card .mic svg { width: 30px; height: 30px; }
+  .recorder-card strong { display: block; font-size: 18px; line-height: 1.2; }
+  .recorder-card small { display: block; margin-top: 7px; color: #748191; font-size: 12px; line-height: 1.4; }
+  .recorder-card p { width: 100%; margin: 18px 0 0; padding-top: 15px; border-top: 1px solid #edf0f2; color: #526275; font-size: 12px; line-height: 1.4; }
+  .sync-button { width: 100%; min-height: 44px; margin-top: 12px; }
+  .transcript-card label { display: block; margin-bottom: 9px; font-size: 10px; font-weight: 900; letter-spacing: .08em; }
+  .transcript-card textarea { display: block; width: 100% !important; min-height: 132px; padding: 14px; resize: vertical; border: 1px solid #dce3e7; border-radius: 12px; background: #fff; color: #17283d; font: inherit; font-size: 16px; line-height: 1.45; }
+  .transcript-card button { width: 100%; min-height: 48px; margin-top: 12px; border: 0; border-radius: 10px; background: #0d3150; color: #fff; font-weight: 900; }
+  .transcript-card button:disabled { background: #e6eaed; color: #9aa4ad; }
+  .voice-draft { margin-top: 14px; padding: 18px !important; border-radius: 16px; }
+  .voice-draft dl { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .voice-draft button { width: 100%; min-height: 48px; }
+}
+
+@media (max-width: 390px) {
+  .official-missions-summary { flex-direction: column; align-items: stretch; }
+  .official-missions-summary button { width: 100%; }
+  .mission-table td { grid-template-columns: 78px minmax(0,1fr); }
+}
