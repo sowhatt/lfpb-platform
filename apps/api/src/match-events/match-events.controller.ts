@@ -14,6 +14,7 @@ import { AuthenticatedActor } from '../iam/domain/actor';
 import { Roles } from '../iam/roles.decorator';
 import { RolesGuard } from '../iam/roles.guard';
 import { CreateMatchEventDto } from './dto/create-match-event.dto';
+import { CreatePostMatchEntryDto } from './dto/create-post-match-entry.dto';
 import { MatchEventsService } from './match-events.service';
 
 @Controller('matches')
@@ -28,6 +29,25 @@ export class MatchEventsController {
     @Param('matchId', ParseUUIDPipe) matchId: string,
   ) {
     return this.matchEvents.report(actor, matchId);
+  }
+
+  @Get(':matchId/post-match-entries')
+  @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
+  postMatchEntries(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.matchEvents.listPostMatchEntries(actor, matchId);
+  }
+
+  @Post(':matchId/post-match-entries')
+  @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
+  createPostMatchEntry(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Body() input: CreatePostMatchEntryDto,
+  ) {
+    return this.matchEvents.createPostMatchEntry(actor, matchId, input);
   }
 
   @Get(':matchId/events')

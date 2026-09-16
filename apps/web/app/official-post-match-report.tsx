@@ -54,6 +54,7 @@ type ReportPayload = {
     grade?: string | null;
   }>;
   events: EventItem[];
+  postMatchEntries: PostMatchEntry[];
   stats: {
     goals: number;
     yellowCards: number;
@@ -68,6 +69,18 @@ type ReportPayload = {
     sheetLocked: boolean;
     readyForSignatures: boolean;
   };
+};
+
+type PostMatchEntry = {
+  id: string;
+  type:
+    | 'TECHNICAL_RESERVE'
+    | 'POST_MATCH_OBSERVATION'
+    | 'OFFICIAL_INCIDENT_REPORT';
+  description?: string | null;
+  clubId?: string | null;
+  registrationId?: string | null;
+  createdAt: string;
 };
 
 type SignaturePayload = {
@@ -329,6 +342,46 @@ export function OfficialPostMatchReport({ token, matchId }: Props) {
       )}
 
       <h3 style={{ marginTop: 24 }}>Chronologie officielle</h3>
+
+      <section style={{ marginTop: 24 }}>
+        <h3>Réserves et rapports post-match</h3>
+
+        {data.postMatchEntries.length === 0 ? (
+          <p>
+            Aucune réserve, observation post-match ou rapport
+            circonstancié enregistré.
+          </p>
+        ) : (
+          <div style={{ display: 'grid', gap: 10 }}>
+            {data.postMatchEntries.map((entry) => (
+              <article
+                key={entry.id}
+                style={{
+                  border: '1px solid #d9e2ec',
+                  borderRadius: 12,
+                  padding: 14,
+                }}
+              >
+                <strong>
+                  {entry.type === 'TECHNICAL_RESERVE'
+                    ? '⚠️ Réserve technique'
+                    : entry.type === 'OFFICIAL_INCIDENT_REPORT'
+                      ? '📄 Rapport circonstancié'
+                      : '📝 Observation après-match'}
+                </strong>
+
+                <div style={{ marginTop: 6 }}>
+                  {entry.description}
+                </div>
+
+                <small>
+                  {new Date(entry.createdAt).toLocaleString('fr-FR')}
+                </small>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       {data.events.length === 0 ? (
         <p>Aucun événement enregistré.</p>

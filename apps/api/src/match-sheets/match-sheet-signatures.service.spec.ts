@@ -85,6 +85,9 @@ describe('MatchSheetSignaturesService - report certification', () => {
             if (where.resourceType === 'MatchEvent') {
               return Promise.resolve(events);
             }
+            if (where.resourceType === 'MatchPostMatchEntry') {
+              return Promise.resolve([]);
+            }
             return Promise.resolve(existing);
           }),
         findFirst: jest.fn().mockResolvedValue(null),

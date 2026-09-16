@@ -18,8 +18,13 @@ import {
   LiveMatchEventType,
   MatchEventPeriod,
 } from './dto/create-match-event.dto';
+import {
+  CreatePostMatchEntryDto,
+  PostMatchEntryType,
+} from './dto/create-post-match-entry.dto';
 
 const EVENT_ACTION_PREFIX = 'MATCH_EVENT_';
+const POST_MATCH_ACTION_PREFIX = 'MATCH_POST_MATCH_';
 
 @Injectable()
 export class MatchEventsService {
@@ -29,6 +34,136 @@ export class MatchEventsService {
     const match = await this.getAuthorizedMatch(actor, matchId, false);
     const events = await this.prisma.auditLog.findMany({ where: { resourceType: 'MatchEvent', resourceId: matchId, action: { startsWith: EVENT_ACTION_PREFIX } }, orderBy: { createdAt: 'asc' } });
     return { match: { id: match.id, status: match.status, homeScore: match.homeScore ?? 0, awayScore: match.awayScore ?? 0, homeClubId: match.homeClubId, awayClubId: match.awayClubId }, events: events.map((event) => ({ id: event.id, type: event.action.slice(EVENT_ACTION_PREFIX.length), createdAt: event.createdAt, ...(event.metadata && typeof event.metadata === 'object' ? (event.metadata as Record<string, unknown>) : {}) })) };
+  }
+
+  async listPostMatchEntries(
+    actor: AuthenticatedActor,
+    matchId: string,
+  ) {
+    await this.getAuthorizedMatch(actor, matchId, false);
+
+    const logs = await this.prisma.auditLog.findMany({
+      where: {
+        resourceType: 'MatchPostMatchEntry',
+        resourceId: matchId,
+        action: { startsWith: POST_MATCH_ACTION_PREFIX },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
+    return logs.map((log) => ({
+      id: log.id,
+      type: log.action.slice(POST_MATCH_ACTION_PREFIX.length),
+      createdAt: log.createdAt,
+      actorUserId: log.actorUserId,
+      ...(log.metadata && typeof log.metadata === 'object'
+        ? (log.metadata as Record<string, unknown>)
+        : {}),
+    }));
+  }
+
+  async createPostMatchEntry(
+    actor: AuthenticatedActor,
+    matchId: string,
+    input: CreatePostMatchEntryDto,
+  ) {
+    const match = await this.getAuthorizedMatch(actor, matchId, true);
+
+    if (match.status !== MatchStatus.COMPLETED) {
+      throw new BadRequestException(
+        'Le match doit être terminé avant la saisie post-match',
+      );
+    }
+
+    const description = input.description?.trim();
+
+    if (!description) {
+      throw new BadRequestException(
+        'Une description est obligatoire',
+      );
+    }
+
+    if (
+      input.clubId &&
+      input.clubId !== match.homeClubId &&
+      input.clubId !== match.awayClubId
+    ) {
+      throw new BadRequestException(
+        'Le club indiqué ne participe pas à cette rencontre',
+      );
+    }
+
+    if (
+      input.type === PostMatchEntryType.TECHNICAL_RESERVE &&
+      !input.clubId
+    ) {
+      throw new BadRequestException(
+        'Un club est obligatoire pour une réserve technique',
+      );
+    }
+
+    const sheet = await this.prisma.matchSheet.findUnique({
+      where: { matchId },
+      select: { id: true },
+    });
+
+    if (!sheet) {
+      throw new BadRequestException(
+        'La feuille de match est introuvable',
+      );
+    }
+
+    const existingSignature = await this.prisma.auditLog.findFirst({
+      where: {
+        resourceType: 'MatchSheetSignature',
+        resourceId: sheet.id,
+        action: 'MATCH_SHEET_SIGNED',
+      },
+    });
+
+    if (existingSignature) {
+      throw new BadRequestException(
+        'Le contenu post-match est figé dès la première signature',
+      );
+    }
+
+    const closure = await this.prisma.auditLog.findFirst({
+      where: {
+        resourceType: 'MatchOfficialClosure',
+        resourceId: matchId,
+        action: 'MATCH_OFFICIALLY_CLOSED',
+      },
+    });
+
+    if (closure) {
+      throw new BadRequestException(
+        'Le rapport officiel est définitivement clôturé',
+      );
+    }
+
+    const log = await this.prisma.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        organizationId: match.competition.organizationId,
+        action: `${POST_MATCH_ACTION_PREFIX}${input.type}`,
+        resourceType: 'MatchPostMatchEntry',
+        resourceId: matchId,
+        metadata: {
+          description,
+          clubId: input.clubId ?? null,
+          registrationId: input.registrationId ?? null,
+        },
+      },
+    });
+
+    return {
+      id: log.id,
+      type: input.type,
+      createdAt: log.createdAt,
+      ...(log.metadata && typeof log.metadata === 'object'
+        ? (log.metadata as Record<string, unknown>)
+        : {}),
+    };
   }
 
   async report(actor: AuthenticatedActor, matchId: string) {
@@ -134,6 +269,25 @@ export class MatchEventsService {
       };
     });
 
+    const postMatchLogs = await this.prisma.auditLog.findMany({
+      where: {
+        resourceType: 'MatchPostMatchEntry',
+        resourceId: matchId,
+        action: { startsWith: POST_MATCH_ACTION_PREFIX },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
+    const postMatchEntries = postMatchLogs.map((log) => ({
+      id: log.id,
+      type: log.action.slice(POST_MATCH_ACTION_PREFIX.length),
+      createdAt: log.createdAt,
+      actorUserId: log.actorUserId,
+      ...(log.metadata && typeof log.metadata === 'object'
+        ? (log.metadata as Record<string, unknown>)
+        : {}),
+    }));
+
     const count = (type: LiveMatchEventType) =>
       events.filter((event) => event.type === type).length;
 
@@ -189,6 +343,7 @@ export class MatchEventsService {
         grade: assignment.officialProfile.grade,
       })),
       events,
+      postMatchEntries,
       stats: {
         goals: count(LiveMatchEventType.GOAL),
         yellowCards: count(LiveMatchEventType.YELLOW_CARD),

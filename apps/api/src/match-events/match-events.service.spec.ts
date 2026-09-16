@@ -953,3 +953,133 @@ describe('MatchEventsService - advanced match facts', () => {
     ).rejects.toThrow(BadRequestException);
   });
 });
+
+describe('MatchEventsService - post-match entries', () => {
+  const actor = {
+    userId: 'league-admin',
+    memberships: [
+      {
+        role: Role.LIGUE_ADMIN,
+        organizationId: 'league-org',
+      },
+    ],
+  } as any;
+
+  function makePostMatchPrisma(
+    status: MatchStatus = MatchStatus.COMPLETED,
+  ) {
+    const match = {
+      id: 'match-1',
+      status,
+      homeClubId: 'club-home',
+      awayClubId: 'club-away',
+      homeScore: 1,
+      awayScore: 0,
+      competition: {
+        organizationId: 'league-org',
+      },
+      homeClub: {
+        organizationId: 'home-org',
+      },
+      awayClub: {
+        organizationId: 'away-org',
+      },
+      officialAssignments: [],
+    };
+
+    return {
+      match: {
+        findUnique: jest.fn().mockResolvedValue(match),
+      },
+      matchSheet: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'sheet-1',
+        }),
+      },
+      auditLog: {
+        findMany: jest.fn().mockResolvedValue([]),
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockImplementation(({ data }: any) =>
+          Promise.resolve({
+            id: 'post-match-1',
+            action: data.action,
+            metadata: data.metadata,
+            createdAt: new Date(
+              '2026-09-16T16:00:00.000Z',
+            ),
+          }),
+        ),
+      },
+      officialProfile: {
+        findUnique: jest.fn(),
+      },
+    } as any;
+  }
+
+  it('accepte une réserve technique après la fin du match', async () => {
+    const prisma = makePostMatchPrisma();
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.createPostMatchEntry(actor, 'match-1', {
+        type: 'TECHNICAL_RESERVE' as any,
+        clubId: 'club-home',
+        description:
+          'Réserve concernant une décision technique.',
+      }),
+    ).resolves.toMatchObject({
+      type: 'TECHNICAL_RESERVE',
+      clubId: 'club-home',
+    });
+  });
+
+  it('refuse une saisie post-match avant la fin du match', async () => {
+    const prisma = makePostMatchPrisma(
+      MatchStatus.IN_PROGRESS,
+    );
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.createPostMatchEntry(actor, 'match-1', {
+        type: 'POST_MATCH_OBSERVATION' as any,
+        description: 'Observation après-match.',
+      }),
+    ).rejects.toThrow(
+      'Le match doit être terminé avant la saisie post-match',
+    );
+  });
+
+  it('refuse une réserve technique sans club', async () => {
+    const prisma = makePostMatchPrisma();
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.createPostMatchEntry(actor, 'match-1', {
+        type: 'TECHNICAL_RESERVE' as any,
+        description: 'Réserve sans club.',
+      }),
+    ).rejects.toThrow(
+      'Un club est obligatoire pour une réserve technique',
+    );
+  });
+
+  it('refuse une modification après une première signature', async () => {
+    const prisma = makePostMatchPrisma();
+
+    prisma.auditLog.findFirst
+      .mockResolvedValueOnce({
+        id: 'signature-1',
+      });
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.createPostMatchEntry(actor, 'match-1', {
+        type: 'POST_MATCH_OBSERVATION' as any,
+        description: 'Tentative tardive.',
+      }),
+    ).rejects.toThrow(
+      'Le contenu post-match est figé dès la première signature',
+    );
+  });
+});

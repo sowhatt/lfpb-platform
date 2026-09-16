@@ -318,8 +318,17 @@ export class MatchSheetSignaturesService {
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
 
+    const postMatchEntries = await this.prisma.auditLog.findMany({
+      where: {
+        resourceType: 'MatchPostMatchEntry',
+        resourceId: sheet.matchId,
+        action: { startsWith: 'MATCH_POST_MATCH_' },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
     const fingerprintSource = JSON.stringify({
-      version: 2,
+      version: 3,
       matchId: sheet.matchId,
       sheetId: sheet.id,
       lockedAt: sheet.lockedAt?.toISOString() ?? null,
@@ -340,6 +349,12 @@ export class MatchSheetSignaturesService {
         action: event.action,
         createdAt: event.createdAt.toISOString(),
         metadata: event.metadata ?? null,
+      })),
+      postMatchEntries: postMatchEntries.map((entry) => ({
+        id: entry.id,
+        action: entry.action,
+        createdAt: entry.createdAt.toISOString(),
+        metadata: entry.metadata ?? null,
       })),
     });
 
