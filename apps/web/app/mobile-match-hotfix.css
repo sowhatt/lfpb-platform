@@ -1,0 +1,29 @@
+@media (max-width: 720px) {
+  /* The empty player-detail pane is useful on desktop, but becomes a huge dead block on phone. */
+  .official-match-flow > :nth-child(3) > div:last-child > div:last-child {
+    display: none !important;
+  }
+
+  /* Keep report KPIs compact instead of stacking five full-width cards. */
+  .official-match-flow > :nth-child(5) [style*="repeat(auto-fit"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Chronology title and score must never visually run into each other. */
+  .official-match-flow > :nth-child(5) strong + small {
+    display: block;
+    margin-top: 6px;
+    line-height: 1.35;
+  }
+
+  /* A little less dead space in mobile cards. */
+  .official-match-flow > .data-panel {
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .official-match-flow > :nth-child(5) [style*="repeat(auto-fit"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
