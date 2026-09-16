@@ -20,6 +20,7 @@
     "db:seed:virtual-team": "ts-node prisma/seed-virtual-team.ts",
     "db:seed:pre-match-control": "ts-node prisma/seed-pre-match-control.ts",
     "db:seed:signature-ready": "ts-node prisma/seed-signature-ready.ts",
+    "db:seed:professional-match-e2e": "ts-node prisma/seed-professional-match-e2e.ts",
     "db:studio": "prisma studio",
     "db:seed:official": "ts-node prisma/seed-official.ts"
   },
