@@ -51,6 +51,12 @@
     text-align: right !important;
   }
 
+  /* Events without a player (kick-off, half-time, restart, end) have no avatar.
+     Put their label in the same details column used by player events. */
+  .official-match-flow > :first-child > div:last-child > div > div > strong:first-child + div[style*="flex: 1"] {
+    grid-column: 3;
+  }
+
   /* Keep report KPIs compact instead of stacking five full-width cards. */
   .official-match-flow > :nth-child(5) [style*="repeat(auto-fit"] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
