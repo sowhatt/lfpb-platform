@@ -1,5 +1,8 @@
 /* Official portal mobile-first polish. Desktop remains unchanged. */
 @media (max-width: 720px) {
+  html, body { max-width: 100%; overflow-x: hidden; }
+  *, *::before, *::after { box-sizing: border-box; }
+
   .official-missions { margin-top: 20px; padding: 0; border: 0; background: transparent; box-shadow: none; }
   .official-missions-summary { margin: 0 0 24px; padding: 18px; flex-direction: row; align-items: center; border-radius: 16px; }
   .official-missions-summary h2 { font-size: 21px; }
@@ -45,10 +48,47 @@
   .voice-draft { margin-top: 14px; padding: 18px !important; border-radius: 16px; }
   .voice-draft dl { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
   .voice-draft button { width: 100%; min-height: 48px; }
+
+  /* Match connecté: one-column field workflow on phones. */
+  .official-match-page { width: 100%; max-width: 100%; margin: 0 !important; padding: max(16px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)) !important; overflow-x: clip; }
+  .official-match-header { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; width: 100%; margin: 0 0 14px !important; padding: 14px 16px !important; border-radius: 16px !important; }
+  .official-match-header > div { min-width: 0; }
+  .official-match-header label { font-size: 9px !important; }
+  .official-match-header h1 { margin: 3px 0 0 !important; font-size: 23px !important; line-height: 1.05 !important; }
+  .official-match-header p { display: none; }
+  .official-match-header button { flex: 0 0 auto; min-height: 44px; padding: 10px 13px !important; font-size: 12px !important; white-space: nowrap; }
+  .official-match-flow { display: grid; grid-template-columns: minmax(0,1fr); gap: 14px; width: 100%; min-width: 0; }
+  .official-match-flow > * { width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0 !important; }
+  .official-match-flow section, .official-match-flow article, .official-match-flow div { max-width: 100%; min-width: 0; }
+  .official-match-flow h1 { font-size: clamp(25px, 7vw, 34px) !important; line-height: 1.08 !important; overflow-wrap: anywhere; }
+  .official-match-flow h2 { font-size: clamp(21px, 6vw, 28px) !important; line-height: 1.12 !important; overflow-wrap: anywhere; }
+  .official-match-flow h3 { font-size: 19px !important; line-height: 1.2 !important; }
+  .official-match-flow p, .official-match-flow li, .official-match-flow dd, .official-match-flow dt { overflow-wrap: anywhere; }
+  .official-match-flow input, .official-match-flow textarea, .official-match-flow select { max-width: 100% !important; font-size: 16px !important; }
+  .official-match-flow button { min-height: 44px; max-width: 100%; }
+  .official-match-flow [style*="grid-template-columns"] { grid-template-columns: minmax(0,1fr) !important; }
+  .official-match-flow [style*="display: flex"], .official-match-flow [style*="display:flex"] { flex-wrap: wrap !important; }
+  .official-match-flow table { width: 100%; max-width: 100%; table-layout: fixed; }
+  .official-match-flow th, .official-match-flow td { overflow-wrap: anywhere; }
+  .official-match-flow img, .official-match-flow video, .official-match-flow canvas { max-width: 100%; height: auto; }
+  .official-match-flow pre { max-width: 100%; overflow-x: auto; }
+  .official-match-flow > :first-child { order: 1; }
+  .official-match-flow > :nth-child(2) { order: 2; }
+  .official-match-flow > :nth-child(3) { order: 3; }
+  .official-match-flow > :nth-child(4) { order: 4; }
+  .official-match-flow > :nth-child(5) { order: 5; }
+  .official-session-page { display: grid; min-height: 80dvh; place-items: center; }
+  .official-session-card { width: 100%; padding: 28px !important; text-align: center; }
+  .official-session-card h1 { margin-top: 10px; }
+  .official-session-card p { margin: 12px auto 24px; }
+  .official-session-card button { width: 100%; min-height: 48px; }
 }
 
 @media (max-width: 390px) {
   .official-missions-summary { flex-direction: column; align-items: stretch; }
   .official-missions-summary button { width: 100%; }
   .mission-table td { grid-template-columns: 78px minmax(0,1fr); }
+  .official-match-page { padding-left: 10px !important; padding-right: 10px !important; }
+  .official-match-header { padding: 12px !important; }
+  .official-match-header h1 { font-size: 21px !important; }
 }
