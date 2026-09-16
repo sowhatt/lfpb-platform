@@ -19,6 +19,7 @@ import {
 } from './dto/sign-match-sheet.dto';
 
 const ACTION = 'MATCH_SHEET_SIGNED';
+const CLOSURE_ACTION = 'MATCH_OFFICIALLY_CLOSED';
 const EVENT_ACTION_PREFIX = 'MATCH_EVENT_';
 
 type SignatureMetadata = {
@@ -60,6 +61,15 @@ export class MatchSheetSignaturesService {
       createdAt: log.createdAt,
     }));
 
+    const closure = await this.prisma.auditLog.findFirst({
+      where: {
+        resourceType: 'MatchOfficialClosure',
+        resourceId: matchId,
+        action: CLOSURE_ACTION,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
     const currentReportFingerprint =
       sheet.match.status === MatchStatus.COMPLETED
         ? await this.buildReportFingerprint(sheet)
@@ -98,7 +108,13 @@ export class MatchSheetSignaturesService {
       ),
       currentReportFingerprint,
       signaturesConsistent,
+      officiallyClosed: Boolean(closure),
+      closedAt: closure?.createdAt ?? null,
+      closureFingerprint:
+        (closure?.metadata as { reportFingerprint?: string } | null)
+          ?.reportFingerprint ?? null,
       readyForSignatures:
+        !closure &&
         sheet.status === MatchSheetStatus.LOCKED &&
         sheet.match.status === MatchStatus.COMPLETED,
     };
@@ -120,6 +136,20 @@ export class MatchSheetSignaturesService {
     if (sheet.match.status !== MatchStatus.COMPLETED) {
       throw new BadRequestException(
         'Le match doit être terminé avant la signature du rapport officiel',
+      );
+    }
+
+    const closure = await this.prisma.auditLog.findFirst({
+      where: {
+        resourceType: 'MatchOfficialClosure',
+        resourceId: matchId,
+        action: CLOSURE_ACTION,
+      },
+    });
+
+    if (closure) {
+      throw new BadRequestException(
+        'Le rapport officiel est définitivement clôturé',
       );
     }
 
@@ -222,29 +252,57 @@ export class MatchSheetSignaturesService {
           ? sheet.match.awayClub.organizationId
           : sheet.match.competition.organizationId;
 
-    const log = await this.prisma.auditLog.create({
-      data: {
-        actorUserId: actor.userId,
-        organizationId,
-        action: ACTION,
-        resourceType: 'MatchSheetSignature',
-        resourceId: sheet.id,
-        metadata: {
-          matchId,
-          role: input.role,
-          signerName: input.signerName.trim(),
-          signerFunction: input.signerFunction?.trim() || null,
-          signedAt: signedAt.toISOString(),
-          sheetFingerprint: reportFingerprint,
-          reportFingerprint,
-          fingerprintVersion: 2,
-        },
+    const log = await this.prisma.$transaction(
+      async (tx) => {
+        const signature = await tx.auditLog.create({
+          data: {
+            actorUserId: actor.userId,
+            organizationId,
+            action: ACTION,
+            resourceType: 'MatchSheetSignature',
+            resourceId: sheet.id,
+            metadata: {
+              matchId,
+              role: input.role,
+              signerName: input.signerName.trim(),
+              signerFunction: input.signerFunction?.trim() || null,
+              signedAt: signedAt.toISOString(),
+              sheetFingerprint: reportFingerprint,
+              reportFingerprint,
+              fingerprintVersion: 2,
+            },
+          },
+        });
+
+        if (input.role === MatchSheetSignatureRole.OFFICIAL) {
+          await tx.auditLog.create({
+            data: {
+              actorUserId: actor.userId,
+              organizationId: sheet.match.competition.organizationId,
+              action: CLOSURE_ACTION,
+              resourceType: 'MatchOfficialClosure',
+              resourceId: matchId,
+              metadata: {
+                matchId,
+                sheetId: sheet.id,
+                officialSignatureId: signature.id,
+                closedAt: signedAt.toISOString(),
+                reportFingerprint,
+                fingerprintVersion: 2,
+              },
+            },
+          });
+        }
+
+        return signature;
       },
-    });
+    );
 
     return {
       id: log.id,
       ...(log.metadata as SignatureMetadata),
+      officiallyClosed:
+        input.role === MatchSheetSignatureRole.OFFICIAL,
     };
   }
 

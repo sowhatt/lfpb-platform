@@ -87,13 +87,34 @@ describe('MatchSheetSignaturesService - report certification', () => {
             }
             return Promise.resolve(existing);
           }),
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockImplementation(({ data }: any) =>
           Promise.resolve({
-            id: 'signature-1',
+            id:
+              data.resourceType === 'MatchOfficialClosure'
+                ? 'closure-1'
+                : 'signature-1',
             metadata: data.metadata,
+            createdAt: new Date('2026-09-16T15:00:00.000Z'),
           }),
         ),
       },
+      $transaction: jest.fn().mockImplementation(async (callback: any) =>
+        callback({
+          auditLog: {
+            create: jest.fn().mockImplementation(({ data }: any) =>
+              Promise.resolve({
+                id:
+                  data.resourceType === 'MatchOfficialClosure'
+                    ? 'closure-1'
+                    : 'signature-1',
+                metadata: data.metadata,
+                createdAt: new Date('2026-09-16T15:00:00.000Z'),
+              }),
+            ),
+          },
+        }),
+      ),
       officialProfile: {
         findUnique: jest.fn(),
       },
@@ -221,4 +242,26 @@ describe('MatchSheetSignaturesService - report certification', () => {
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('refuse toute nouvelle signature après la clôture officielle', async () => {
+    const prisma = createPrisma();
+    prisma.auditLog.findFirst.mockResolvedValue({
+      id: 'closure-1',
+      action: 'MATCH_OFFICIALLY_CLOSED',
+      resourceType: 'MatchOfficialClosure',
+      resourceId: 'match-1',
+      metadata: {},
+      createdAt: new Date(),
+    });
+
+    const service = new MatchSheetSignaturesService(prisma);
+
+    await expect(
+      service.sign(actor, 'match-1', {
+        role: MatchSheetSignatureRole.HOME_REPRESENTATIVE,
+        signerName: 'Président Home',
+      }),
+    ).rejects.toThrow('Le rapport officiel est définitivement clôturé');
+  });
+
 });

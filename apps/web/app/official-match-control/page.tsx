@@ -84,8 +84,8 @@ export default function OfficialMatchControlPage() {
         <OfficialLiveMatchControl token={token} matchId={matchId} />
         <OfficialPreMatchGate token={token} matchId={matchId} />
         <OfficialMatchPlayerControlGpt token={token} matchId={matchId} />
-        <MatchSheetSignaturesPanel token={token} matchId={matchId} memberships={actor.memberships} />
         <OfficialPostMatchReport token={token} matchId={matchId} />
+        <MatchSheetSignaturesPanel token={token} matchId={matchId} memberships={actor.memberships} />
       </section>
     </main>
   );
