@@ -189,11 +189,6 @@ export default function HomePage() {
       const email = String(form.get('email') ?? '').trim().toLowerCase();
       const password = String(form.get('password') ?? '');
 
-      console.log('AUTH_FORM_DEBUG', {
-        email,
-        passwordLength: password.length,
-      });
-
       const result = await request<{ accessToken: string; actor: Actor }>('/auth/login', undefined, {
         method: 'POST',
         body: JSON.stringify({ email, password }),
