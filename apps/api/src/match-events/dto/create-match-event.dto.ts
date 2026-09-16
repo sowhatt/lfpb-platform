@@ -12,6 +12,14 @@ export enum LiveMatchEventType {
   MATCH_END = 'MATCH_END',
 }
 
+export enum MatchEventPeriod {
+  FIRST_HALF = 'FIRST_HALF',
+  SECOND_HALF = 'SECOND_HALF',
+  EXTRA_TIME_FIRST = 'EXTRA_TIME_FIRST',
+  EXTRA_TIME_SECOND = 'EXTRA_TIME_SECOND',
+  PENALTIES = 'PENALTIES',
+}
+
 export class CreateMatchEventDto {
   @IsEnum(LiveMatchEventType)
   type!: LiveMatchEventType;
@@ -21,6 +29,16 @@ export class CreateMatchEventDto {
   @Min(0)
   @Max(130)
   minute?: number;
+
+  @IsOptional()
+  @IsEnum(MatchEventPeriod)
+  period?: MatchEventPeriod;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(30)
+  stoppageMinute?: number;
 
   @IsOptional()
   @IsUUID()
