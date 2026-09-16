@@ -42,6 +42,13 @@ export class MatchEventsService {
       if (!input.secondaryRegistrationId) throw new BadRequestException('secondaryRegistrationId est obligatoire pour un remplacement');
       await this.assertPlayerOnLockedSheet(matchId, input.clubId!, input.secondaryRegistrationId);
       if (input.secondaryRegistrationId === input.registrationId) throw new BadRequestException('Le joueur entrant doit être différent du joueur sortant');
+
+      await this.assertValidSubstitution(
+        matchId,
+        input.clubId!,
+        input.registrationId!,
+        input.secondaryRegistrationId,
+      );
     }
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let homeScore = match.homeScore ?? 0; let awayScore = match.awayScore ?? 0; let status = match.status;
@@ -65,5 +72,72 @@ export class MatchEventsService {
 
   private assertEventAllowed(status: MatchStatus, type: LiveMatchEventType) { if (type === LiveMatchEventType.MATCH_START) { if (status !== MatchStatus.SCHEDULED) throw new BadRequestException('Le match doit être planifié avant le coup d’envoi'); return; } if (status !== MatchStatus.IN_PROGRESS) throw new BadRequestException('Le match doit être en cours'); }
   private assertClubBelongsToMatch(match: { homeClubId: string; awayClubId: string }, clubId?: string) { if (!clubId) return; if (clubId !== match.homeClubId && clubId !== match.awayClubId) throw new BadRequestException('Le club ne participe pas à cette rencontre'); }
+  private async assertValidSubstitution(
+    matchId: string,
+    clubId: string,
+    outgoingRegistrationId: string,
+    incomingRegistrationId: string,
+  ) {
+    const sheet = await this.prisma.matchSheet.findUnique({
+      where: { matchId },
+      include: {
+        players: {
+          where: { clubId },
+          select: {
+            registrationId: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!sheet || sheet.status !== MatchSheetStatus.LOCKED) {
+      throw new BadRequestException(
+        'La feuille de match doit être verrouillée avant la saisie live',
+      );
+    }
+
+    const onField = new Set(
+      sheet.players
+        .filter((player) => player.role === 'STARTER')
+        .map((player) => player.registrationId),
+    );
+
+    const substitutions = await this.prisma.auditLog.findMany({
+      where: {
+        resourceType: 'MatchEvent',
+        resourceId: matchId,
+        action: `${EVENT_ACTION_PREFIX}${LiveMatchEventType.SUBSTITUTION}`,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    for (const event of substitutions) {
+      if (!event.metadata || typeof event.metadata !== 'object') continue;
+
+      const metadata = event.metadata as Record<string, unknown>;
+
+      if (metadata.clubId !== clubId) continue;
+
+      const outgoing = metadata.registrationId;
+      const incoming = metadata.secondaryRegistrationId;
+
+      if (typeof outgoing === 'string') onField.delete(outgoing);
+      if (typeof incoming === 'string') onField.add(incoming);
+    }
+
+    if (!onField.has(outgoingRegistrationId)) {
+      throw new BadRequestException(
+        'Le joueur sortant n’est pas actuellement sur le terrain',
+      );
+    }
+
+    if (onField.has(incomingRegistrationId)) {
+      throw new BadRequestException(
+        'Le joueur entrant est déjà sur le terrain',
+      );
+    }
+  }
+
   private async assertPlayerOnLockedSheet(matchId: string, clubId: string, registrationId: string) { const sheet = await this.prisma.matchSheet.findUnique({ where: { matchId }, include: { players: { where: { clubId, registrationId }, select: { id: true } } } }); if (!sheet || sheet.status !== MatchSheetStatus.LOCKED) throw new BadRequestException('La feuille de match doit être verrouillée avant la saisie live'); if (sheet.players.length === 0) throw new BadRequestException('Le joueur ne figure pas sur la feuille de match verrouillée'); }
 }
