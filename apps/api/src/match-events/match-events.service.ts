@@ -33,6 +33,7 @@ export class MatchEventsService {
   async create(actor: AuthenticatedActor, matchId: string, input: CreateMatchEventDto) {
     const match = await this.getAuthorizedMatch(actor, matchId, true);
     this.assertEventAllowed(match.status, input.type);
+    await this.assertLifecycleSequence(matchId, input.type);
     this.assertClubBelongsToMatch(match, input.clubId);
     if ([LiveMatchEventType.GOAL, LiveMatchEventType.YELLOW_CARD, LiveMatchEventType.RED_CARD, LiveMatchEventType.SUBSTITUTION].includes(input.type)) {
       if (!input.clubId || !input.registrationId) throw new BadRequestException('clubId et registrationId sont obligatoires pour cet événement');
@@ -71,6 +72,86 @@ export class MatchEventsService {
   }
 
   private assertEventAllowed(status: MatchStatus, type: LiveMatchEventType) { if (type === LiveMatchEventType.MATCH_START) { if (status !== MatchStatus.SCHEDULED) throw new BadRequestException('Le match doit être planifié avant le coup d’envoi'); return; } if (status !== MatchStatus.IN_PROGRESS) throw new BadRequestException('Le match doit être en cours'); }
+  private async assertLifecycleSequence(
+    matchId: string,
+    type: LiveMatchEventType,
+  ) {
+    const lifecycleTypes = [
+      LiveMatchEventType.MATCH_START,
+      LiveMatchEventType.HALF_TIME,
+      LiveMatchEventType.SECOND_HALF_START,
+      LiveMatchEventType.MATCH_END,
+    ];
+
+    if (!lifecycleTypes.includes(type)) return;
+
+    if (type === LiveMatchEventType.MATCH_START) return;
+
+    const events = await this.prisma.auditLog.findMany({
+      where: {
+        resourceType: 'MatchEvent',
+        resourceId: matchId,
+        action: {
+          in: lifecycleTypes.map(
+            (eventType) => `${EVENT_ACTION_PREFIX}${eventType}`,
+          ),
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const history = events.map((event) =>
+      event.action.slice(EVENT_ACTION_PREFIX.length),
+    );
+
+    const hasStarted = history.includes(LiveMatchEventType.MATCH_START);
+    const hasHalfTime = history.includes(LiveMatchEventType.HALF_TIME);
+    const hasSecondHalf = history.includes(
+      LiveMatchEventType.SECOND_HALF_START,
+    );
+    const hasEnded = history.includes(LiveMatchEventType.MATCH_END);
+
+    if (hasEnded) {
+      throw new BadRequestException('Le match est déjà terminé');
+    }
+
+    if (!hasStarted) {
+      throw new BadRequestException(
+        'Le coup d’envoi doit être enregistré avant cet événement',
+      );
+    }
+
+    if (type === LiveMatchEventType.HALF_TIME) {
+      if (hasHalfTime || hasSecondHalf) {
+        throw new BadRequestException(
+          'La mi-temps a déjà été enregistrée',
+        );
+      }
+      return;
+    }
+
+    if (type === LiveMatchEventType.SECOND_HALF_START) {
+      if (!hasHalfTime) {
+        throw new BadRequestException(
+          'La mi-temps doit être enregistrée avant la reprise',
+        );
+      }
+
+      if (hasSecondHalf) {
+        throw new BadRequestException(
+          'La deuxième mi-temps a déjà commencé',
+        );
+      }
+      return;
+    }
+
+    if (type === LiveMatchEventType.MATCH_END && !hasSecondHalf) {
+      throw new BadRequestException(
+        'La deuxième mi-temps doit avoir commencé avant la fin du match',
+      );
+    }
+  }
+
   private assertClubBelongsToMatch(match: { homeClubId: string; awayClubId: string }, clubId?: string) { if (!clubId) return; if (clubId !== match.homeClubId && clubId !== match.awayClubId) throw new BadRequestException('Le club ne participe pas à cette rencontre'); }
   private async assertValidSubstitution(
     matchId: string,

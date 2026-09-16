@@ -319,3 +319,180 @@ describe('MatchEventsService - substitutions', () => {
   });
 
 });
+
+describe('MatchEventsService - lifecycle', () => {
+  const actor = {
+    userId: 'league-admin',
+    memberships: [
+      {
+        role: Role.LIGUE_ADMIN,
+        organizationId: 'league-org',
+      },
+    ],
+  } as any;
+
+  function makeLifecyclePrisma(
+    status: MatchStatus,
+    events: any[] = [],
+  ) {
+    const lifecycleMatch = {
+      id: 'match-1',
+      status,
+      homeScore: 0,
+      awayScore: 0,
+      homeClubId: 'home-club',
+      awayClubId: 'away-club',
+      competition: { organizationId: 'league-org' },
+      matchSheet: { status: MatchSheetStatus.LOCKED },
+      officialAssignments: [],
+    };
+
+    return {
+      match: {
+        findUnique: jest.fn().mockResolvedValue(lifecycleMatch),
+      },
+      officialProfile: {
+        findUnique: jest.fn(),
+      },
+      auditLog: {
+        findMany: jest.fn().mockResolvedValue(events),
+        create: jest.fn(),
+      },
+      $transaction: jest.fn().mockImplementation(async (callback: any) =>
+        callback({
+          match: {
+            update: jest.fn().mockImplementation(({ data }: any) =>
+              Promise.resolve({
+                ...lifecycleMatch,
+                ...data,
+              }),
+            ),
+          },
+          auditLog: {
+            create: jest.fn().mockResolvedValue({
+              id: 'event-lifecycle',
+              createdAt: new Date(),
+            }),
+          },
+        }),
+      ),
+    } as any;
+  }
+
+  it('refuse la mi-temps sans coup d’envoi', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, []);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.HALF_TIME,
+        minute: 45,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse la reprise avant la mi-temps', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
+      { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
+    ]);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.SECOND_HALF_START,
+        minute: 45,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse une deuxième mi-temps', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
+      { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
+      { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
+    ]);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.HALF_TIME,
+        minute: 46,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse une deuxième reprise', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
+      { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
+      { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
+      { action: 'MATCH_EVENT_SECOND_HALF_START', metadata: {} },
+    ]);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.SECOND_HALF_START,
+        minute: 46,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse la fin du match avant la deuxième mi-temps', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
+      { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
+      { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
+    ]);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.MATCH_END,
+        minute: 45,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('accepte la mi-temps après le coup d’envoi', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
+      { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
+    ]);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.HALF_TIME,
+        minute: 45,
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('accepte la reprise après la mi-temps', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
+      { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
+      { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
+    ]);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.SECOND_HALF_START,
+        minute: 45,
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('accepte la fin après le début de la deuxième mi-temps', async () => {
+    const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
+      { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
+      { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
+      { action: 'MATCH_EVENT_SECOND_HALF_START', metadata: {} },
+    ]);
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.MATCH_END,
+        minute: 90,
+      }),
+    ).resolves.toBeDefined();
+  });
+});
