@@ -807,3 +807,149 @@ describe('MatchEventsService - live integrity', () => {
     ).resolves.toBeDefined();
   });
 });
+
+describe('MatchEventsService - advanced match facts', () => {
+  const actor = {
+    userId: 'league-admin',
+    memberships: [
+      {
+        role: Role.LIGUE_ADMIN,
+        organizationId: 'league-org',
+      },
+    ],
+  } as any;
+
+  function makeFactsPrisma() {
+    const match = {
+      id: 'match-1',
+      status: MatchStatus.IN_PROGRESS,
+      homeScore: 0,
+      awayScore: 0,
+      homeClubId: 'home-club',
+      awayClubId: 'away-club',
+      competition: { organizationId: 'league-org' },
+      matchSheet: { status: MatchSheetStatus.LOCKED },
+      officialAssignments: [],
+    };
+
+    return {
+      match: {
+        findUnique: jest.fn().mockResolvedValue(match),
+      },
+      officialProfile: {
+        findUnique: jest.fn(),
+      },
+      matchSheet: {
+        findUnique: jest.fn().mockResolvedValue({
+          status: MatchSheetStatus.LOCKED,
+          players: [{ id: 'sheet-starter1' }],
+        }),
+      },
+      auditLog: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      $transaction: jest.fn().mockImplementation(async (callback: any) =>
+        callback({
+          match: {
+            update: jest.fn().mockImplementation(({ data }: any) =>
+              Promise.resolve({ ...match, ...data }),
+            ),
+          },
+          auditLog: {
+            create: jest.fn().mockResolvedValue({
+              id: 'fact-event',
+              createdAt: new Date(),
+            }),
+          },
+        }),
+      ),
+    } as any;
+  }
+
+  it('accepte une blessure documentée pour un joueur de la feuille', async () => {
+    const service = new MatchEventsService(makeFactsPrisma());
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.INJURY,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 32,
+        description: 'Douleur à la cheville droite',
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuse une blessure sans joueur', async () => {
+    const service = new MatchEventsService(makeFactsPrisma());
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.INJURY,
+        clubId: 'home-club',
+        minute: 32,
+        description: 'Blessure',
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse une blessure sans description', async () => {
+    const service = new MatchEventsService(makeFactsPrisma());
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.INJURY,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 32,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('accepte un incident documenté sans joueur', async () => {
+    const service = new MatchEventsService(makeFactsPrisma());
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.INCIDENT,
+        minute: 55,
+        description: 'Interruption après jets de projectiles',
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuse un incident sans description', async () => {
+    const service = new MatchEventsService(makeFactsPrisma());
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.INCIDENT,
+        minute: 55,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('accepte une observation officielle documentée', async () => {
+    const service = new MatchEventsService(makeFactsPrisma());
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.OBSERVATION,
+        minute: 90,
+        description: 'Éclairage insuffisant pendant plusieurs minutes',
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuse une observation vide', async () => {
+    const service = new MatchEventsService(makeFactsPrisma());
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.OBSERVATION,
+        minute: 90,
+        description: '   ',
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+});

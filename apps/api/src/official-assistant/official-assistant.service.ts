@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { TranscribeAudioDto } from './dto/transcribe-audio.dto';
 
-export type VoiceEventType = 'GOAL' | 'YELLOW_CARD' | 'RED_CARD' | 'SUBSTITUTION' | 'INCIDENT' | 'FINAL_SCORE' | 'NOTE';
+export type VoiceEventType = 'GOAL' | 'YELLOW_CARD' | 'RED_CARD' | 'SUBSTITUTION' | 'INCIDENT' | 'INJURY' | 'OBSERVATION' | 'FINAL_SCORE' | 'NOTE';
 export interface VoiceEventDraft { type: VoiceEventType; minute?: number; playerNumber?: number; replacementPlayerNumber?: number; transcript: string; confidence: number; needsConfirmation: true; }
 
 const AUDIO_TYPES: Record<string, { mimeType: string; extension: string }> = {
@@ -99,11 +99,40 @@ function frenchNumber(raw: string): number | undefined {
 }
 
 function extractMinute(normalized: string): number | undefined {
-  const digit = /\b(?:a|vers)\s+(?:la\s+)?(\d{1,3})(?:e|eme|ieme|ere|re)?\s+minute\b/.exec(normalized);
+  const digitMatches = [
+    ...normalized.matchAll(
+      /(?:^|\s)(?:a|vers)\s+(?:la\s+)?(\d{1,3})(?:e|eme|ieme|ere|re)?\s+minute\b/g,
+    ),
+  ];
+  const digit = digitMatches.at(-1);
   if (digit) return Number(digit[1]);
 
-  const words = /\b(?:a|vers)\s+(?:la\s+)?([a-z]+(?:[- ][a-z]+){0,4})\s+minute\b/.exec(normalized);
-  if (!words) return undefined;
+  const minuteEnd = normalized.lastIndexOf(' minute');
+  if (minuteEnd < 0) return undefined;
+
+  const beforeMinute = normalized.slice(0, minuteEnd);
+  const markers = [
+    beforeMinute.lastIndexOf(' a la '),
+    beforeMinute.lastIndexOf(' vers la '),
+    beforeMinute.lastIndexOf(' a '),
+    beforeMinute.lastIndexOf(' vers '),
+  ];
+
+  const markerIndex = Math.max(...markers);
+  if (markerIndex < 0) return undefined;
+
+  let rawWords = beforeMinute.slice(markerIndex).trim();
+
+  rawWords = rawWords
+    .replace(/^vers\s+la\s+/, '')
+    .replace(/^a\s+la\s+/, '')
+    .replace(/^vers\s+/, '')
+    .replace(/^a\s+/, '')
+    .trim();
+
+  if (!rawWords) return undefined;
+
+  const words = [rawWords, rawWords];
 
   const ordinalToCardinal: Record<string, string> = {
     premiere: 'un',
@@ -163,7 +192,9 @@ export class OfficialAssistantService {
     else if (/remplace|remplacement|sort\s+et|entre\s+a\s+la\s+place/.test(normalized)) { type = 'SUBSTITUTION'; confidence = 0.9; }
     else if (/\bbut\b|a\s+marqu/.test(normalized)) { type = 'GOAL'; confidence = 0.9; }
     else if (/score\s+final|fin\s+du\s+match/.test(normalized)) { type = 'FINAL_SCORE'; confidence = 0.85; }
-    else if (/incident|blessure|envahissement|bagarre|tribune/.test(normalized)) { type = 'INCIDENT'; confidence = 0.82; }
+    else if (/blessure|blesse|blessé/.test(normalized)) { type = 'INJURY'; confidence = 0.9; }
+    else if (/observation|remarque|a signaler|à signaler/.test(normalized)) { type = 'OBSERVATION'; confidence = 0.85; }
+    else if (/incident|envahissement|bagarre|tribune/.test(normalized)) { type = 'INCIDENT'; confidence = 0.82; }
     if (minute !== undefined && (minute < 0 || minute > 180)) throw new BadRequestException('La minute détectée est hors limites');
     return { type, ...(minute !== undefined ? { minute } : {}), ...(numbers[0] !== undefined ? { playerNumber: numbers[0] } : {}), ...(numbers[1] !== undefined ? { replacementPlayerNumber: numbers[1] } : {}), transcript: transcript.trim(), confidence, needsConfirmation: true };
   }

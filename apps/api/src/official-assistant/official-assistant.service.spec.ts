@@ -40,3 +40,35 @@ describe('OfficialAssistantService', () => {
     expect(() => service.interpret('But du numéro 9 à la 999e minute')).toThrow(BadRequestException);
   });
 });
+
+describe('OfficialAssistantService - advanced match facts', () => {
+  const service = new OfficialAssistantService({} as any);
+
+  it('distingue une blessure d’un incident général', () => {
+    const result = service.interpret(
+      'Blessure numéro 8 à la trente-deuxième minute',
+    );
+
+    expect(result.type).toBe('INJURY');
+    expect(result.playerNumber).toBe(8);
+    expect(result.minute).toBe(32);
+  });
+
+  it('reconnaît une observation officielle', () => {
+    const result = service.interpret(
+      'Observation à signaler à la quatre-vingtième minute',
+    );
+
+    expect(result.type).toBe('OBSERVATION');
+    expect(result.minute).toBe(80);
+  });
+
+  it('conserve les incidents généraux', () => {
+    const result = service.interpret(
+      'Incident en tribune à la soixantième minute',
+    );
+
+    expect(result.type).toBe('INCIDENT');
+    expect(result.minute).toBe(60);
+  });
+});

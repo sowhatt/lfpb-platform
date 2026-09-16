@@ -37,6 +37,37 @@ export class MatchEventsService {
     await this.assertLifecycleSequence(matchId, input.type);
     this.assertClubBelongsToMatch(match, input.clubId);
 
+    if (
+      input.type === LiveMatchEventType.INCIDENT ||
+      input.type === LiveMatchEventType.OBSERVATION
+    ) {
+      if (!input.description?.trim()) {
+        throw new BadRequestException(
+          'Une description est obligatoire pour cet événement',
+        );
+      }
+    }
+
+    if (input.type === LiveMatchEventType.INJURY) {
+      if (!input.clubId || !input.registrationId) {
+        throw new BadRequestException(
+          'clubId et registrationId sont obligatoires pour une blessure',
+        );
+      }
+
+      if (!input.description?.trim()) {
+        throw new BadRequestException(
+          'Une description est obligatoire pour une blessure',
+        );
+      }
+
+      await this.assertPlayerOnLockedSheet(
+        matchId,
+        input.clubId,
+        input.registrationId,
+      );
+    }
+
     if (input.type === LiveMatchEventType.GOAL) {
       if (!input.clubId || !input.registrationId) {
         throw new BadRequestException(
