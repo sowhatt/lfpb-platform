@@ -269,7 +269,7 @@ export class MatchSheetSignaturesService {
               signedAt: signedAt.toISOString(),
               sheetFingerprint: reportFingerprint,
               reportFingerprint,
-              fingerprintVersion: 2,
+              fingerprintVersion: 3,
             },
           },
         });
@@ -288,7 +288,7 @@ export class MatchSheetSignaturesService {
                 officialSignatureId: signature.id,
                 closedAt: signedAt.toISOString(),
                 reportFingerprint,
-                fingerprintVersion: 2,
+                fingerprintVersion: 3,
               },
             },
           });

@@ -144,7 +144,7 @@ describe('MatchSheetSignaturesService - report certification', () => {
     );
   });
 
-  it('certifie le rapport complet avec une empreinte v2', async () => {
+  it('certifie le rapport complet avec une empreinte v3', async () => {
     const prisma = createPrisma();
     const service = new MatchSheetSignaturesService(prisma);
 
@@ -155,7 +155,7 @@ describe('MatchSheetSignaturesService - report certification', () => {
 
     expect(result.reportFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(result.sheetFingerprint).toBe(result.reportFingerprint);
-    expect(result.fingerprintVersion).toBe(2);
+    expect(result.fingerprintVersion).toBe(3);
   });
 
   it('produit une empreinte différente si les faits du match changent', async () => {
