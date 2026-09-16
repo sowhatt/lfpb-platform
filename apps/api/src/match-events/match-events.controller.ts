@@ -21,6 +21,15 @@ import { MatchEventsService } from './match-events.service';
 export class MatchEventsController {
   constructor(private readonly matchEvents: MatchEventsService) {}
 
+  @Get(':matchId/report')
+  @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
+  report(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.matchEvents.report(actor, matchId);
+  }
+
   @Get(':matchId/events')
   @Roles(Role.LIGUE_ADMIN, Role.OFFICIEL)
   list(

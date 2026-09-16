@@ -31,6 +31,181 @@ export class MatchEventsService {
     return { match: { id: match.id, status: match.status, homeScore: match.homeScore ?? 0, awayScore: match.awayScore ?? 0, homeClubId: match.homeClubId, awayClubId: match.awayClubId }, events: events.map((event) => ({ id: event.id, type: event.action.slice(EVENT_ACTION_PREFIX.length), createdAt: event.createdAt, ...(event.metadata && typeof event.metadata === 'object' ? (event.metadata as Record<string, unknown>) : {}) })) };
   }
 
+  async report(actor: AuthenticatedActor, matchId: string) {
+    const match = await this.getAuthorizedMatch(actor, matchId, false);
+
+    const [sheet, logs, assignments] = await Promise.all([
+      this.prisma.matchSheet.findUnique({
+        where: { matchId },
+        include: {
+          players: {
+            include: {
+              registration: {
+                include: {
+                  person: true,
+                  playerProfile: true,
+                },
+              },
+              club: {
+                include: { organization: true },
+              },
+            },
+            orderBy: [
+              { side: 'asc' },
+              { role: 'asc' },
+              { shirtNumber: 'asc' },
+            ],
+          },
+        },
+      }),
+      this.prisma.auditLog.findMany({
+        where: {
+          resourceType: 'MatchEvent',
+          resourceId: matchId,
+          action: { startsWith: EVENT_ACTION_PREFIX },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.matchOfficialAssignment.findMany({
+        where: {
+          matchId,
+          status: MatchOfficialAssignmentStatus.ACCEPTED,
+        },
+        include: {
+          officialProfile: {
+            include: {
+              registration: {
+                include: { person: true },
+              },
+            },
+          },
+        },
+        orderBy: { role: 'asc' },
+      }),
+    ]);
+
+    const players = sheet?.players ?? [];
+
+    const playerByRegistrationId = new Map(
+      players.map((player) => [
+        player.registrationId,
+        {
+          registrationId: player.registrationId,
+          clubId: player.clubId,
+          side: player.side,
+          role: player.role,
+          shirtNumber: player.shirtNumber,
+          firstName: player.registration.person.firstName,
+          lastName: player.registration.person.lastName,
+          federationId: player.registration.person.federationId,
+          position: player.registration.playerProfile?.position ?? null,
+          clubName: player.club.organization.name,
+        },
+      ]),
+    );
+
+    const events = logs.map((log) => {
+      const metadata =
+        log.metadata && typeof log.metadata === 'object'
+          ? (log.metadata as Record<string, unknown>)
+          : {};
+
+      const registrationId =
+        typeof metadata.registrationId === 'string'
+          ? metadata.registrationId
+          : null;
+
+      const secondaryRegistrationId =
+        typeof metadata.secondaryRegistrationId === 'string'
+          ? metadata.secondaryRegistrationId
+          : null;
+
+      return {
+        id: log.id,
+        type: log.action.slice(EVENT_ACTION_PREFIX.length),
+        createdAt: log.createdAt,
+        ...metadata,
+        player: registrationId
+          ? playerByRegistrationId.get(registrationId) ?? null
+          : null,
+        secondaryPlayer: secondaryRegistrationId
+          ? playerByRegistrationId.get(secondaryRegistrationId) ?? null
+          : null,
+      };
+    });
+
+    const count = (type: LiveMatchEventType) =>
+      events.filter((event) => event.type === type).length;
+
+    const completed = match.status === MatchStatus.COMPLETED;
+    const locked = sheet?.status === MatchSheetStatus.LOCKED;
+
+    return {
+      generatedAt: new Date(),
+      match: {
+        id: match.id,
+        status: match.status,
+        kickoffAt: match.kickoffAt,
+        homeScore: match.homeScore ?? 0,
+        awayScore: match.awayScore ?? 0,
+        homeClub: {
+          id: match.homeClub.id,
+          organizationId: match.homeClub.organizationId,
+          name: match.homeClub.shortName,
+        },
+        awayClub: {
+          id: match.awayClub.id,
+          organizationId: match.awayClub.organizationId,
+          name: match.awayClub.shortName,
+        },
+      },
+      sheet: sheet
+        ? {
+            id: sheet.id,
+            status: sheet.status,
+            lockedAt: sheet.lockedAt,
+            players: players.map((player) => ({
+              registrationId: player.registrationId,
+              clubId: player.clubId,
+              side: player.side,
+              role: player.role,
+              shirtNumber: player.shirtNumber,
+              firstName: player.registration.person.firstName,
+              lastName: player.registration.person.lastName,
+              federationId: player.registration.person.federationId,
+              position: player.registration.playerProfile?.position ?? null,
+              clubName: player.club.organization.name,
+            })),
+          }
+        : null,
+      officials: assignments.map((assignment) => ({
+        role: assignment.role,
+        registrationId: assignment.officialProfile.registrationId,
+        firstName:
+          assignment.officialProfile.registration.person.firstName,
+        lastName:
+          assignment.officialProfile.registration.person.lastName,
+        function: assignment.officialProfile.function,
+        grade: assignment.officialProfile.grade,
+      })),
+      events,
+      stats: {
+        goals: count(LiveMatchEventType.GOAL),
+        yellowCards: count(LiveMatchEventType.YELLOW_CARD),
+        redCards: count(LiveMatchEventType.RED_CARD),
+        substitutions: count(LiveMatchEventType.SUBSTITUTION),
+        injuries: count(LiveMatchEventType.INJURY),
+        incidents: count(LiveMatchEventType.INCIDENT),
+        observations: count(LiveMatchEventType.OBSERVATION),
+      },
+      readiness: {
+        completed,
+        sheetLocked: locked,
+        readyForSignatures: completed && locked,
+      },
+    };
+  }
+
   async create(actor: AuthenticatedActor, matchId: string, input: CreateMatchEventDto) {
     const match = await this.getAuthorizedMatch(actor, matchId, true);
     this.assertEventAllowed(match.status, input.type);
@@ -110,7 +285,7 @@ export class MatchEventsService {
   }
 
   private async getAuthorizedMatch(actor: AuthenticatedActor, matchId: string, write: boolean) {
-    const match = await this.prisma.match.findUnique({ where: { id: matchId }, include: { competition: true, matchSheet: true, officialAssignments: { where: { status: MatchOfficialAssignmentStatus.ACCEPTED }, include: { officialProfile: true } } } });
+    const match = await this.prisma.match.findUnique({ where: { id: matchId }, include: { competition: true, homeClub: true, awayClub: true, matchSheet: true, officialAssignments: { where: { status: MatchOfficialAssignmentStatus.ACCEPTED }, include: { officialProfile: true } } } });
     if (!match) throw new NotFoundException('Rencontre introuvable');
     const isLeagueAdmin = actor.memberships.some((membership) => membership.role === Role.LIGUE_ADMIN); const isOfficial = actor.memberships.some((membership) => membership.role === Role.OFFICIEL);
     if (!write && (isLeagueAdmin || isOfficial)) return match; if (isLeagueAdmin) return match;
