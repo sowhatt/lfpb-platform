@@ -1,3 +1,32 @@
+/* Card events: keep the player identity in the same visual position as goals.
+   The card marker and label come after the player identity instead of shifting it. */
+.official-match-flow > :first-child > div:last-child > div > div:has(> span[style*="width: 18px"][style*="height: 28px"]) > span[style*="width: 18px"][style*="height: 28px"] {
+  order: 3;
+}
+
+.official-match-flow > :first-child > div:last-child > div > div:has(> span[style*="width: 18px"][style*="height: 28px"]) > img,
+.official-match-flow > :first-child > div:last-child > div > div:has(> span[style*="width: 18px"][style*="height: 28px"]) > div:not([style*="flex: 1"]) {
+  order: 1;
+}
+
+.official-match-flow > :first-child > div:last-child > div > div:has(> span[style*="width: 18px"][style*="height: 28px"]) > div[style*="flex: 1"] {
+  order: 2;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.official-match-flow > :first-child > div:last-child > div > div:has(> span[style*="width: 18px"][style*="height: 28px"]) > div[style*="flex: 1"] > span {
+  order: 1;
+}
+
+.official-match-flow > :first-child > div:last-child > div > div:has(> span[style*="width: 18px"][style*="height: 28px"]) > div[style*="flex: 1"] > strong {
+  order: 2;
+}
+
+.official-match-flow > :first-child > div:last-child > div > div:has(> span[style*="width: 18px"][style*="height: 28px"]) > strong:last-child {
+  order: 4;
+}
+
 @media (max-width: 720px) {
   /* The empty player-detail pane is useful on desktop, but becomes a huge dead block on phone. */
   .official-match-flow > :nth-child(3) > div:last-child > div:last-child {
