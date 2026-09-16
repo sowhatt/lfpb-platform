@@ -4,6 +4,53 @@
     display: none !important;
   }
 
+  /* Live match controls: use a stable 2-column mobile grid instead of a loose vertical stack. */
+  .official-match-flow > :first-child > .workspace-actions[style*="margin-top: 12"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  .official-match-flow > :first-child > .workspace-actions[style*="margin-top: 12"] > label,
+  .official-match-flow > :first-child > .workspace-actions[style*="margin-top: 12"] > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    justify-content: center !important;
+  }
+
+  .official-match-flow > :first-child > .workspace-actions[style*="margin-top: 12"] > label input {
+    width: 64px !important;
+    min-width: 0 !important;
+  }
+
+  /* Live timeline: every event keeps the same columns: minute | player | details | score. */
+  .official-match-flow > :first-child > div:last-child > div > div {
+    display: grid !important;
+    grid-template-columns: 42px 54px minmax(0, 1fr) auto !important;
+    column-gap: 12px !important;
+    align-items: center !important;
+  }
+
+  /* The coloured card marker must not create an extra column and shift carded players. */
+  .official-match-flow > :first-child > div:last-child > div > div > span[style*="width: 18px"][style*="height: 28px"] {
+    display: none !important;
+  }
+
+  .official-match-flow > :first-child > div:last-child > div > div > strong:first-child {
+    min-width: 0 !important;
+  }
+
+  .official-match-flow > :first-child > div:last-child > div > div > div[style*="flex: 1"] {
+    min-width: 0 !important;
+  }
+
+  .official-match-flow > :first-child > div:last-child > div > div > strong:last-child {
+    white-space: nowrap !important;
+    text-align: right !important;
+  }
+
   /* Keep report KPIs compact instead of stacking five full-width cards. */
   .official-match-flow > :nth-child(5) [style*="repeat(auto-fit"] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -25,5 +72,10 @@
 @media (max-width: 390px) {
   .official-match-flow > :nth-child(5) [style*="repeat(auto-fit"] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .official-match-flow > :first-child > div:last-child > div > div {
+    grid-template-columns: 38px 48px minmax(0, 1fr) auto !important;
+    column-gap: 9px !important;
   }
 }
