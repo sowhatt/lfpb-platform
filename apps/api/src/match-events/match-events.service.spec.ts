@@ -6,7 +6,10 @@ import {
   Role,
 } from '@prisma/client';
 import { MatchEventsService } from './match-events.service';
-import { LiveMatchEventType } from './dto/create-match-event.dto';
+import {
+  LiveMatchEventType,
+  MatchEventPeriod,
+} from './dto/create-match-event.dto';
 
 describe('MatchEventsService - substitutions', () => {
   const actor = {
@@ -492,6 +495,314 @@ describe('MatchEventsService - lifecycle', () => {
       service.create(actor, 'match-1', {
         type: LiveMatchEventType.MATCH_END,
         minute: 90,
+      }),
+    ).resolves.toBeDefined();
+  });
+});
+
+
+describe('MatchEventsService - live integrity', () => {
+  const actor = {
+    userId: 'league-admin',
+    memberships: [
+      {
+        role: Role.LIGUE_ADMIN,
+        organizationId: 'league-org',
+      },
+    ],
+  } as any;
+
+  const match = {
+    id: 'match-1',
+    status: MatchStatus.IN_PROGRESS,
+    homeScore: 0,
+    awayScore: 0,
+    homeClubId: 'home-club',
+    awayClubId: 'away-club',
+    competition: { organizationId: 'league-org' },
+    matchSheet: { status: MatchSheetStatus.LOCKED },
+    officialAssignments: [],
+  };
+
+  function event(type: LiveMatchEventType, metadata: any = {}) {
+    return {
+      action: `MATCH_EVENT_${type}`,
+      metadata,
+      createdAt: new Date(),
+    };
+  }
+
+  function makeIntegrityPrisma(events: any[]) {
+    return {
+      match: {
+        findUnique: jest.fn().mockResolvedValue(match),
+      },
+      officialProfile: {
+        findUnique: jest.fn(),
+      },
+      matchSheet: {
+        findUnique: jest.fn().mockImplementation(({ include }: any) => {
+          const where = include?.players?.where;
+
+          if (where?.registrationId) {
+            const known = ['starter1', 'starter2', 'sub1', 'sub2'];
+
+            return Promise.resolve({
+              status: MatchSheetStatus.LOCKED,
+              players:
+                where.clubId === 'home-club' &&
+                known.includes(where.registrationId)
+                  ? [{ id: `sheet-${where.registrationId}` }]
+                  : [],
+            });
+          }
+
+          return Promise.resolve({
+            status: MatchSheetStatus.LOCKED,
+            players: [
+              {
+                registrationId: 'starter1',
+                role: MatchSheetPlayerRole.STARTER,
+              },
+              {
+                registrationId: 'starter2',
+                role: MatchSheetPlayerRole.STARTER,
+              },
+              {
+                registrationId: 'sub1',
+                role: MatchSheetPlayerRole.SUBSTITUTE,
+              },
+              {
+                registrationId: 'sub2',
+                role: MatchSheetPlayerRole.SUBSTITUTE,
+              },
+            ],
+          });
+        }),
+      },
+      auditLog: {
+        findMany: jest.fn().mockImplementation(({ where }: any) => {
+          const allowed = where?.action?.in;
+
+          if (!Array.isArray(allowed)) return Promise.resolve(events);
+
+          return Promise.resolve(
+            events.filter((item) => allowed.includes(item.action)),
+          );
+        }),
+      },
+      $transaction: jest.fn().mockImplementation(async (callback: any) =>
+        callback({
+          match: {
+            update: jest.fn().mockImplementation(({ data }: any) =>
+              Promise.resolve({
+                ...match,
+                ...data,
+              }),
+            ),
+          },
+          auditLog: {
+            create: jest.fn().mockResolvedValue({
+              id: 'event-created',
+              createdAt: new Date(),
+            }),
+          },
+        }),
+      ),
+    } as any;
+  }
+
+  it('accepte un but d’un titulaire pendant la première mi-temps', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 20,
+        period: MatchEventPeriod.FIRST_HALF,
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuse un but pendant la mi-temps', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.HALF_TIME),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 45,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse un but d’un remplaçant qui n’est jamais entré', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'sub1',
+        minute: 30,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('accepte le but d’un remplaçant après son entrée', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.SUBSTITUTION, {
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        secondaryRegistrationId: 'sub1',
+      }),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'sub1',
+        minute: 35,
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuse le but d’un joueur déjà remplacé', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.SUBSTITUTION, {
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        secondaryRegistrationId: 'sub1',
+      }),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 35,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse le but d’un joueur expulsé', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.RED_CARD, {
+        clubId: 'home-club',
+        registrationId: 'starter1',
+      }),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 40,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('accepte un but pendant la deuxième mi-temps', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.HALF_TIME),
+      event(LiveMatchEventType.SECOND_HALF_START),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 70,
+        period: MatchEventPeriod.SECOND_HALF,
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuse une période incohérente avec la phase réelle', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.HALF_TIME),
+      event(LiveMatchEventType.SECOND_HALF_START),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.GOAL,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        minute: 70,
+        period: MatchEventPeriod.FIRST_HALF,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('conserve les remplacements possibles pendant la mi-temps', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.HALF_TIME),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.SUBSTITUTION,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        secondaryRegistrationId: 'sub1',
+        minute: 45,
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('conserve les cartons possibles pendant la mi-temps', async () => {
+    const prisma = makeIntegrityPrisma([
+      event(LiveMatchEventType.MATCH_START),
+      event(LiveMatchEventType.HALF_TIME),
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.YELLOW_CARD,
+        clubId: 'home-club',
+        registrationId: 'sub1',
+        minute: 45,
       }),
     ).resolves.toBeDefined();
   });

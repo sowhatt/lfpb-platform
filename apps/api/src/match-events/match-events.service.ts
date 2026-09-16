@@ -16,6 +16,7 @@ import { AuthenticatedActor } from '../iam/domain/actor';
 import {
   CreateMatchEventDto,
   LiveMatchEventType,
+  MatchEventPeriod,
 } from './dto/create-match-event.dto';
 
 const EVENT_ACTION_PREFIX = 'MATCH_EVENT_';
@@ -35,6 +36,21 @@ export class MatchEventsService {
     this.assertEventAllowed(match.status, input.type);
     await this.assertLifecycleSequence(matchId, input.type);
     this.assertClubBelongsToMatch(match, input.clubId);
+
+    if (input.type === LiveMatchEventType.GOAL) {
+      if (!input.clubId || !input.registrationId) {
+        throw new BadRequestException(
+          'clubId et registrationId sont obligatoires pour un but',
+        );
+      }
+
+      await this.assertValidGoal(
+        matchId,
+        input.clubId,
+        input.registrationId,
+        input.period,
+      );
+    }
     if ([LiveMatchEventType.GOAL, LiveMatchEventType.YELLOW_CARD, LiveMatchEventType.RED_CARD, LiveMatchEventType.SUBSTITUTION].includes(input.type)) {
       if (!input.clubId || !input.registrationId) throw new BadRequestException('clubId et registrationId sont obligatoires pour cet événement');
       await this.assertPlayerOnLockedSheet(matchId, input.clubId, input.registrationId);
@@ -152,13 +168,73 @@ export class MatchEventsService {
     }
   }
 
-  private assertClubBelongsToMatch(match: { homeClubId: string; awayClubId: string }, clubId?: string) { if (!clubId) return; if (clubId !== match.homeClubId && clubId !== match.awayClubId) throw new BadRequestException('Le club ne participe pas à cette rencontre'); }
-  private async assertValidSubstitution(
+  private async assertValidGoal(
     matchId: string,
     clubId: string,
-    outgoingRegistrationId: string,
-    incomingRegistrationId: string,
+    registrationId: string,
+    period?: MatchEventPeriod,
   ) {
+    const lifecycleEvents = await this.prisma.auditLog.findMany({
+      where: {
+        resourceType: 'MatchEvent',
+        resourceId: matchId,
+        action: {
+          in: [
+            `${EVENT_ACTION_PREFIX}${LiveMatchEventType.MATCH_START}`,
+            `${EVENT_ACTION_PREFIX}${LiveMatchEventType.HALF_TIME}`,
+            `${EVENT_ACTION_PREFIX}${LiveMatchEventType.SECOND_HALF_START}`,
+            `${EVENT_ACTION_PREFIX}${LiveMatchEventType.MATCH_END}`,
+          ],
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const history = lifecycleEvents.map((event) =>
+      event.action.slice(EVENT_ACTION_PREFIX.length),
+    );
+
+    const hasStarted = history.includes(LiveMatchEventType.MATCH_START);
+    const hasHalfTime = history.includes(LiveMatchEventType.HALF_TIME);
+    const hasSecondHalf = history.includes(
+      LiveMatchEventType.SECOND_HALF_START,
+    );
+    const hasEnded = history.includes(LiveMatchEventType.MATCH_END);
+
+    if (!hasStarted || hasEnded) {
+      throw new BadRequestException(
+        'Un but ne peut être enregistré que pendant le jeu',
+      );
+    }
+
+    let authoritativePeriod: MatchEventPeriod;
+
+    if (!hasHalfTime) {
+      authoritativePeriod = MatchEventPeriod.FIRST_HALF;
+    } else if (!hasSecondHalf) {
+      throw new BadRequestException(
+        'Un but ne peut pas être enregistré pendant la mi-temps',
+      );
+    } else {
+      authoritativePeriod = MatchEventPeriod.SECOND_HALF;
+    }
+
+    if (period && period !== authoritativePeriod) {
+      throw new BadRequestException(
+        'La période du but ne correspond pas à la phase actuelle du match',
+      );
+    }
+
+    const { onField } = await this.getPlayerState(matchId, clubId);
+
+    if (!onField.has(registrationId)) {
+      throw new BadRequestException(
+        'Le buteur n’est pas actuellement sur le terrain',
+      );
+    }
+  }
+
+  private async getPlayerState(matchId: string, clubId: string) {
     const sheet = await this.prisma.matchSheet.findUnique({
       where: { matchId },
       include: {
@@ -184,7 +260,9 @@ export class MatchEventsService {
         .map((player) => player.registrationId),
     );
 
-    const playerStateEvents = await this.prisma.auditLog.findMany({
+    const sentOff = new Set<string>();
+
+    const events = await this.prisma.auditLog.findMany({
       where: {
         resourceType: 'MatchEvent',
         resourceId: matchId,
@@ -198,9 +276,7 @@ export class MatchEventsService {
       orderBy: { createdAt: 'asc' },
     });
 
-    const sentOff = new Set<string>();
-
-    for (const event of playerStateEvents) {
+    for (const event of events) {
       if (!event.metadata || typeof event.metadata !== 'object') continue;
 
       const metadata = event.metadata as Record<string, unknown>;
@@ -222,14 +298,26 @@ export class MatchEventsService {
         event.action ===
         `${EVENT_ACTION_PREFIX}${LiveMatchEventType.RED_CARD}`
       ) {
-        const registrationId = metadata.registrationId;
+        const playerId = metadata.registrationId;
 
-        if (typeof registrationId === 'string') {
-          sentOff.add(registrationId);
-          onField.delete(registrationId);
+        if (typeof playerId === 'string') {
+          sentOff.add(playerId);
+          onField.delete(playerId);
         }
       }
     }
+
+    return { onField, sentOff };
+  }
+
+  private assertClubBelongsToMatch(match: { homeClubId: string; awayClubId: string }, clubId?: string) { if (!clubId) return; if (clubId !== match.homeClubId && clubId !== match.awayClubId) throw new BadRequestException('Le club ne participe pas à cette rencontre'); }
+  private async assertValidSubstitution(
+    matchId: string,
+    clubId: string,
+    outgoingRegistrationId: string,
+    incomingRegistrationId: string,
+  ) {
+    const { onField, sentOff } = await this.getPlayerState(matchId, clubId);
 
     if (sentOff.has(outgoingRegistrationId)) {
       throw new BadRequestException(
