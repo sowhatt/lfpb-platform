@@ -22,6 +22,10 @@ type Summary = {
   homeSigned: boolean;
   awaySigned: boolean;
   officialSigned: boolean;
+  matchStatus?: string;
+  readyForSignatures?: boolean;
+  signaturesConsistent?: boolean;
+  currentReportFingerprint?: string | null;
 };
 
 type Props = { token: string; matchId: string; memberships: Membership[] };
@@ -101,9 +105,9 @@ export function MatchSheetSignaturesPanel({ token, matchId, memberships }: Props
 
   return (
     <section className="data-panel" style={{ marginTop: 20, padding: 20 }}>
-      <label>FEUILLE DE MATCH · SIGNATURES</label>
-      <h2 style={{ margin: '8px 0 6px' }}>{final ? 'Feuille finalisée' : 'Circuit de signature'}</h2>
-      <p style={{ marginTop: 0 }}>Les deux clubs signent d’abord. L’officiel signe ensuite la version verrouillée de la feuille.</p>
+      <label>RAPPORT OFFICIEL · SIGNATURES</label>
+      <h2 style={{ margin: '8px 0 6px' }}>{final ? 'Rapport certifié' : 'Circuit de signature'}</h2>
+      <p style={{ marginTop: 0 }}>Les deux clubs signent d’abord. L’officiel certifie ensuite la même version du rapport final : feuille verrouillée, score et faits de match.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12, margin: '18px 0' }}>
         {cards.map((card) => {
@@ -125,17 +129,19 @@ export function MatchSheetSignaturesPanel({ token, matchId, memberships }: Props
       </div>
 
       {summary.sheetStatus !== 'LOCKED' && <div className="api-error">La feuille doit être verrouillée avant toute signature.</div>}
+      {summary.matchStatus && summary.matchStatus !== 'COMPLETED' && <div className="api-error">Le match doit être terminé avant de signer le rapport officiel.</div>}
+      {summary.signatures.length > 0 && summary.signaturesConsistent === false && <div className="api-error">⚠️ Le rapport a changé depuis une signature précédente. Le circuit doit être réinitialisé avant certification.</div>}
       {notice && <p style={{ fontWeight: 700 }}>{notice}</p>}
       {error && <div className="api-error">{error}</div>}
 
-      {allowedRole && summary.sheetStatus === 'LOCKED' && !(allowedRole === 'OFFICIAL' && !bothClubsSigned) && (
+      {allowedRole && summary.sheetStatus === 'LOCKED' && summary.matchStatus === 'COMPLETED' && summary.signaturesConsistent !== false && !(allowedRole === 'OFFICIAL' && !bothClubsSigned) && (
         <div style={{ display: 'grid', gap: 10, maxWidth: 560, marginTop: 16 }}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom et prénom du signataire" maxLength={120} />
           <input value={fn} onChange={(e) => setFn(e.target.value)} placeholder="Fonction (ex. Président, secrétaire, arbitre)" maxLength={120} />
           <button type="button" onClick={() => void sign()} disabled={busy || name.trim().length < 2}>
-            {busy ? 'Signature en cours…' : '✍️ Signer la feuille verrouillée'}
+            {busy ? 'Signature en cours…' : '✍️ Signer le rapport officiel'}
           </button>
-          <small>En signant, le nom, la fonction, l’heure et l’empreinte SHA-256 de la feuille sont enregistrés dans l’audit.</small>
+          <small>La signature enregistre le signataire, l’heure et l’empreinte SHA-256 du rapport complet : composition, score final et chronologie officielle.</small>
         </div>
       )}
     </section>
