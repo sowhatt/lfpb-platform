@@ -16,29 +16,138 @@ const AUDIO_TYPES: Record<string, { mimeType: string; extension: string }> = {
 
 const FR_UNITS: Record<string, number> = { zero: 0, un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11, douze: 12, treize: 13, quatorze: 14, quinze: 15, seize: 16 };
 function frenchNumber(raw: string): number | undefined {
-  const text = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/-/g, ' ').replace(/\bet\b/g, ' ').replace(/\s+/g, ' ').trim();
+  const text = raw
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/-/g, ' ')
+    .replace(/\bet\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
   if (/^\d{1,3}$/.test(text)) return Number(text);
-  if (FR_UNITS[text] !== undefined) return FR_UNITS[text];
+
+  const units: Record<string, number> = {
+    zero: 0,
+    un: 1,
+    une: 1,
+    deux: 2,
+    trois: 3,
+    quatre: 4,
+    cinq: 5,
+    six: 6,
+    sept: 7,
+    huit: 8,
+    neuf: 9,
+    dix: 10,
+    onze: 11,
+    douze: 12,
+    treize: 13,
+    quatorze: 14,
+    quinze: 15,
+    seize: 16,
+  };
+
+  const directTens: Record<string, number> = {
+    vingt: 20,
+    trente: 30,
+    quarante: 40,
+    cinquante: 50,
+    soixante: 60,
+  };
+
   const tokens = text.split(' ').filter(Boolean);
-  let total = 0;
-  for (let index = 0; index < tokens.length;) {
-    const token = tokens[index];
-    const next = tokens[index + 1];
-    if (token === 'quatre' && next === 'vingt') { total += 80; index += 2; continue; }
-    if (token === 'soixante' && next && FR_UNITS[next] !== undefined && FR_UNITS[next] >= 10) { total += 60 + FR_UNITS[next]; index += 2; continue; }
-    if (FR_UNITS[token] !== undefined) { total += FR_UNITS[token]; index += 1; continue; }
-    const tens: Record<string, number> = { vingt: 20, trente: 30, quarante: 40, cinquante: 50, soixante: 60 };
-    if (tens[token] !== undefined) { total += tens[token]; index += 1; continue; }
-    if (token === 'cent') { total = Math.max(1, total) * 100; index += 1; continue; }
-    return undefined;
+
+  if (tokens.length === 1) {
+    return units[tokens[0]] ?? directTens[tokens[0]];
   }
-  return total || undefined;
+
+  if (tokens[0] === 'quatre' && tokens[1] === 'vingt') {
+    const rest = tokens.slice(2).join(' ');
+    if (!rest) return 80;
+
+    const value = frenchNumber(rest);
+    return value === undefined ? undefined : 80 + value;
+  }
+
+  if (tokens[0] === 'soixante') {
+    const rest = tokens.slice(1).join(' ');
+    if (!rest) return 60;
+
+    const value = frenchNumber(rest);
+    return value === undefined ? undefined : 60 + value;
+  }
+
+  const tens = directTens[tokens[0]];
+  if (tens !== undefined) {
+    const rest = tokens.slice(1).join(' ');
+    if (!rest) return tens;
+
+    const value = frenchNumber(rest);
+    return value === undefined ? undefined : tens + value;
+  }
+
+  if (tokens[0] === 'cent') {
+    const rest = tokens.slice(1).join(' ');
+    if (!rest) return 100;
+
+    const value = frenchNumber(rest);
+    return value === undefined ? undefined : 100 + value;
+  }
+
+  return undefined;
 }
+
 function extractMinute(normalized: string): number | undefined {
-  const digit = /(?:a|vers)?\s*(?:la\s+)?(\d{1,3})(?:e|eme|ere|re)?\s+minute/.exec(normalized);
+  const digit = /\b(?:a|vers)\s+(?:la\s+)?(\d{1,3})(?:e|eme|ieme|ere|re)?\s+minute\b/.exec(normalized);
   if (digit) return Number(digit[1]);
-  const words = /(?:a|vers)?\s*(?:la\s+)?([a-z -]{2,40}?)(?:ieme|eme|ere|re)?\s+minute/.exec(normalized);
-  return words ? frenchNumber(words[1]) : undefined;
+
+  const words = /\b(?:a|vers)\s+(?:la\s+)?([a-z]+(?:[- ][a-z]+){0,4})\s+minute\b/.exec(normalized);
+  if (!words) return undefined;
+
+  const ordinalToCardinal: Record<string, string> = {
+    premiere: 'un',
+    deuxieme: 'deux',
+    troisieme: 'trois',
+    quatrieme: 'quatre',
+    cinquieme: 'cinq',
+    sixieme: 'six',
+    septieme: 'sept',
+    huitieme: 'huit',
+    neuvieme: 'neuf',
+    dixieme: 'dix',
+    onzieme: 'onze',
+    douzieme: 'douze',
+    treizieme: 'treize',
+    quatorzieme: 'quatorze',
+    quinzieme: 'quinze',
+    seizieme: 'seize',
+    vingtieme: 'vingt',
+    trentieme: 'trente',
+    quarantieme: 'quarante',
+    cinquantieme: 'cinquante',
+    soixantieme: 'soixante',
+  };
+
+  const tokens = words[1]
+    .replace(/-/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const lastIndex = tokens.length - 1;
+  const last = tokens[lastIndex];
+
+  if (ordinalToCardinal[last]) {
+    tokens[lastIndex] = ordinalToCardinal[last];
+  } else {
+    tokens[lastIndex] = last
+      .replace(/ieme$/, '')
+      .replace(/eme$/, '')
+      .replace(/ere$/, '')
+      .replace(/re$/, '');
+  }
+
+  return frenchNumber(tokens.join(' '));
 }
 
 @Injectable()
