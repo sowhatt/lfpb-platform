@@ -236,4 +236,86 @@ describe('MatchEventsService - substitutions', () => {
     ).resolves.toBeDefined();
   });
 
+
+  it('refuse de remplacer un joueur déjà expulsé', async () => {
+    const prisma = makePrisma([
+      {
+        action: 'MATCH_EVENT_RED_CARD',
+        metadata: {
+          clubId: 'home-club',
+          registrationId: 'starter1',
+        },
+      },
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.SUBSTITUTION,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        secondaryRegistrationId: 'sub1',
+        minute: 70,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuse de faire entrer un remplaçant déjà expulsé', async () => {
+    const prisma = makePrisma([
+      {
+        action: 'MATCH_EVENT_RED_CARD',
+        metadata: {
+          clubId: 'home-club',
+          registrationId: 'sub1',
+        },
+      },
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.SUBSTITUTION,
+        clubId: 'home-club',
+        registrationId: 'starter1',
+        secondaryRegistrationId: 'sub1',
+        minute: 70,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+
+  it('refuse de remplacer un remplaçant entré puis expulsé', async () => {
+    const prisma = makePrisma([
+      {
+        action: 'MATCH_EVENT_SUBSTITUTION',
+        metadata: {
+          clubId: 'home-club',
+          registrationId: 'starter1',
+          secondaryRegistrationId: 'sub1',
+        },
+      },
+      {
+        action: 'MATCH_EVENT_RED_CARD',
+        metadata: {
+          clubId: 'home-club',
+          registrationId: 'sub1',
+        },
+      },
+    ]);
+
+    const service = new MatchEventsService(prisma);
+
+    await expect(
+      service.create(actor, 'match-1', {
+        type: LiveMatchEventType.SUBSTITUTION,
+        clubId: 'home-club',
+        registrationId: 'sub1',
+        secondaryRegistrationId: 'sub2',
+        minute: 80,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
 });

@@ -103,27 +103,63 @@ export class MatchEventsService {
         .map((player) => player.registrationId),
     );
 
-    const substitutions = await this.prisma.auditLog.findMany({
+    const playerStateEvents = await this.prisma.auditLog.findMany({
       where: {
         resourceType: 'MatchEvent',
         resourceId: matchId,
-        action: `${EVENT_ACTION_PREFIX}${LiveMatchEventType.SUBSTITUTION}`,
+        action: {
+          in: [
+            `${EVENT_ACTION_PREFIX}${LiveMatchEventType.SUBSTITUTION}`,
+            `${EVENT_ACTION_PREFIX}${LiveMatchEventType.RED_CARD}`,
+          ],
+        },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    for (const event of substitutions) {
+    const sentOff = new Set<string>();
+
+    for (const event of playerStateEvents) {
       if (!event.metadata || typeof event.metadata !== 'object') continue;
 
       const metadata = event.metadata as Record<string, unknown>;
 
       if (metadata.clubId !== clubId) continue;
 
-      const outgoing = metadata.registrationId;
-      const incoming = metadata.secondaryRegistrationId;
+      if (
+        event.action ===
+        `${EVENT_ACTION_PREFIX}${LiveMatchEventType.SUBSTITUTION}`
+      ) {
+        const outgoing = metadata.registrationId;
+        const incoming = metadata.secondaryRegistrationId;
 
-      if (typeof outgoing === 'string') onField.delete(outgoing);
-      if (typeof incoming === 'string') onField.add(incoming);
+        if (typeof outgoing === 'string') onField.delete(outgoing);
+        if (typeof incoming === 'string') onField.add(incoming);
+      }
+
+      if (
+        event.action ===
+        `${EVENT_ACTION_PREFIX}${LiveMatchEventType.RED_CARD}`
+      ) {
+        const registrationId = metadata.registrationId;
+
+        if (typeof registrationId === 'string') {
+          sentOff.add(registrationId);
+          onField.delete(registrationId);
+        }
+      }
+    }
+
+    if (sentOff.has(outgoingRegistrationId)) {
+      throw new BadRequestException(
+        'Le joueur sortant a déjà été expulsé',
+      );
+    }
+
+    if (sentOff.has(incomingRegistrationId)) {
+      throw new BadRequestException(
+        'Le joueur entrant a déjà été expulsé',
+      );
     }
 
     if (!onField.has(outgoingRegistrationId)) {
