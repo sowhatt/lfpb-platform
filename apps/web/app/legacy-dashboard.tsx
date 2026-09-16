@@ -5,6 +5,7 @@ import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import { OfficialVoiceAssistant } from './official-voice-assistant';
 import { StaffWorkspace } from './staff-workspace';
 import { ClubLicenseWorkspace } from './club-license-workspace';
+import { LeagueCompetitionCalendar } from './league-competition-calendar';
 import { navigationForSpace, resolveSpace } from './space-policy';
 import type { Space } from './space-policy';
 
@@ -242,13 +243,19 @@ export default function HomePage() {
         <div className="user"><b>{actor.email.slice(0, 2).toUpperCase()}</b><span><strong>{actor.email}</strong><small>{actor.memberships[0]?.role.replaceAll('_', ' ')}</small></span><button onClick={logout}>↪</button></div>
       </aside>
       <main>
-        <header><div><label>{space === 'FEDERATION' ? 'FÉDÉRATION BÉNINOISE DE FOOTBALL' : space === 'CLUB' ? organizations[0]?.name : space === 'OFFICIEL' ? 'PORTAIL DES OFFICIELS' : 'DONNÉES TEMPS RÉEL · API LFPB'}</label><h1>{active}</h1><p>{loading ? 'Actualisation des données…' : space === 'FEDERATION' ? `${licenses.length} dossier(s) de licence` : space === 'CLUB' ? `${players.length} joueur(s) · ${staff.length} membre(s) du staff · ${licenses.length} dossier(s)` : `${clubs.length} clubs · ${competitions.length} compétition(s) · ${visibleMatches.length} rencontre(s)`}</p></div><div className="actions"><button onClick={() => loadDashboard(token, actor)}>↻ Actualiser</button>{space === 'LIGUE' && <button className="primary" onClick={() => setActive('Calendrier RKJO')}>Ouvrir RKJO</button>}</div></header>
+        <header><div><label>{space === 'FEDERATION' ? 'FÉDÉRATION BÉNINOISE DE FOOTBALL' : space === 'CLUB' ? organizations[0]?.name : space === 'OFFICIEL' ? 'PORTAIL DES OFFICIELS' : 'DONNÉES TEMPS RÉEL · API LFPB'}</label><h1>{active}</h1><p>{loading ? 'Actualisation des données…' : space === 'FEDERATION' ? `${licenses.length} dossier(s) de licence` : space === 'CLUB' ? `${players.length} joueur(s) · ${staff.length} membre(s) du staff · ${licenses.length} dossier(s)` : `${clubs.length} clubs · ${competitions.length} compétition(s) · ${visibleMatches.length} rencontre(s)`}</p></div><div className="actions"><button onClick={() => loadDashboard(token, actor)}>↻ Actualiser</button>{space === 'LIGUE' && <button className="primary" onClick={() => setActive('Calendrier des compétitions')}>Calendrier des compétitions</button>}</div></header>
         {error && <div className="api-error">{error}</div>}
         {active === 'Vue d’ensemble' && (space === 'FEDERATION' ? <FederationOverview licenses={licenses} /> : space === 'CLUB' ? <ClubOverview organization={organizations[0]} players={players} staff={staff} licenses={licenses} matches={upcoming} /> : space === 'OFFICIEL' ? <OfficialOverview matches={upcoming} /> : <Overview clubs={clubs} competitions={competitions} matches={upcoming} proposal={latestProposal} />)}
         {active === 'Clubs' && <ClubsView clubs={clubs} />}
         {active === 'Compétitions' && <CompetitionsView competitions={competitions} />}
+        {active === 'Calendrier des compétitions' && space === 'LIGUE' && (
+          <LeagueCompetitionCalendar
+            competitions={competitions}
+            token={token}
+            roles={actor?.memberships.map((membership) => membership.role) ?? []}
+          />
+        )}
         {active === 'Rencontres' && <MatchesView matches={matches} />}
-        {active === 'Calendrier RKJO' && <PlannerView proposals={proposals} />}
         {active === 'Effectif' && currentOrganizationId && <PlayersWorkspace registrations={players} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
         {active === 'Staff' && currentOrganizationId && <StaffWorkspace registrations={staff} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
         {active === 'Licences' && (space === 'CLUB'
@@ -311,7 +318,7 @@ function LoginScreen({ loading, error, onSubmit }: { loading: boolean; error: st
 }
 
 function Overview({ clubs, competitions, matches, proposal }: { clubs: Organization[]; competitions: Competition[]; matches: Match[]; proposal?: Proposal }) {
-  return <><section className="stats"><Stat value={String(clubs.length)} label="Clubs enregistrés" detail="Données PostgreSQL" /><Stat value={String(competitions.length)} label="Compétitions" detail="Toutes saisons" /><Stat value={String(matches.length)} label="Prochaines rencontres" detail="Calendrier actuel" /><Stat value={proposal ? `${proposal.qualityScore}%` : '—'} label="Qualité RKJO" detail={proposal?.status ?? 'Aucune proposition'} /></section><section className="main-grid"><MatchesPanel matches={matches} /><article className="planner"><div className="orbit">RKJO</div><label>PLANIFICATEUR INTELLIGENT</label><h2>{proposal ? `Proposition v${proposal.version}` : 'Aucune proposition active'}</h2><p>Cette information provient maintenant de l’API de gouvernance du calendrier.</p><div className="score"><strong>{proposal?.qualityScore ?? '—'}</strong><span>/100<br />{proposal?.status ?? 'À générer'}</span></div></article></section></>;
+  return <><section className="stats"><Stat value={String(clubs.length)} label="Clubs enregistrés" detail="Données PostgreSQL" /><Stat value={String(competitions.length)} label="Compétitions" detail="Toutes saisons" /><Stat value={String(matches.length)} label="Prochaines rencontres" detail="Calendrier actuel" /><Stat value={proposal ? `${proposal.qualityScore}%` : '—'} label="Qualité du calendrier" detail={proposal?.status ?? 'Aucune proposition'} /></section><section className="main-grid"><MatchesPanel matches={matches} /><article className="planner"><div className="orbit">DF</div><label>PLANIFICATEUR INTELLIGENT</label><h2>{proposal ? `Proposition v${proposal.version}` : 'Aucune proposition active'}</h2><p>Cette information provient maintenant de l’API de gouvernance du calendrier.</p><div className="score"><strong>{proposal?.qualityScore ?? '—'}</strong><span>/100<br />{proposal?.status ?? 'À générer'}</span></div></article></section></>;
 }
 function ClubOverview({ organization, players, staff, licenses, matches }: { organization?: Organization; players: Registration[]; staff: Registration[]; licenses: License[]; matches: Match[] }) {
   const issued = licenses.filter((license) => license.status === 'ISSUED_BY_FBF').length;
@@ -331,7 +338,6 @@ function MatchesPanel({ matches }: { matches: Match[] }) { return <article class
 function ClubsView({ clubs }: { clubs: Organization[] }) { return <DataPanel title="Clubs gérés par la Ligue"><table><thead><tr><th>Club</th><th>Code</th><th>Division</th><th>Ville</th><th>État</th></tr></thead><tbody>{clubs.map((club) => <tr key={club.id}><td><strong>{club.name}</strong></td><td>{club.code}</td><td>{club.club?.division.replace('_', ' ')}</td><td>{club.club?.city ?? '—'}</td><td><Badge value={club.active ? 'ACTIF' : 'INACTIF'} /></td></tr>)}</tbody></table></DataPanel>; }
 function CompetitionsView({ competitions }: { competitions: Competition[] }) { return <DataPanel title="Compétitions"><table><thead><tr><th>Nom</th><th>Code</th><th>Format</th><th>Division</th><th>Statut</th></tr></thead><tbody>{competitions.map((c) => <tr key={c.id}><td><strong>{c.name}</strong></td><td>{c.code}</td><td>{c.format.replaceAll('_', ' ')}</td><td>{c.division?.replace('_', ' ') ?? '—'}</td><td><Badge value={c.status} /></td></tr>)}</tbody></table></DataPanel>; }
 function MatchesView({ matches }: { matches: Match[] }) { return <DataPanel title="Toutes les rencontres"><table><thead><tr><th>Journée</th><th>Affiche</th><th>Date</th><th>Stade</th><th>Statut</th></tr></thead><tbody>{matches.map((m) => <tr key={m.id}><td>J{m.round?.number ?? '—'}</td><td><strong>{m.homeClub.shortName} — {m.awayClub.shortName}</strong></td><td>{formatDate(m.kickoffAt)} · {formatTime(m.kickoffAt)}</td><td>{m.venue?.name ?? '—'}</td><td><Badge value={m.status} /></td></tr>)}</tbody></table></DataPanel>; }
-function PlannerView({ proposals }: { proposals: Proposal[] }) { return <DataPanel title="Propositions RKJO"><table><thead><tr><th>Version</th><th>Moteur</th><th>Qualité</th><th>Date</th><th>Statut</th></tr></thead><tbody>{proposals.map((p) => <tr key={p.id}><td><strong>Version {p.version}</strong></td><td>{p.generatedBy}</td><td>{p.qualityScore}/100</td><td>{formatDate(p.createdAt)}</td><td><Badge value={p.status} /></td></tr>)}</tbody></table>{proposals.length === 0 && <Empty text="Aucune proposition accessible avec ce rôle" />}</DataPanel>; }
 function PlayersWorkspace({ registrations, organizationId, token, onCreated }: { registrations: Registration[]; organizationId: string; token: string; onCreated: () => Promise<void> }) {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
