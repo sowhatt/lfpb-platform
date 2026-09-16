@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './styles.css';
+import './mobile-official.css';
 
 export const metadata: Metadata = {
   title: 'LFPB Platform',
