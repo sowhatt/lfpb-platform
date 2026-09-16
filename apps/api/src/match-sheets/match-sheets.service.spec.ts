@@ -16,7 +16,7 @@ describe('MatchSheetsService', () => {
     matchSheet: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
     matchSheetPlayer: { upsert: jest.fn() },
     officialProfile: { findUnique: jest.fn() },
-    matchOfficialAssignment: { findUnique: jest.fn() },
+    matchOfficialAssignment: { findFirst: jest.fn() },
     auditLog: { create: jest.fn() },
   } as any;
 
@@ -257,7 +257,7 @@ describe('MatchSheetsService', () => {
 
   it('allows an assigned and accepted official to validate the sheet', async () => {
     prisma.officialProfile.findUnique.mockResolvedValue({ registrationId: 'official-registration' });
-    prisma.matchOfficialAssignment.findUnique.mockResolvedValue({
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue({
       id: 'assignment',
       status: MatchOfficialAssignmentStatus.ACCEPTED,
     });
@@ -280,12 +280,12 @@ describe('MatchSheetsService', () => {
     const result = await service.validateSheet(officialActor(), 'match');
 
     expect(result.validatedAt).toBeInstanceOf(Date);
-    expect(prisma.matchOfficialAssignment.findUnique).toHaveBeenCalled();
+    expect(prisma.matchOfficialAssignment.findFirst).toHaveBeenCalled();
   });
 
   it('refuses validation by an official who is not assigned and accepted', async () => {
     prisma.officialProfile.findUnique.mockResolvedValue({ registrationId: 'official-registration' });
-    prisma.matchOfficialAssignment.findUnique.mockResolvedValue(null);
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue(null);
 
     await expect(
       service.validateSheet(officialActor(), 'match'),
