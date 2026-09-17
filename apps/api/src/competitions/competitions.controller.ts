@@ -24,13 +24,18 @@ import { CreateSeasonDto } from './dto/create-season.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
 import { EnrollClubDto } from './dto/enroll-club.dto';
-import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
+import { MaterializeScheduleDto } from './dto/materialize-schedule.dto';
 import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dto';
+import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
+import { ScheduleMaterializationService } from './schedule-materialization.service';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CompetitionsController {
-  constructor(private readonly competitions: CompetitionsService) {}
+  constructor(
+    private readonly competitions: CompetitionsService,
+    private readonly materialization: ScheduleMaterializationService,
+  ) {}
 
   @Get('seasons')
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
@@ -67,6 +72,16 @@ export class CompetitionsController {
   @Patch('schedule-proposals/:proposalId/decision')
   @Roles(Role.SCHEDULE_APPROVER)
   decideScheduleProposal(@CurrentActor() actor: AuthenticatedActor, @Param('proposalId', ParseUUIDPipe) proposalId: string, @Body() input: ScheduleProposalDecisionDto) { return this.competitions.decideScheduleProposal(actor, proposalId, input); }
+
+  @Post('schedule-proposals/:proposalId/materialize')
+  @Roles(Role.LIGUE_ADMIN)
+  materializeScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+    @Body() input: MaterializeScheduleDto,
+  ) {
+    return this.materialization.materialize(actor, proposalId, input);
+  }
 
   @Patch('schedule-proposals/:proposalId/publish')
   @Roles(Role.LIGUE_ADMIN)
