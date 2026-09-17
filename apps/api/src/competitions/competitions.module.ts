@@ -5,10 +5,16 @@ import { CompetitionsController } from './competitions.controller';
 import { CompetitionsService } from './competitions.service';
 import { FixturePlannerService } from './fixture-planner.service';
 import { FixtureQualityService } from './fixture-quality.service';
+import { ScheduleMaterializationService } from './schedule-materialization.service';
 
 @Module({
   imports: [AuthModule, IamModule],
   controllers: [CompetitionsController],
-  providers: [CompetitionsService, FixturePlannerService, FixtureQualityService],
+  providers: [
+    CompetitionsService,
+    FixturePlannerService,
+    FixtureQualityService,
+    ScheduleMaterializationService,
+  ],
 })
 export class CompetitionsModule {}
