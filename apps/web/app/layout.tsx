@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import './styles.css';
 import './mobile-official.css';
 import './mobile-match-hotfix.css';
+import './calendar-cockpit.css';
 
 export const metadata: Metadata = {
   title: 'LFPB Platform',
