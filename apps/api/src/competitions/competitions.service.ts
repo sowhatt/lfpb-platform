@@ -499,7 +499,7 @@ export class CompetitionsService {
         name: competition.name,
         format: competition.format,
       },
-      generatedBy: 'RKJO_FIXTURE_PLANNER_V1',
+      generatedBy: 'DIGITAL_FOOT_FIXTURE_PLANNER_V1',
       quality,
       constraints: [
         'Aucun club ne joue contre lui-même',

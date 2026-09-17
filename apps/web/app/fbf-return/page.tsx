@@ -165,7 +165,7 @@ export default function FbfReturnPage() {
         <nav>
           <button type="button" onClick={() => window.location.assign('/')}>⌂ Vue d’ensemble</button>
           <button type="button" onClick={() => window.location.assign('/')}>◫ Compétitions</button>
-          <button type="button" onClick={() => window.location.assign('/')}>✦ Calendrier RKJO</button>
+          <button type="button" onClick={() => window.location.assign('/')}>✦ Calendrier des compétitions</button>
           <button type="button" onClick={() => window.location.assign('/')}>◆ Clubs</button>
           <button type="button" onClick={() => window.location.assign('/')}>◉ Licences</button>
           <button type="button" className="active">✓ Retours FBF</button>

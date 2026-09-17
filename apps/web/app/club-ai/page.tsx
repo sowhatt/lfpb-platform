@@ -55,7 +55,7 @@ export default function ClubAiPage() {
     <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}>
       <div className="workspace-actions">
         <div>
-          <label>LF · RKJO AI</label>
+          <label>LF · Digital Foot AI</label>
           <h1>Recherche vocale joueur</h1>
           <p>{actor.email}</p>
         </div>
