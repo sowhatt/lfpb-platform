@@ -18,12 +18,8 @@ type Competition = {
   entries?: ClubEntry[];
 };
 type Quality = { score: number; [key: string]: unknown };
-type Preview = {
-  competition: { id: string; name: string; format: string };
-  quality: Quality;
-  constraints: string[];
-  rounds: Array<{ number: number; byeClub?: { name?: string } | null; matches: Array<{ homeClub: { name?: string }; awayClub: { name?: string } }> }>;
-};
+type PreviewRound = { number: number; byeClub?: { name?: string } | null; matches: Array<{ homeClub: { name?: string }; awayClub: { name?: string } }> };
+type Preview = { competition: { id: string; name: string; format: string }; quality: Quality; constraints: string[]; rounds: PreviewRound[] };
 type Proposal = {
   id: string;
   version: number;
@@ -32,7 +28,7 @@ type Proposal = {
   createdAt: string;
   rejectionReason?: string | null;
   qualityReport?: Quality;
-  payload?: { constraints?: string[]; rounds?: Preview['rounds'] };
+  payload?: { constraints?: string[]; rounds?: PreviewRound[] };
 };
 type Venue = { id: string; name: string; city: string; approved: boolean; active: boolean; capacity?: number | null };
 type Round = { id: string; number: number; startDate?: string | null; matches?: unknown[] };
@@ -88,7 +84,11 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
   const qualityScore = preview?.quality.score ?? latest?.qualityScore ?? null;
   const activeClubs = selected?.entries?.filter((entry) => entry.active !== false) ?? [];
   const approvedVenues = venues.filter((venue) => venue.active && venue.approved);
-  const isMaterialized = roundRecords.length > 0;
+  const expectedRoundCount = rounds.length;
+  const expectedMatchCount = rounds.reduce((sum, round) => sum + round.matches.length, 0);
+  const actualMatchCount = roundRecords.reduce((sum, round) => sum + (round.matches?.length ?? 0), 0);
+  const isMaterialized = expectedRoundCount > 0 && roundRecords.length === expectedRoundCount && actualMatchCount === expectedMatchCount;
+  const hasExistingCompetitionSchedule = roundRecords.length > 0;
 
   async function loadCompetitions() {
     const items = await api<Competition[]>('/competitions', token);
@@ -162,21 +162,20 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
 
   function materialize() {
     if (!latest) return;
+    if (hasExistingCompetitionSchedule) { setError('Cette compétition contient déjà des journées ou rencontres. La matérialisation automatique est bloquée pour éviter tout écrasement.'); return; }
     if (!authorizedVenueIds.length) { setError('Sélectionnez au moins un stade autorisé.'); return; }
     if (windows.some((windowItem) => !windowItem.validFrom || !windowItem.validUntil || !windowItem.weekdays.length || !windowItem.startTime || !windowItem.endTime)) {
       setError('Chaque fenêtre doit contenir une période, au moins un jour et une plage horaire.'); return;
     }
-    return run(async () => {
-      const result = await api<MaterializationResult>(`/schedule-proposals/${latest.id}/materialize`, token, {
-        method: 'POST',
-        body: JSON.stringify({ programmingWindows: windows, authorizedVenueIds }),
-      });
-      setNotice(`${result.roundsCreated} journée(s) et ${result.matchesCreated} rencontre(s) matérialisées.`);
-    }, 'Calendrier opérationnel matérialisé.');
+    return run(() => api<MaterializationResult>(`/schedule-proposals/${latest.id}/materialize`, token, {
+      method: 'POST',
+      body: JSON.stringify({ programmingWindows: windows, authorizedVenueIds }),
+    }), 'Calendrier opérationnel matérialisé.');
   }
 
   function publish() {
     if (!latest) return;
+    if (!isMaterialized) { setError('Publication bloquée : les journées et rencontres de cette proposition ne sont pas complètement matérialisées.'); return; }
     return run(() => api(`/schedule-proposals/${latest.id}/publish`, token, { method: 'PATCH' }), 'Calendrier publié par la Ligue.');
   }
 
@@ -231,12 +230,13 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
       <article className="calendar-card calendar-proposal">
         <div className="calendar-card-title"><div><small>03 · OPTIMISATION</small><h3>Proposition de calendrier</h3></div>{qualityScore !== null && <div className="calendar-score"><strong>{qualityScore}</strong><span>/100<br />qualité</span></div>}</div>
         <div className="calendar-intelligence"><b>Digital Foot analyse l’équilibre du championnat</b><span>Alternance domicile/extérieur, unicité des rencontres par journée, exemptions et contraintes définies par la Ligue.</span></div>
-        {(role === 'COMPETITION_MANAGER' || role === 'LIGUE_ADMIN') && <button className="calendar-primary" disabled={busy || activeClubs.length < 2 || isMaterialized} onClick={generate}>{busy ? 'Traitement…' : '✦ Générer une proposition optimisée'}</button>}
+        {(role === 'COMPETITION_MANAGER' || role === 'LIGUE_ADMIN') && <button className="calendar-primary" disabled={busy || activeClubs.length < 2 || hasExistingCompetitionSchedule} onClick={generate}>{busy ? 'Traitement…' : '✦ Générer une proposition optimisée'}</button>}
         {latest && <div className="calendar-proposal-status"><span>Version {latest.version}</span><b>{statusLabel[latest.status] ?? latest.status}</b>{latest.rejectionReason && <em>{latest.rejectionReason}</em>}{isMaterialized && <strong>Calendrier opérationnel créé</strong>}</div>}
         {rounds.length > 0 ? <div className="calendar-rounds">{rounds.slice(0, 6).map((round) => <div className="calendar-round" key={round.number}><h4>Journée {round.number}</h4>{round.matches.map((match, index) => <div className="calendar-fixture" key={`${round.number}-${index}`}><span>{match.homeClub.name}</span><b>—</b><span>{match.awayClub.name}</span></div>)}{round.byeClub?.name && <small>Exempt : {round.byeClub.name}</small>}</div>)}</div> : <div className="calendar-empty">La proposition apparaîtra ici après génération.</div>}
+        {hasExistingCompetitionSchedule && !isMaterialized && <div className="calendar-message error">Des journées ou rencontres existent déjà pour cette compétition, mais elles ne correspondent pas complètement à cette proposition. Publication et matérialisation automatiques bloquées.</div>}
       </article>
 
-      {role === 'LIGUE_ADMIN' && latest?.status === 'APPROVED' && !isMaterialized && <article className="calendar-card">
+      {role === 'LIGUE_ADMIN' && latest?.status === 'APPROVED' && !isMaterialized && !hasExistingCompetitionSchedule && <article className="calendar-card">
         <div className="calendar-card-title"><div><small>04 · PROGRAMMATION</small><h3>Fenêtres de programmation et stades autorisés</h3></div><span className="calendar-count">CDC</span></div>
         <p className="calendar-note">La Ligue définit les fenêtres autorisées. Digital Foot recherche ensuite un créneau valide sans conflit de club, de stade ni de repos.</p>
         <div className="calendar-window-list">
@@ -267,7 +267,7 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
           {(role === 'COMPETITION_MANAGER' || role === 'LIGUE_ADMIN') && latest?.status === 'GENERATED' && <button className="calendar-primary" disabled={busy} onClick={submit}>Soumettre pour validation</button>}
           {role === 'SCHEDULE_APPROVER' && latest?.status === 'SUBMITTED' && <><button className="calendar-primary" disabled={busy} onClick={() => decide('APPROVED')}>Approuver</button><button className="calendar-danger" disabled={busy} onClick={() => decide('REJECTED')}>Rejeter</button></>}
           {role === 'LIGUE_ADMIN' && latest?.status === 'APPROVED' && isMaterialized && <button className="calendar-primary" disabled={busy} onClick={publish}>Publier le calendrier</button>}
-          {role === 'LIGUE_ADMIN' && latest?.status === 'APPROVED' && !isMaterialized && <span className="calendar-muted">Matérialisez d’abord les journées et rencontres avant publication.</span>}
+          {role === 'LIGUE_ADMIN' && latest?.status === 'APPROVED' && !isMaterialized && <span className="calendar-muted">Publication bloquée tant que les journées et rencontres de la proposition ne sont pas matérialisées complètement.</span>}
           {!latest && <span className="calendar-muted">Générez d’abord une proposition.</span>}
         </div>
         <p className="calendar-note">L’assistance numérique ne publie jamais seule : toute publication reste une décision de la Ligue.</p>
