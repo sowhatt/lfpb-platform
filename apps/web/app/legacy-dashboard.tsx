@@ -443,6 +443,18 @@ function LicenseWorkflowView({ authority, licenses, clubs, token, onChanged }: {
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
   const [checklist, setChecklist] = useState<LicenseChecklist | null>(null);
   const [checklistLoading, setChecklistLoading] = useState(false);
+  const checklistPanelRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!selectedLicense) return;
+
+    window.requestAnimationFrame(() => {
+      checklistPanelRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }, [selectedLicense]);
 
   async function loadChecklist(license: License) {
     if (!license.registration?.id) return;
@@ -802,7 +814,10 @@ function LicenseWorkflowView({ authority, licenses, clubs, token, onChanged }: {
       </DataPanel>
 
       {authority === 'LIGUE' && selectedLicense && (
-        <section className="data-panel">
+        <section
+          ref={checklistPanelRef}
+          className="data-panel league-document-review"
+        >
           <div className="title">
             <span>
               <label>CONTRÔLE DOCUMENTAIRE LFPB</label>

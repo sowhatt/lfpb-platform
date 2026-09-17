@@ -89,3 +89,684 @@
   background: rgba(15, 45, 70, 0.06);
   border-radius: 8px;
 }
+
+/* =========================================================
+   DIGITAL FOOT — DOSSIER LICENCE CLUB
+   Présentation professionnelle du dossier joueur
+   ========================================================= */
+
+.player-profile {
+  position: relative;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 32px;
+  margin: 26px 0;
+  padding: 32px;
+  border: 1px solid #dbe3e8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 30px #1c2e430d;
+}
+
+.player-profile .profile-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #dbe3e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #526275;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.player-profile .profile-close:hover {
+  background: #f7f9fa;
+  color: #0b2c48;
+}
+
+.player-profile .player-photo {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  gap: 12px;
+  padding: 24px 18px;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #0b2c48, #123e5e);
+}
+
+.player-profile .player-photo > span {
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #d7af47;
+  border-radius: 50%;
+  background: #0d3150;
+  color: #d7af47;
+  font: 800 27px Georgia, serif;
+  letter-spacing: .05em;
+}
+
+.player-profile .player-photo > small {
+  max-width: 140px;
+  color: #b8c6d1 !important;
+  font-size: 10px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.player-profile .player-identity {
+  min-width: 0;
+  padding-top: 5px;
+}
+
+.player-profile .player-identity > label {
+  display: block;
+  margin-bottom: 7px;
+  color: #a37c22;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.player-profile .player-identity > h2 {
+  margin: 0 120px 22px 0;
+  color: #17283d;
+  font: 700 30px Georgia, serif;
+}
+
+.player-profile .player-identity > dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.player-profile .player-identity > dl > div {
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid #edf0f2;
+  border-radius: 10px;
+  background: #f8fafb;
+}
+
+.player-profile .player-identity dt {
+  margin-bottom: 6px;
+  color: #84909e;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.player-profile .player-identity dd {
+  margin: 0;
+  color: #203147;
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.player-profile .player-identity .badge {
+  padding: 7px 10px;
+  font-size: 9px;
+}
+
+.player-profile .badge.issued_by_fbf,
+.player-profile .badge.league_favorable {
+  background: #e7f4ec;
+  color: #27704d;
+}
+
+.player-profile .badge.submitted_to_league,
+.player-profile .badge.transmitted_to_fbf {
+  background: #eaf2f8;
+  color: #356b95;
+}
+
+.player-profile .badge.incomplete,
+.player-profile .badge.rejected_by_fbf,
+.player-profile .badge.suspended,
+.player-profile .badge.cancelled,
+.player-profile .badge.expired {
+  background: #fae8e6;
+  color: #9e3933;
+}
+
+@media (max-width: 1050px) {
+  .player-profile {
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 22px;
+    padding: 26px;
+  }
+
+  .player-profile .player-identity > dl {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .player-profile {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .player-profile .profile-close {
+    position: static;
+    justify-self: end;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .player-profile .player-photo {
+    min-height: 145px;
+    grid-column: 1;
+  }
+
+  .player-profile .player-identity > h2 {
+    margin-right: 0;
+    font-size: 25px;
+  }
+
+  .player-profile .player-identity > dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Alignement des métadonnées de la fiche licence */
+
+.player-profile .player-identity > dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 74px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.player-profile .player-identity > dl > div {
+  height: 74px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 16px;
+}
+
+.player-profile .player-identity dt {
+  height: 14px;
+  margin: 0 0 5px;
+  display: flex;
+  align-items: center;
+  line-height: 14px;
+}
+
+.player-profile .player-identity dd {
+  min-height: 22px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  line-height: 1.25;
+}
+
+.player-profile .player-identity dd .badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1050px) {
+  .player-profile .player-identity > dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: auto;
+  }
+
+  .player-profile .player-identity > dl > div {
+    height: 74px;
+  }
+}
+
+@media (max-width: 700px) {
+  .player-profile .player-identity > dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Digital Foot — workflow professionnel des licences */
+
+.license-workflow,
+.license-documents {
+  margin-top: 30px;
+}
+
+.license-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.license-section-heading label {
+  display: block;
+  margin-bottom: 5px;
+  color: #84909e;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+
+.license-section-heading h3 {
+  margin: 0;
+  color: #203147;
+  font-size: 17px;
+}
+
+.license-current-status,
+.license-completion {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #eef2f4;
+  color: #526275;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.license-completion.is-complete {
+  background: #e7f4ec;
+  color: #27704d;
+}
+
+.license-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid #e3e9ed;
+  border-radius: 13px;
+  background: #f8fafb;
+  overflow: hidden;
+}
+
+.license-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 13px;
+}
+
+.license-step + .license-step {
+  border-left: 1px solid #e3e9ed;
+}
+
+.license-step-marker {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #cfd8df;
+  border-radius: 50%;
+  background: #fff;
+  color: #788795;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.license-step.is-done .license-step-marker {
+  border-color: #78b494;
+  background: #e7f4ec;
+  color: #27704d;
+}
+
+.license-step.is-active {
+  background: #fff8e8;
+}
+
+.license-step.is-active .license-step-marker {
+  border-color: #d7af47;
+  background: #d7af47;
+  color: #102a43;
+}
+
+.license-step-copy {
+  min-width: 0;
+}
+
+.license-step-copy strong,
+.license-step-copy small {
+  display: block;
+}
+
+.license-step-copy strong {
+  color: #26394e;
+  font-size: 10px;
+}
+
+.license-step-copy small {
+  margin-top: 3px;
+  color: #84909e;
+  font-size: 8px;
+  line-height: 1.25;
+}
+
+.license-progress-summary {
+  padding: 16px 18px;
+  border: 1px solid #e3e9ed;
+  border-radius: 11px;
+  background: #f8fafb;
+}
+
+.license-progress-copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 11px;
+}
+
+.license-progress-copy strong {
+  color: #203147;
+  font-size: 11px;
+}
+
+.license-progress-copy span {
+  color: #71808e;
+  font-size: 10px;
+}
+
+.license-progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e4e9ed;
+}
+
+.license-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #d7af47;
+  transition: width .25s ease;
+}
+
+.license-document-table {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #e1e7eb;
+  border-radius: 12px;
+}
+
+.license-document-head,
+.license-document-row {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.8fr) minmax(110px, .65fr) minmax(120px, .7fr) minmax(150px, .8fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.license-document-head {
+  padding: 11px 15px;
+  background: #f5f7f9;
+  color: #84909e;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.license-document-row {
+  min-height: 64px;
+  padding: 11px 15px;
+  background: #fff;
+  border-top: 1px solid #edf0f2;
+}
+
+.license-document-row.is-present {
+  background: #fbfdfc;
+}
+
+.license-document-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.license-document-name strong {
+  color: #203147;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.license-document-icon {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef2f4;
+  color: #7a8996;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.license-document-icon.is-present {
+  background: #e7f4ec;
+  color: #27704d;
+}
+
+.license-document-requirement {
+  color: #71808e;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.license-document-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #eef2f4;
+  color: #71808e;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.license-document-status.valid {
+  background: #e7f4ec;
+  color: #27704d;
+}
+
+.license-document-status.pending {
+  background: #fbf1d9;
+  color: #916b18;
+}
+
+.license-document-status.rejected,
+.license-document-status.expired {
+  background: #fae8e6;
+  color: #9e3933;
+}
+
+.license-document-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.license-secondary-action,
+.license-upload-action {
+  box-sizing: border-box;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  border: 1px solid #ccd7de;
+  border-radius: 7px;
+  background: #fff;
+  color: #203147;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.license-upload-action {
+  border-color: #0d3150;
+  background: #0d3150;
+  color: #fff;
+}
+
+.license-blocker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid #ead9a9;
+  border-radius: 9px;
+  background: #fff9e9;
+}
+
+.license-blocker strong {
+  color: #806018;
+  font-size: 10px;
+}
+
+.license-blocker span {
+  color: #806d42;
+  font-size: 9px;
+}
+
+.license-blocker.is-rejected {
+  border-color: #efc5c1;
+  background: #fff1f0;
+}
+
+.license-submit-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 11px;
+  background: #0b2c48;
+}
+
+.license-submit-zone > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.license-submit-zone strong {
+  color: #fff;
+  font-size: 11px;
+}
+
+.license-submit-zone span {
+  color: #b8c6d1;
+  font-size: 9px;
+}
+
+.license-submit-zone button {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #d7af47;
+  color: #102a43;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.license-submit-zone button:disabled {
+  background: #64798b;
+  color: #d6dfe5;
+  cursor: not-allowed;
+}
+
+.license-loading {
+  padding: 22px;
+  border: 1px dashed #d5dee4;
+  border-radius: 10px;
+  color: #71808e;
+  text-align: center;
+  font-size: 10px;
+}
+
+@media (max-width: 950px) {
+  .license-stepper {
+    grid-template-columns: 1fr;
+  }
+
+  .license-step + .license-step {
+    border-left: 0;
+    border-top: 1px solid #e3e9ed;
+  }
+
+  .license-document-head {
+    display: none;
+  }
+
+  .license-document-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .license-document-requirement,
+  .license-document-row > div:nth-child(3) {
+    grid-column: 1;
+    margin-left: 34px;
+  }
+
+  .license-document-actions {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+}
+
+@media (max-width: 650px) {
+  .license-section-heading,
+  .license-progress-copy,
+  .license-submit-zone {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .license-document-row {
+    grid-template-columns: 1fr;
+  }
+
+  .license-document-requirement,
+  .license-document-row > div:nth-child(3),
+  .license-document-actions {
+    grid-column: 1;
+    grid-row: auto;
+    margin-left: 34px;
+    justify-content: flex-start;
+  }
+
+  .license-submit-zone button {
+    width: 100%;
+  }
+}
+
+.league-document-review {
+  scroll-margin-top: 24px;
+  border: 1px solid #d9e2e8;
+  box-shadow: 0 14px 34px rgba(13, 49, 80, 0.08);
+}
+
+.league-document-review > .title {
+  border-bottom: 1px solid #e5ebef;
+  padding-bottom: 18px;
+}

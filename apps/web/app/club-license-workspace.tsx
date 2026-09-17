@@ -31,7 +31,7 @@ export function ClubLicenseWorkspace({ players, licenses, token, onChanged }: Pr
   async function createLicense(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = new FormData(event.currentTarget); const requestedSeason = String(form.get('season') ?? '').trim(); setBusy('create'); setMessage(''); setMessageIsError(false); try { await request('/licenses', token, { method: 'POST', body: JSON.stringify({ registrationId: form.get('registrationId'), season: requestedSeason }) }); setCreating(false); setMessage('Dossier de licence créé en brouillon.'); await onChanged(); } catch (reason) { setMessageIsError(true); setMessage(reason instanceof Error ? reason.message : 'Création impossible'); } finally { setBusy(''); } }
   async function uploadDocument(item: ChecklistItem, file?: File) { if (!selected?.registration?.id || !file) return; setBusy(`upload-${item.code}`); setMessage(''); setMessageIsError(false); try { const form = new FormData(); form.append('file', file); const response = await fetch(`${API}/license-documents/${selected.registration.id}/upload?itemCode=${encodeURIComponent(item.code)}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error((data as { message?: string }).message ?? `Erreur ${response.status}`); setChecklist((data as { checklist: Checklist }).checklist); setMessage(`Pièce « ${item.label} » déposée avec succès.`); await onChanged(); } catch (reason) { setMessageIsError(true); setMessage(reason instanceof Error ? reason.message : 'Dépôt impossible'); } finally { setBusy(''); } }
   async function openDocument(documentId?: string | null) { if (!documentId) return; setMessage(''); setMessageIsError(false); const targetWindow = window.open('', '_blank'); try { const response = await fetch(`${API}/license-documents/document/${documentId}/file`, { headers: { Authorization: `Bearer ${token}` } }); if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error((data as { message?: string }).message ?? `Ouverture impossible (${response.status})`); } const blob = await response.blob(); const url = URL.createObjectURL(blob); if (targetWindow) targetWindow.location.href = url; else window.location.href = url; window.setTimeout(() => URL.revokeObjectURL(url), 60_000); } catch (reason) { targetWindow?.close(); setMessageIsError(true); setMessage(reason instanceof Error ? reason.message : 'Ouverture du document impossible'); } }
-  async function submit(license: License) { if (!['DRAFT', 'INCOMPLETE'].includes(license.status)) return; if (!checklist?.complete) { setMessageIsError(true); setMessage('Dossier incomplet : toutes les pièces réglementaires obligatoires doivent être recevables avant soumission.'); return; } if (!window.confirm('Soumettre ce dossier à la LFPB ? Après soumission, le club ne pourra plus le modifier librement.')) return; setBusy(license.id); setMessage(''); setMessageIsError(false); try { await request(`/licenses/${license.id}/submit`, token, { method: 'PATCH' }); setSelected(null); setMessage('Dossier soumis à la LFPB avec succès.'); await onChanged(); } catch (reason) { setMessageIsError(true); setMessage(reason instanceof Error ? reason.message : 'Soumission impossible'); } finally { setBusy(''); } }
+  async function submit(license: License) { if (!['DRAFT', 'INCOMPLETE'].includes(license.status)) return; if (!checklist?.complete) { setMessageIsError(true); setMessage('Dossier incomplet : toutes les pièces réglementaires obligatoires doivent être déposées avant soumission.'); return; } if (!window.confirm('Soumettre ce dossier à la LFPB ? Après soumission, le club ne pourra plus le modifier librement.')) return; setBusy(license.id); setMessage(''); setMessageIsError(false); try { await request(`/licenses/${license.id}/submit`, token, { method: 'PATCH' }); setSelected(null); setMessage('Dossier soumis à la LFPB avec succès.'); await onChanged(); } catch (reason) { setMessageIsError(true); setMessage(reason instanceof Error ? reason.message : 'Soumission impossible'); } finally { setBusy(''); } }
   function progressIndex(status: string) { if (status === 'INCOMPLETE') return 1; if (status === 'REJECTED_BY_FBF') return 3; if (status === 'SUSPENDED' || ['CANCELLED', 'EXPIRED'].includes(status)) return 4; return Math.max(0, STATUS_ORDER.indexOf(status)); }
 
   const depositedRequired = checklist?.items.filter((item) => item.required && item.present).length ?? 0;
@@ -43,10 +43,197 @@ export function ClubLicenseWorkspace({ players, licenses, token, onChanged }: Pr
     {creating && <form className="entity-form" onSubmit={createLicense}><div><label>Joueur *</label><select name="registrationId" required defaultValue=""><option value="" disabled>Choisir un joueur</option>{availablePlayers.map((player) => <option key={player.id} value={player.id}>{player.person.firstName} {player.person.lastName}</option>)}</select></div><div><label>Saison *</label><input name="season" value={season} onChange={(event) => setSeason(event.target.value)} required maxLength={20} /></div><div><label>Numéro FBF</label><input value="Attribué uniquement par la FBF" disabled /></div><button disabled={busy === 'create' || availablePlayers.length === 0 || !normalizedSeason}>{busy === 'create' ? 'Création…' : availablePlayers.length === 0 ? `Tous les joueurs ont un dossier ${normalizedSeason || ''}` : 'Créer le dossier'}</button></form>}
 
     {selected && <section className="player-profile"><button className="profile-close" type="button" onClick={() => setSelected(null)}>Fermer ×</button><div className="player-photo"><span>LF</span><small style={{ color: '#6f7e8d', textAlign: 'center' }}>Dossier officiel de licence</small></div><div className="player-identity"><label>FICHE LICENCE</label><h2>{selected.registration ? `${selected.registration.person.firstName} ${selected.registration.person.lastName}` : 'Dossier licence'}</h2><dl><div><dt>Saison</dt><dd>{selected.season}</dd></div><div><dt>Statut</dt><dd><span className={`badge ${selected.status.toLowerCase()}`}>{labelStatus(selected.status)}</span></dd></div><div><dt>Numéro FBF</dt><dd>{selected.number ?? 'Non attribué'}</dd></div><div><dt>Validité du</dt><dd>{formatDate(selected.validFrom)}</dd></div><div><dt>Validité au</dt><dd>{formatDate(selected.validUntil)}</dd></div><div><dt>Motif / complément</dt><dd>{selected.rejectionReason ?? '—'}</dd></div></dl>
-      <div style={{ marginTop: 24 }}><label style={{ display: 'block', marginBottom: 10 }}>SUIVI DU DOSSIER</label><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['Brouillon', 'LFPB', 'Avis favorable', 'FBF', 'Délivrée'].map((step, index) => <span key={step} style={{ padding: '8px 10px', borderRadius: 18, background: index <= progressIndex(selected.status) ? '#e7f4ec' : '#eef2f4', color: index <= progressIndex(selected.status) ? '#27704d' : '#71808e', fontSize: 10, fontWeight: 800 }}>{index + 1}. {step}</span>)}</div></div>
-      <div style={{ marginTop: 28 }}><label style={{ display: 'block' }}>PIÈCES RÉGLEMENTAIRES</label><h3 style={{ margin: '6px 0' }}>{checklistLoading ? 'Chargement…' : checklist ? `${depositedRequired} / ${checklist.totalRequired} pièces obligatoires déposées · ${checklist.completedRequired} / ${checklist.totalRequired} recevables` : 'Checklist indisponible'}</h3>{checklist && <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>{checklist.items.map((item) => <div key={item.code} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center', border: '1px solid #dfe7ec', borderRadius: 10, padding: 12, background: item.present ? '#f1f8f4' : '#fff' }}><div><strong>{item.present ? '✓ ' : '□ '}{item.label}</strong><div style={{ fontSize: 11, color: '#71808e', marginTop: 3 }}>{item.required ? 'Obligatoire' : item.condition ?? 'Conditionnelle'}{item.status ? ` · ${labelDocumentStatus(item.status)}` : ''}</div></div><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{item.present && item.documentId && <button type="button" onClick={() => void openDocument(item.documentId)} style={{ border: '1px solid #c8d4dc', borderRadius: 7, padding: '7px 10px', fontSize: 11, fontWeight: 800, background: '#fff', cursor: 'pointer' }}>Ouvrir</button>}{['DRAFT', 'INCOMPLETE'].includes(selected.status) && <label style={{ cursor: 'pointer', border: '1px solid #c8d4dc', borderRadius: 7, padding: '7px 10px', fontSize: 11, fontWeight: 800 }}>{busy === `upload-${item.code}` ? 'Dépôt…' : item.present ? 'Remplacer' : 'Déposer'}<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" hidden disabled={Boolean(busy)} onChange={(event) => { const file = event.target.files?.[0]; void uploadDocument(item, file); event.currentTarget.value = ''; }} /></label>}</div></div>)}</div>}
-      {checklist && !checklist.complete && <div className="api-error" style={{ marginTop: 14 }}>{rejectedRequired ? 'Soumission bloquée : remplacez les pièces rejetées avant de resoumettre le dossier.' : 'Soumission bloquée : déposez toutes les pièces obligatoires du dossier.'}</div>}</div>
-      {['DRAFT', 'INCOMPLETE'].includes(selected.status) && <button type="button" disabled={busy === selected.id || !checklist?.complete} onClick={() => submit(selected)} style={{ marginTop: 24, border: 0, borderRadius: 8, padding: '0.8rem 1rem', background: checklist?.complete ? '#0d3150' : '#9aa8b3', color: '#fff', fontWeight: 800 }}>{busy === selected.id ? 'Soumission…' : selected.status === 'INCOMPLETE' ? 'Resoumettre à la LFPB' : 'Soumettre à la LFPB'}</button>}
+      <div className="license-workflow">
+        <div className="license-section-heading">
+          <div>
+            <label>SUIVI DU DOSSIER</label>
+            <h3>Parcours de validation</h3>
+          </div>
+          <span className="license-current-status">{labelStatus(selected.status)}</span>
+        </div>
+
+        <div className="license-stepper">
+          {['Brouillon', 'LFPB', 'Avis favorable', 'FBF', 'Délivrée'].map((step, index) => {
+            const current = progressIndex(selected.status);
+            const done = index < current;
+            const active = index === current;
+
+            return (
+              <div
+                key={step}
+                className={`license-step ${done ? 'is-done' : ''} ${active ? 'is-active' : ''}`}
+              >
+                <div className="license-step-marker">
+                  <span>{done ? '✓' : index + 1}</span>
+                </div>
+                <div className="license-step-copy">
+                  <strong>{step}</strong>
+                  <small>
+                    {index === 0 && 'Création du dossier'}
+                    {index === 1 && 'Contrôle LFPB'}
+                    {index === 2 && 'Validation Ligue'}
+                    {index === 3 && 'Traitement FBF'}
+                    {index === 4 && 'Licence officielle'}
+                  </small>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="license-documents">
+        <div className="license-section-heading">
+          <div>
+            <label>PIÈCES RÉGLEMENTAIRES</label>
+            <h3>Dossier documentaire</h3>
+          </div>
+          {checklist && (
+            <span className={`license-completion ${checklist.complete ? 'is-complete' : ''}`}>
+              {depositedRequired}/{checklist.totalRequired} déposées
+            </span>
+          )}
+        </div>
+
+        {checklistLoading ? (
+          <div className="license-loading">Chargement des pièces réglementaires…</div>
+        ) : checklist ? (
+          <>
+            <div className="license-progress-summary">
+              <div className="license-progress-copy">
+                <strong>
+                  {depositedRequired} / {checklist.totalRequired} pièces obligatoires déposées
+                </strong>
+                <span>
+                  {checklist.complete
+                  ? 'Dossier documentaire complet · Contrôle LFPB après soumission'
+                  : `${depositedRequired} / ${checklist.totalRequired} pièces présentes`}
+                </span>
+              </div>
+              <div
+                className="license-progress-track"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={checklist.totalRequired}
+                aria-valuenow={depositedRequired}
+              >
+                <span
+                  style={{
+                    width: `${checklist.totalRequired ? Math.round((depositedRequired / checklist.totalRequired) * 100) : 0}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="license-document-table">
+              <div className="license-document-head">
+                <span>Pièce</span>
+                <span>Exigence</span>
+                <span>Statut</span>
+                <span>Action</span>
+              </div>
+
+              {checklist.items.map((item) => (
+                <div
+                  key={item.code}
+                  className={`license-document-row ${item.present ? 'is-present' : ''}`}
+                >
+                  <div className="license-document-name">
+                    <span className={`license-document-icon ${item.present ? 'is-present' : ''}`}>
+                      {item.present ? '✓' : '—'}
+                    </span>
+                    <strong>{item.label}</strong>
+                  </div>
+
+                  <div className="license-document-requirement">
+                    {item.required ? 'Obligatoire' : item.condition ?? 'Conditionnelle'}
+                  </div>
+
+                  <div>
+                    <span
+                      className={`license-document-status ${
+                        item.status ? item.status.toLowerCase() : 'missing'
+                      }`}
+                    >
+                      {item.status ? labelDocumentStatus(item.status) : 'Manquante'}
+                    </span>
+                  </div>
+
+                  <div className="license-document-actions">
+                    {item.present && item.documentId && (
+                      <button
+                        type="button"
+                        className="license-secondary-action"
+                        onClick={() => void openDocument(item.documentId)}
+                      >
+                        Ouvrir
+                      </button>
+                    )}
+
+                    {['DRAFT', 'INCOMPLETE'].includes(selected.status) && (
+                      <label className="license-upload-action">
+                        {busy === `upload-${item.code}`
+                          ? 'Dépôt…'
+                          : item.present
+                            ? 'Remplacer'
+                            : 'Déposer'}
+                        <input
+                          type="file"
+                          accept="application/pdf,image/jpeg,image/png,image/webp"
+                          hidden
+                          disabled={Boolean(busy)}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            void uploadDocument(item, file);
+                            event.currentTarget.value = '';
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {!checklist.complete && (
+              <div className={`license-blocker ${rejectedRequired ? 'is-rejected' : ''}`}>
+                <strong>Dossier non soumissible</strong>
+                <span>
+                  {rejectedRequired
+                    ? 'Remplacez les pièces rejetées avant de resoumettre le dossier.'
+                    : 'Déposez toutes les pièces obligatoires avant de soumettre le dossier à la LFPB.'}
+                </span>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="license-loading">Checklist indisponible</div>
+        )}
+      </div>
+
+      {['DRAFT', 'INCOMPLETE'].includes(selected.status) && (
+        <div className="license-submit-zone">
+          <div>
+            <strong>Soumission à la LFPB</strong>
+            <span>
+              {checklist?.complete
+                ? 'Le dossier est complet et peut être transmis pour contrôle.'
+                : 'La soumission sera disponible lorsque toutes les pièces obligatoires auront été déposées.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={busy === selected.id || !checklist?.complete}
+            onClick={() => submit(selected)}
+          >
+            {busy === selected.id
+              ? 'Soumission…'
+              : selected.status === 'INCOMPLETE'
+                ? 'Resoumettre à la LFPB'
+                : 'Soumettre à la LFPB'}
+          </button>
+        </div>
+      )}
       </div></section>}
 
     <section className="data-panel"><div className="title"><span><label>DONNÉES RÉELLES</label><h2>Dossiers de licence du club</h2></span></div><div className="table-wrap">{licenses.length === 0 ? <div className="empty">Aucun dossier de licence enregistré</div> : <table><thead><tr><th>Joueur</th><th>Numéro FBF</th><th>Saison</th><th>Statut</th><th>Pièces</th><th>Action</th></tr></thead><tbody>{licenses.map((license) => <tr key={license.id} className="selectable-row" onClick={() => setSelected(license)}><td><button type="button" className="player-link" onClick={(event) => { event.stopPropagation(); setSelected(license); }}>{license.registration ? `${license.registration.person.firstName} ${license.registration.person.lastName}` : '—'}</button></td><td>{license.number ?? 'En attente FBF'}</td><td>{license.season}</td><td><span className={`badge ${license.status.toLowerCase()}`}>{labelStatus(license.status)}</span></td><td>{license.registration?.documents?.length ?? 0}</td><td><button type="button" onClick={(event) => { event.stopPropagation(); setSelected(license); }}>Voir la fiche</button></td></tr>)}</tbody></table>}</div></section>
