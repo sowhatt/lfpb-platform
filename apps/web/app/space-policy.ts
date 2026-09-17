@@ -18,7 +18,7 @@ export function navigationForSpace(space: Space): string[] {
   return [
     'Vue d’ensemble',
     'Compétitions',
-    'Calendrier RKJO',
+    'Calendrier des compétitions',
     'Clubs',
     'Licences',
     'Retours FBF',
