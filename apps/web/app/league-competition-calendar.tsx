@@ -261,7 +261,7 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
       </article>}
 
       <article className="calendar-card calendar-governance">
-        <div className="calendar-card-title"><div><small>05 · GOUVERNANCE</small><h3>Validation humaine et publication</h3></div></div>
+        <div className="calendar-card-title"><div><small>04 · GOUVERNANCE</small><h3>Validation humaine et publication</h3></div></div>
         <div className="calendar-governance-flow"><span>Digital Foot <b>propose</b></span><i>→</i><span>Responsable <b>soumet</b></span><i>→</i><span>Validateur <b>approuve</b></span><i>→</i><span>Ligue <b>matérialise et publie</b></span></div>
         <div className="calendar-actions">
           {(role === 'COMPETITION_MANAGER' || role === 'LIGUE_ADMIN') && latest?.status === 'GENERATED' && <button className="calendar-primary" disabled={busy} onClick={submit}>Soumettre pour validation</button>}
