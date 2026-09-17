@@ -27,8 +27,19 @@ export function DashboardEnhancer() {
       try { setActor(JSON.parse(rawActor) as Actor); } catch { setActor(null); }
     };
 
+    const normalizeCalendarLabels = () => {
+      document.querySelectorAll<HTMLElement>('button').forEach((button) => {
+        const label = button.textContent?.trim();
+        if (label === 'Ouvrir RKJO') button.textContent = 'Calendrier des compétitions';
+        if (label?.includes('Calendrier RKJO')) button.textContent = label.replace('Calendrier RKJO', 'Calendrier des compétitions');
+      });
+      const title = document.querySelector<HTMLElement>('main header h1');
+      if (title?.textContent?.trim() === 'Calendrier RKJO') title.textContent = 'Calendrier des compétitions';
+    };
+
     const attachDashboard = () => {
       syncSession();
+      normalizeCalendarLabels();
       const main = document.querySelector('main');
       if (!main) return;
 
@@ -44,8 +55,8 @@ export function DashboardEnhancer() {
 
       const readActive = () => {
         syncSession();
-        const title = main.querySelector('header h1')?.textContent?.trim() ?? '';
-        setActive(title === 'Calendrier RKJO' ? 'Calendrier des compétitions' : title);
+        normalizeCalendarLabels();
+        setActive(main.querySelector('header h1')?.textContent?.trim() ?? '');
       };
       readActive();
       if (!observer) {
