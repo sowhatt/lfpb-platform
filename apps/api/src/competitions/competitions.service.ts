@@ -29,6 +29,8 @@ import { FixturePlannerService } from './fixture-planner.service';
 import { FixtureQualityService } from './fixture-quality.service';
 import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
 import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dto';
+import { UpdateMatchScheduleDto } from './dto/update-match-schedule.dto';
+import { ChangeMatchStatusDto } from './dto/change-match-status.dto';
 
 @Injectable()
 export class CompetitionsService {
@@ -744,6 +746,291 @@ export class CompetitionsService {
         },
       });
       return match;
+    });
+  }
+
+  async updateMatchSchedule(
+    actor: AuthenticatedActor,
+    matchId: string,
+    input: UpdateMatchScheduleDto,
+  ) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: { competition: true },
+    });
+
+    if (!match) throw new NotFoundException('Match introuvable');
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      match.competition.organizationId,
+    );
+
+    if (
+      match.status === MatchStatus.COMPLETED ||
+      match.status === MatchStatus.CANCELLED
+    ) {
+      throw new BadRequestException(
+        'Un match terminé ou annulé ne peut pas être reprogrammé',
+      );
+    }
+
+    const kickoffAt = input.kickoffAt
+      ? new Date(input.kickoffAt)
+      : match.kickoffAt;
+
+    const venueId = input.venueId ?? match.venueId;
+
+    if (!kickoffAt) {
+      throw new BadRequestException('La date et l’heure du match sont obligatoires');
+    }
+
+    if (!venueId) {
+      throw new BadRequestException('Le stade du match est obligatoire');
+    }
+
+    const venue = await this.prisma.venue.findUnique({
+      where: { id: venueId },
+    });
+
+    if (!venue || !venue.active || !venue.approved) {
+      throw new BadRequestException('Le stade doit être actif et homologué');
+    }
+
+    const unavailable = await this.prisma.venueUnavailability.findFirst({
+      where: {
+        venueId,
+        startsAt: { lte: kickoffAt },
+        endsAt: { gt: kickoffAt },
+      },
+    });
+
+    if (unavailable) {
+      throw new ConflictException('Le stade est indisponible à cet horaire');
+    }
+
+    const restWindowStart = new Date(
+      kickoffAt.getTime() -
+        match.competition.minRestHours * 60 * 60 * 1000,
+    );
+
+    const restWindowEnd = new Date(
+      kickoffAt.getTime() +
+        match.competition.minRestHours * 60 * 60 * 1000,
+    );
+
+    const restConflict = await this.prisma.match.findFirst({
+      where: {
+        id: { not: match.id },
+        kickoffAt: { gt: restWindowStart, lt: restWindowEnd },
+        status: {
+          notIn: [MatchStatus.CANCELLED, MatchStatus.POSTPONED],
+        },
+        OR: [
+          {
+            homeClubId: {
+              in: [match.homeClubId, match.awayClubId],
+            },
+          },
+          {
+            awayClubId: {
+              in: [match.homeClubId, match.awayClubId],
+            },
+          },
+        ],
+      },
+    });
+
+    if (restConflict) {
+      throw new ConflictException(
+        `Le repos minimal de ${match.competition.minRestHours} heures n’est pas respecté`,
+      );
+    }
+
+    const directConflict = await this.prisma.match.findFirst({
+      where: {
+        id: { not: match.id },
+        kickoffAt,
+        status: {
+          notIn: [MatchStatus.CANCELLED, MatchStatus.POSTPONED],
+        },
+        OR: [
+          { venueId },
+          {
+            homeClubId: {
+              in: [match.homeClubId, match.awayClubId],
+            },
+          },
+          {
+            awayClubId: {
+              in: [match.homeClubId, match.awayClubId],
+            },
+          },
+        ],
+      },
+    });
+
+    if (directConflict) {
+      throw new ConflictException(
+        'Un club ou le stade est déjà occupé à cet horaire',
+      );
+    }
+
+    return this.prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const updated = await tx.match.update({
+          where: { id: match.id },
+          data: {
+            kickoffAt,
+            venueId,
+            status:
+              match.status === MatchStatus.POSTPONED
+                ? MatchStatus.SCHEDULED
+                : match.status,
+            postponementReason:
+              match.status === MatchStatus.POSTPONED
+                ? null
+                : match.postponementReason,
+          },
+          include: {
+            round: true,
+            venue: true,
+            homeClub: { include: { organization: true } },
+            awayClub: { include: { organization: true } },
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            actorUserId: actor.userId,
+            organizationId: match.competition.organizationId,
+            action: 'MATCH_RESCHEDULED',
+            resourceType: 'Match',
+            resourceId: match.id,
+            metadata: {
+              reason: input.reason.trim(),
+              previousKickoffAt: match.kickoffAt?.toISOString() ?? null,
+              newKickoffAt: kickoffAt.toISOString(),
+              previousVenueId: match.venueId,
+              newVenueId: venueId,
+              previousStatus: match.status,
+              newStatus: updated.status,
+            },
+          },
+        });
+
+        return updated;
+      },
+    );
+  }
+
+  async changeMatchStatus(
+    actor: AuthenticatedActor,
+    matchId: string,
+    input: ChangeMatchStatusDto,
+  ) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: { competition: true },
+    });
+
+    if (!match) throw new NotFoundException('Match introuvable');
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      match.competition.organizationId,
+    );
+
+    if (match.status === MatchStatus.COMPLETED) {
+      throw new BadRequestException(
+        'Un match terminé ne peut pas être reporté ou annulé',
+      );
+    }
+
+    const newStatus =
+      input.status === 'POSTPONED'
+        ? MatchStatus.POSTPONED
+        : MatchStatus.CANCELLED;
+
+    if (match.status === newStatus) {
+      throw new BadRequestException(
+        `Le match est déjà ${input.status === 'POSTPONED' ? 'reporté' : 'annulé'}`,
+      );
+    }
+
+    return this.prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const updated = await tx.match.update({
+          where: { id: match.id },
+          data: {
+            status: newStatus,
+            postponementReason: input.reason.trim(),
+          },
+          include: {
+            round: true,
+            venue: true,
+            homeClub: { include: { organization: true } },
+            awayClub: { include: { organization: true } },
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            actorUserId: actor.userId,
+            organizationId: match.competition.organizationId,
+            action:
+              newStatus === MatchStatus.POSTPONED
+                ? 'MATCH_POSTPONED'
+                : 'MATCH_CANCELLED',
+            resourceType: 'Match',
+            resourceId: match.id,
+            metadata: {
+              reason: input.reason.trim(),
+              previousStatus: match.status,
+              newStatus,
+              kickoffAt: match.kickoffAt?.toISOString() ?? null,
+              venueId: match.venueId,
+            },
+          },
+        });
+
+        return updated;
+      },
+    );
+  }
+
+  async listMatchHistory(
+    actor: AuthenticatedActor,
+    matchId: string,
+  ) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: { competition: true },
+    });
+
+    if (!match) throw new NotFoundException('Match introuvable');
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      match.competition.organizationId,
+    );
+
+    return this.prisma.auditLog.findMany({
+      where: {
+        resourceType: 'Match',
+        resourceId: matchId,
+      },
+      include: {
+        actor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

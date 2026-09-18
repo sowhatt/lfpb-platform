@@ -27,6 +27,8 @@ import { EnrollClubDto } from './dto/enroll-club.dto';
 import { MaterializeScheduleDto } from './dto/materialize-schedule.dto';
 import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dto';
 import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
+import { UpdateMatchScheduleDto } from './dto/update-match-schedule.dto';
+import { ChangeMatchStatusDto } from './dto/change-match-status.dto';
 import { ScheduleMaterializationService } from './schedule-materialization.service';
 
 @Controller()
@@ -110,6 +112,35 @@ export class CompetitionsController {
   @Post('competitions/:competitionId/matches')
   @Roles(Role.LIGUE_ADMIN)
   createMatch(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string, @Body() input: CreateMatchDto) { return this.competitions.createMatch(actor, competitionId, input); }
+
+  @Patch('matches/:matchId/schedule')
+  @Roles(Role.LIGUE_ADMIN)
+  updateMatchSchedule(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Body() input: UpdateMatchScheduleDto,
+  ) {
+    return this.competitions.updateMatchSchedule(actor, matchId, input);
+  }
+
+  @Patch('matches/:matchId/status')
+  @Roles(Role.LIGUE_ADMIN)
+  changeMatchStatus(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Body() input: ChangeMatchStatusDto,
+  ) {
+    return this.competitions.changeMatchStatus(actor, matchId, input);
+  }
+
+  @Get('matches/:matchId/history')
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
+  listMatchHistory(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.competitions.listMatchHistory(actor, matchId);
+  }
 
   @Get('clubs/:clubId/venues')
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)

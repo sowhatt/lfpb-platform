@@ -32,6 +32,28 @@ type Proposal = {
 };
 type Venue = { id: string; name: string; city: string; approved: boolean; active: boolean; capacity?: number | null };
 type Round = { id: string; number: number; startDate?: string | null; matches?: unknown[] };
+type MatchRecord = {
+  id: string;
+  kickoffAt?: string | null;
+  status: string;
+  postponementReason?: string | null;
+  homeClub: { id: string; shortName: string };
+  awayClub: { id: string; shortName: string };
+  venue?: { id: string; name: string } | null;
+  round?: { id: string; number: number } | null;
+};
+
+type MatchHistoryEntry = {
+  id: string;
+  action: string;
+  createdAt: string;
+  metadata?: Record<string, unknown> | null;
+  actor?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null;
+};
 type ProgrammingWindow = { validFrom: string; validUntil: string; weekdays: number[]; startTime: string; endTime: string };
 type MaterializationResult = { roundsCreated: number; matchesCreated: number; firstKickoffAt?: string | null; lastKickoffAt?: string | null };
 
@@ -53,7 +75,27 @@ async function api<T>(path: string, token: string, init?: RequestInit): Promise<
 }
 
 const statusLabel: Record<string, string> = {
-  GENERATED: 'Proposition générée', SUBMITTED: 'En validation', APPROVED: 'Approuvée', REJECTED: 'Rejetée', PUBLISHED: 'Publiée',
+  GENERATED: 'Proposition générée',
+  SUBMITTED: 'En validation',
+  APPROVED: 'Approuvée',
+  REJECTED: 'Rejetée',
+  PUBLISHED: 'Publiée',
+};
+
+const matchStatusLabel: Record<string, string> = {
+  DRAFT: 'Brouillon',
+  SCHEDULED: 'Programmé',
+  POSTPONED: 'Reporté',
+  IN_PROGRESS: 'En cours',
+  COMPLETED: 'Terminé',
+  CANCELLED: 'Annulé',
+};
+
+const auditActionLabel: Record<string, string> = {
+  MATCH_SCHEDULED: 'Match programmé',
+  MATCH_RESCHEDULED: 'Match reprogrammé',
+  MATCH_POSTPONED: 'Match reporté',
+  MATCH_CANCELLED: 'Match annulé',
 };
 
 function defaultWindow(): ProgrammingWindow {
@@ -71,6 +113,15 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [roundRecords, setRoundRecords] = useState<Round[]>([]);
+  const [matches, setMatches] = useState<MatchRecord[]>([]);
+  const [roundFilter, setRoundFilter] = useState('ALL');
+  const [clubFilter, setClubFilter] = useState('ALL');
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [editKickoff, setEditKickoff] = useState('');
+  const [editVenueId, setEditVenueId] = useState('');
+  const [matchReason, setMatchReason] = useState('');
+  const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -87,8 +138,158 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
   const expectedRoundCount = rounds.length;
   const expectedMatchCount = rounds.reduce((sum, round) => sum + round.matches.length, 0);
   const actualMatchCount = roundRecords.reduce((sum, round) => sum + (round.matches?.length ?? 0), 0);
-  const isMaterialized = expectedRoundCount > 0 && roundRecords.length === expectedRoundCount && actualMatchCount === expectedMatchCount;
+  const scheduleMatchesProposal =
+    expectedRoundCount > 0 &&
+    roundRecords.length === expectedRoundCount &&
+    actualMatchCount === expectedMatchCount;
+
+  const isMaterialized =
+    latest?.status === 'PUBLISHED' && scheduleMatchesProposal;
+
   const hasExistingCompetitionSchedule = roundRecords.length > 0;
+
+  const filteredMatches = matches.filter((match) => {
+    const roundMatches =
+      roundFilter === 'ALL' || String(match.round?.number ?? '') === roundFilter;
+
+    const clubMatches =
+      clubFilter === 'ALL' ||
+      match.homeClub.id === clubFilter ||
+      match.awayClub.id === clubFilter;
+
+    return roundMatches && clubMatches;
+  });
+
+  const toLocalDateTimeInput = (value?: string | null) => {
+    if (!value) return '';
+    const date = new Date(value);
+    const pad = (number: number) => String(number).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  const selectedMatch = matches.find((match) => match.id === selectedMatchId) ?? null;
+
+  async function openMatchManagement(match: MatchRecord) {
+    setSelectedMatchId(match.id);
+    setEditKickoff(toLocalDateTimeInput(match.kickoffAt));
+    setEditVenueId(
+      match.venue?.id ??
+        approvedVenues.find((venue) => venue.name === match.venue?.name)?.id ??
+        '',
+    );
+    setMatchReason('');
+    setHistoryLoading(true);
+
+    try {
+      const history = await api<MatchHistoryEntry[]>(
+        `/matches/${match.id}/history`,
+        token,
+      );
+      setMatchHistory(history);
+    } catch {
+      setMatchHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  async function refreshSelectedMatchHistory(matchId: string) {
+    const history = await api<MatchHistoryEntry[]>(
+      `/matches/${matchId}/history`,
+      token,
+    ).catch(() => []);
+    setMatchHistory(history);
+  }
+
+  async function saveMatchSchedule() {
+    if (!selectedMatch) return;
+
+    if (!editKickoff) {
+      setError('Sélectionnez une nouvelle date et heure.');
+      return;
+    }
+
+    if (!editVenueId) {
+      setError('Sélectionnez un stade.');
+      return;
+    }
+
+    if (matchReason.trim().length < 3) {
+      setError('Le motif de modification est obligatoire.');
+      return;
+    }
+
+    await run(
+      () =>
+        api(`/matches/${selectedMatch.id}/schedule`, token, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            kickoffAt: new Date(editKickoff).toISOString(),
+            venueId: editVenueId,
+            reason: matchReason.trim(),
+          }),
+        }),
+      'Match reprogrammé avec traçabilité.',
+    );
+
+    await refreshSelectedMatchHistory(selectedMatch.id);
+    setMatchReason('');
+  }
+
+  async function changeSelectedMatchStatus(
+    status: 'POSTPONED' | 'CANCELLED',
+  ) {
+    if (!selectedMatch) return;
+
+    if (matchReason.trim().length < 3) {
+      setError('Le motif est obligatoire.');
+      return;
+    }
+
+    const label = status === 'POSTPONED' ? 'reporter' : 'annuler';
+
+    if (
+      !window.confirm(
+        `Confirmer : ${label} ${selectedMatch.homeClub.shortName} - ${selectedMatch.awayClub.shortName} ?`,
+      )
+    ) {
+      return;
+    }
+
+    await run(
+      () =>
+        api(`/matches/${selectedMatch.id}/status`, token, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            status,
+            reason: matchReason.trim(),
+          }),
+        }),
+      status === 'POSTPONED'
+        ? 'Match reporté avec traçabilité.'
+        : 'Match annulé avec traçabilité.',
+    );
+
+    await refreshSelectedMatchHistory(selectedMatch.id);
+    setMatchReason('');
+  }
+
+  const formatKickoff = (value?: string | null) => {
+    if (!value) return { date: 'Date à définir', time: '—' };
+    const date = new Date(value);
+    return {
+      date: date.toLocaleDateString('fr-FR', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }),
+      time: date.toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+  };
 
   async function loadCompetitions() {
     const items = await api<Competition[]>('/competitions', token);
@@ -105,10 +306,14 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
   async function loadCompetition(id: string) {
     if (!id) return;
     setError('');
-    const plans = await api<Proposal[]>(`/competitions/${id}/schedule-proposals`, token).catch(() => []);
-    const materializedRounds = await api<Round[]>(`/competitions/${id}/rounds`, token).catch(() => []);
+    const [plans, materializedRounds, materializedMatches] = await Promise.all([
+      api<Proposal[]>(`/competitions/${id}/schedule-proposals`, token).catch(() => []),
+      api<Round[]>(`/competitions/${id}/rounds`, token).catch(() => []),
+      api<MatchRecord[]>(`/competitions/${id}/matches`, token).catch(() => []),
+    ]);
     setProposals(plans);
     setRoundRecords(materializedRounds);
+    setMatches(materializedMatches);
     if (role === 'LIGUE_ADMIN') {
       const result = await api<Preview>(`/competitions/${id}/fixture-plan/preview`, token).catch(() => null);
       setPreview(result);
@@ -230,10 +435,26 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
       <article className="calendar-card calendar-proposal">
         <div className="calendar-card-title"><div><small>03 · OPTIMISATION</small><h3>Proposition de calendrier</h3></div>{qualityScore !== null && <div className="calendar-score"><strong>{qualityScore}</strong><span>/100<br />qualité</span></div>}</div>
         <div className="calendar-intelligence"><b>Digital Foot analyse l’équilibre du championnat</b><span>Alternance domicile/extérieur, unicité des rencontres par journée, exemptions et contraintes définies par la Ligue.</span></div>
-        {(role === 'COMPETITION_MANAGER' || role === 'LIGUE_ADMIN') && <button className="calendar-primary" disabled={busy || activeClubs.length < 2 || hasExistingCompetitionSchedule} onClick={generate}>{busy ? 'Traitement…' : '✦ Générer une proposition optimisée'}</button>}
+        {(role === 'COMPETITION_MANAGER' || role === 'LIGUE_ADMIN') && (
+          <button
+            className="calendar-primary"
+            disabled={busy || activeClubs.length < 2}
+            onClick={generate}
+          >
+            {busy
+              ? 'Traitement…'
+              : hasExistingCompetitionSchedule
+                ? '✦ Générer une nouvelle version'
+                : '✦ Générer une proposition optimisée'}
+          </button>
+        )}
         {latest && <div className="calendar-proposal-status"><span>Version {latest.version}</span><b>{statusLabel[latest.status] ?? latest.status}</b>{latest.rejectionReason && <em>{latest.rejectionReason}</em>}{isMaterialized && <strong>Calendrier opérationnel créé</strong>}</div>}
         {rounds.length > 0 ? <div className="calendar-rounds">{rounds.slice(0, 6).map((round) => <div className="calendar-round" key={round.number}><h4>Journée {round.number}</h4>{round.matches.map((match, index) => <div className="calendar-fixture" key={`${round.number}-${index}`}><span>{match.homeClub.name}</span><b>—</b><span>{match.awayClub.name}</span></div>)}{round.byeClub?.name && <small>Exempt : {round.byeClub.name}</small>}</div>)}</div> : <div className="calendar-empty">La proposition apparaîtra ici après génération.</div>}
-        {hasExistingCompetitionSchedule && !isMaterialized && <div className="calendar-message error">Des journées ou rencontres existent déjà pour cette compétition, mais elles ne correspondent pas complètement à cette proposition. Publication et matérialisation automatiques bloquées.</div>}
+        {hasExistingCompetitionSchedule && !isMaterialized && (
+          <div className="calendar-message">
+            Un calendrier opérationnel existe déjà pour cette compétition. Cette nouvelle proposition n’a encore aucun effet sur le calendrier publié. Elle doit être validée par la Ligue avant tout remplacement.
+          </div>
+        )}
       </article>
 
       {role === 'LIGUE_ADMIN' && latest?.status === 'APPROVED' && !isMaterialized && !hasExistingCompetitionSchedule && <article className="calendar-card">
@@ -260,8 +481,238 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
         <button className="calendar-primary" disabled={busy || !authorizedVenueIds.length} onClick={materialize}>{busy ? 'Contrôle et matérialisation…' : 'Créer les journées et rencontres'}</button>
       </article>}
 
+      {matches.length > 0 && <article className="calendar-card calendar-operational">
+        <div className="calendar-card-title">
+          <div>
+            <small>04 · CALENDRIER OPÉRATIONNEL</small>
+            <h3>Rencontres programmées</h3>
+          </div>
+          <span className="calendar-count">{filteredMatches.length} match{filteredMatches.length > 1 ? 's' : ''}</span>
+        </div>
+
+        <div className="calendar-operational-filters">
+          <label className="calendar-field">
+            Journée
+            <select value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
+              <option value="ALL">Toutes les journées</option>
+              {roundRecords.map((round) => (
+                <option key={round.id} value={String(round.number)}>
+                  Journée {round.number}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="calendar-field">
+            Club
+            <select value={clubFilter} onChange={(event) => setClubFilter(event.target.value)}>
+              <option value="ALL">Tous les clubs</option>
+              {activeClubs.map((entry) => (
+                <option key={entry.club.id} value={entry.club.id}>
+                  {entry.club.shortName}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="calendar-operational-list">
+          {filteredMatches.map((match) => {
+            const kickoff = formatKickoff(match.kickoffAt);
+
+            return (
+              <div className="calendar-operational-match" key={match.id}>
+                <div className="calendar-operational-round">
+                  J{match.round?.number ?? '—'}
+                </div>
+
+                <div className="calendar-operational-teams">
+                  <strong>{match.homeClub.shortName}</strong>
+                  <span>—</span>
+                  <strong>{match.awayClub.shortName}</strong>
+                </div>
+
+                <div className="calendar-operational-info">
+                  <strong>{kickoff.date}</strong>
+                  <span>{kickoff.time}</span>
+                </div>
+
+                <div className="calendar-operational-info">
+                  <strong>{match.venue?.name ?? 'Stade à définir'}</strong>
+                  <span>{matchStatusLabel[match.status] ?? match.status}</span>
+                </div>
+
+                {role === 'LIGUE_ADMIN' && (
+                  <button
+                    className="calendar-secondary calendar-manage-match"
+                    onClick={() => void openMatchManagement(match)}
+                  >
+                    Gérer
+                  </button>
+                )}
+
+                {selectedMatchId === match.id && role === 'LIGUE_ADMIN' && (
+                  <div className="calendar-match-management">
+                    <div className="calendar-match-management-header">
+                      <div>
+                        <small>GESTION DE LA RENCONTRE</small>
+                        <h4>
+                          {match.homeClub.shortName} — {match.awayClub.shortName}
+                        </h4>
+                      </div>
+
+                      <button
+                        className="calendar-secondary"
+                        onClick={() => {
+                          setSelectedMatchId(null);
+                          setMatchHistory([]);
+                        }}
+                      >
+                        Fermer
+                      </button>
+                    </div>
+
+                    <div className="calendar-match-edit-grid">
+                      <label className="calendar-field">
+                        Date et heure
+                        <input
+                          type="datetime-local"
+                          value={editKickoff}
+                          onChange={(event) => setEditKickoff(event.target.value)}
+                        />
+                      </label>
+
+                      <label className="calendar-field">
+                        Stade
+                        <select
+                          value={editVenueId}
+                          onChange={(event) => setEditVenueId(event.target.value)}
+                        >
+                          <option value="">Sélectionner un stade</option>
+                          {approvedVenues.map((venue) => (
+                            <option key={venue.id} value={venue.id}>
+                              {venue.name} · {venue.city}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="calendar-field calendar-match-reason">
+                        Motif de modification
+                        <input
+                          type="text"
+                          placeholder="Ex. indisponibilité du terrain"
+                          value={matchReason}
+                          onChange={(event) => setMatchReason(event.target.value)}
+                        />
+                      </label>
+                    </div>
+
+                    {match.postponementReason && (
+                      <div className="calendar-match-alert">
+                        Motif actuel : {match.postponementReason}
+                      </div>
+                    )}
+
+                    <div className="calendar-match-actions">
+                      <button
+                        className="calendar-primary"
+                        disabled={busy || match.status === 'COMPLETED' || match.status === 'CANCELLED'}
+                        onClick={() => void saveMatchSchedule()}
+                      >
+                        Reprogrammer / changer le stade
+                      </button>
+
+                      <button
+                        className="calendar-secondary"
+                        disabled={busy || match.status === 'COMPLETED' || match.status === 'CANCELLED'}
+                        onClick={() => void changeSelectedMatchStatus('POSTPONED')}
+                      >
+                        Reporter
+                      </button>
+
+                      <button
+                        className="calendar-danger"
+                        disabled={busy || match.status === 'COMPLETED' || match.status === 'CANCELLED'}
+                        onClick={() => void changeSelectedMatchStatus('CANCELLED')}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+
+                    <div className="calendar-match-history">
+                      <div className="calendar-card-title">
+                        <div>
+                          <small>AUDIT</small>
+                          <h4>Historique des modifications</h4>
+                        </div>
+                      </div>
+
+                      {historyLoading && (
+                        <span className="calendar-muted">
+                          Chargement de l’historique…
+                        </span>
+                      )}
+
+                      {!historyLoading && matchHistory.length === 0 && (
+                        <span className="calendar-muted">
+                          Aucune modification tracée pour cette rencontre.
+                        </span>
+                      )}
+
+                      {!historyLoading &&
+                        matchHistory.map((entry) => {
+                          const metadata = entry.metadata ?? {};
+                          const reason =
+                            typeof metadata.reason === 'string'
+                              ? metadata.reason
+                              : null;
+
+                          const actorName = [
+                            entry.actor?.firstName,
+                            entry.actor?.lastName,
+                          ]
+                            .filter(Boolean)
+                            .join(' ');
+
+                          return (
+                            <div
+                              className="calendar-history-entry"
+                              key={entry.id}
+                            >
+                              <div>
+                                <strong>{auditActionLabel[entry.action] ?? entry.action.replaceAll('_', ' ')}</strong>
+                                <span>
+                                  {new Date(entry.createdAt).toLocaleString('fr-FR')}
+                                </span>
+                              </div>
+
+                              <div>
+                                <span>
+                                  {actorName || entry.actor?.email || 'Système'}
+                                </span>
+                                {reason && <em>{reason}</em>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {filteredMatches.length === 0 && (
+            <div className="calendar-muted">
+              Aucun match ne correspond aux filtres sélectionnés.
+            </div>
+          )}
+        </div>
+      </article>}
+
       <article className="calendar-card calendar-governance">
-        <div className="calendar-card-title"><div><small>04 · GOUVERNANCE</small><h3>Validation humaine et publication</h3></div></div>
+        <div className="calendar-card-title"><div><small>05 · GOUVERNANCE</small><h3>Validation humaine et publication</h3></div></div>
         <div className="calendar-governance-flow"><span>Digital Foot <b>propose</b></span><i>→</i><span>Responsable <b>soumet</b></span><i>→</i><span>Validateur <b>approuve</b></span><i>→</i><span>Ligue <b>matérialise et publie</b></span></div>
         <div className="calendar-actions">
           {(role === 'COMPETITION_MANAGER' || role === 'LIGUE_ADMIN') && latest?.status === 'GENERATED' && <button className="calendar-primary" disabled={busy} onClick={submit}>Soumettre pour validation</button>}
