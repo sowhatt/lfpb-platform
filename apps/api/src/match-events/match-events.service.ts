@@ -12,6 +12,7 @@ import {
   Role,
 } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
+import { DisciplineService } from '../discipline/discipline.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import {
   CreateMatchEventDto,
@@ -28,7 +29,10 @@ const POST_MATCH_ACTION_PREFIX = 'MATCH_POST_MATCH_';
 
 @Injectable()
 export class MatchEventsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly discipline: DisciplineService,
+  ) {}
 
   async list(actor: AuthenticatedActor, matchId: string) {
     const match = await this.getAuthorizedMatch(actor, matchId, false);
@@ -435,6 +439,100 @@ export class MatchEventsService {
       if (input.type === LiveMatchEventType.MATCH_END) status = MatchStatus.COMPLETED;
       const updatedMatch = await tx.match.update({ where: { id: matchId }, data: { homeScore, awayScore, status } });
       const event = await tx.auditLog.create({ data: { actorUserId: actor.userId, organizationId: match.competition.organizationId, action: `${EVENT_ACTION_PREFIX}${input.type}`, resourceType: 'MatchEvent', resourceId: matchId, metadata: { minute: input.minute ?? null, period: input.period ?? null, stoppageMinute: input.stoppageMinute ?? 0, clubId: input.clubId ?? null, registrationId: input.registrationId ?? null, secondaryRegistrationId: input.secondaryRegistrationId ?? null, description: input.description?.trim() || null, scoreAfter: { home: homeScore, away: awayScore } } } });
+
+      if (
+        input.type === LiveMatchEventType.YELLOW_CARD &&
+        input.registrationId
+      ) {
+        const competitionMatches = await tx.match.findMany({
+          where: { competitionId: match.competition.id },
+          select: { id: true },
+        });
+
+        const competitionMatchIds = competitionMatches.map(
+          (competitionMatch) => competitionMatch.id,
+        );
+
+        const yellowCardLogs = await tx.auditLog.findMany({
+          where: {
+            resourceType: 'MatchEvent',
+            resourceId: { in: competitionMatchIds },
+            action: `${EVENT_ACTION_PREFIX}${LiveMatchEventType.YELLOW_CARD}`,
+          },
+        });
+
+        const yellowCardCount = yellowCardLogs.filter((log) => {
+          if (
+            !log.metadata ||
+            typeof log.metadata !== 'object' ||
+            Array.isArray(log.metadata)
+          ) {
+            return false;
+          }
+
+          return (
+            (log.metadata as Record<string, unknown>).registrationId ===
+            input.registrationId
+          );
+        }).length;
+
+        await this.discipline.createYellowCardSuspensionIfThresholdReached(
+          {
+            actorUserId: actor.userId,
+            organizationId: match.competition.organizationId,
+            competitionId: match.competition.id,
+            registrationId: input.registrationId,
+            sourceMatchId: matchId,
+            sourceEventId: event.id,
+            yellowCardCount,
+          },
+          tx,
+        );
+      }
+
+      if (
+        input.type === LiveMatchEventType.RED_CARD &&
+        input.registrationId
+      ) {
+        const configuredMatches = Number(
+          process.env.DISCIPLINE_RED_CARD_MATCHES ?? '1',
+        );
+
+        const matchesTotal =
+          Number.isInteger(configuredMatches) && configuredMatches > 0
+            ? configuredMatches
+            : 1;
+
+        await this.discipline.createSuspension(
+          {
+            actorUserId: actor.userId,
+            organizationId: match.competition.organizationId,
+            competitionId: match.competition.id,
+            registrationId: input.registrationId,
+            matchesTotal,
+            reason: 'Carton rouge',
+            source: 'RED_CARD',
+            sourceMatchId: matchId,
+            sourceEventId: event.id,
+          },
+          tx,
+        );
+      }
+
+      if (input.type === LiveMatchEventType.MATCH_END) {
+        await this.discipline.serveSuspensionsForCompletedMatch(
+          {
+            actorUserId: actor.userId,
+            organizationId: match.competition.organizationId,
+            competitionId: match.competition.id,
+            matchId,
+            homeOrganizationId: match.homeClub.organizationId,
+            awayOrganizationId: match.awayClub.organizationId,
+          },
+          tx,
+        );
+      }
+
       return { event: { id: event.id, type: input.type, minute: input.minute ?? null, period: input.period ?? null, stoppageMinute: input.stoppageMinute ?? 0, clubId: input.clubId ?? null, registrationId: input.registrationId ?? null, secondaryRegistrationId: input.secondaryRegistrationId ?? null, description: input.description?.trim() || null, createdAt: event.createdAt }, match: { id: updatedMatch.id, status: updatedMatch.status, homeScore: updatedMatch.homeScore ?? 0, awayScore: updatedMatch.awayScore ?? 0 } };
     });
   }

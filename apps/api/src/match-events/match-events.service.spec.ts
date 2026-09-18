@@ -29,7 +29,10 @@ describe('MatchEventsService - substitutions', () => {
     awayScore: 0,
     homeClubId: 'home-club',
     awayClubId: 'away-club',
-    competition: { organizationId: 'league-org' },
+    competition: {
+      id: 'competition-1',
+      organizationId: 'league-org',
+    },
     matchSheet: { status: MatchSheetStatus.LOCKED },
     officialAssignments: [
       {
@@ -122,7 +125,11 @@ describe('MatchEventsService - substitutions', () => {
       }),
     );
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -147,7 +154,11 @@ describe('MatchEventsService - substitutions', () => {
       },
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -172,7 +183,11 @@ describe('MatchEventsService - substitutions', () => {
       },
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -187,7 +202,11 @@ describe('MatchEventsService - substitutions', () => {
 
   it('refuse de faire sortir un remplaçant qui n’est jamais entré', async () => {
     const prisma = makePrisma();
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -226,7 +245,11 @@ describe('MatchEventsService - substitutions', () => {
       }),
     );
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -251,7 +274,11 @@ describe('MatchEventsService - substitutions', () => {
       },
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -275,7 +302,11 @@ describe('MatchEventsService - substitutions', () => {
       },
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -308,7 +339,11 @@ describe('MatchEventsService - substitutions', () => {
       },
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -345,7 +380,12 @@ describe('MatchEventsService - lifecycle', () => {
       awayScore: 0,
       homeClubId: 'home-club',
       awayClubId: 'away-club',
-      competition: { organizationId: 'league-org' },
+      homeClub: { organizationId: 'home-org' },
+      awayClub: { organizationId: 'away-org' },
+      competition: {
+        id: 'competition-1',
+        organizationId: 'league-org',
+      },
       matchSheet: { status: MatchSheetStatus.LOCKED },
       officialAssignments: [],
     };
@@ -384,7 +424,11 @@ describe('MatchEventsService - lifecycle', () => {
 
   it('refuse la mi-temps sans coup d’envoi', async () => {
     const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, []);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -398,7 +442,11 @@ describe('MatchEventsService - lifecycle', () => {
     const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
       { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
     ]);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -413,7 +461,11 @@ describe('MatchEventsService - lifecycle', () => {
       { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
       { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
     ]);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -429,7 +481,11 @@ describe('MatchEventsService - lifecycle', () => {
       { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
       { action: 'MATCH_EVENT_SECOND_HALF_START', metadata: {} },
     ]);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -444,7 +500,11 @@ describe('MatchEventsService - lifecycle', () => {
       { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
       { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
     ]);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -458,7 +518,11 @@ describe('MatchEventsService - lifecycle', () => {
     const prisma = makeLifecyclePrisma(MatchStatus.IN_PROGRESS, [
       { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
     ]);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -473,7 +537,11 @@ describe('MatchEventsService - lifecycle', () => {
       { action: 'MATCH_EVENT_MATCH_START', metadata: {} },
       { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
     ]);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -489,7 +557,11 @@ describe('MatchEventsService - lifecycle', () => {
       { action: 'MATCH_EVENT_HALF_TIME', metadata: {} },
       { action: 'MATCH_EVENT_SECOND_HALF_START', metadata: {} },
     ]);
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -594,6 +666,9 @@ describe('MatchEventsService - live integrity', () => {
       $transaction: jest.fn().mockImplementation(async (callback: any) =>
         callback({
           match: {
+            findMany: jest.fn().mockResolvedValue([
+              { id: 'match-1' },
+            ]),
             update: jest.fn().mockImplementation(({ data }: any) =>
               Promise.resolve({
                 ...match,
@@ -602,6 +677,15 @@ describe('MatchEventsService - live integrity', () => {
             ),
           },
           auditLog: {
+            findMany: jest.fn().mockImplementation(({ where }: any) => {
+              if (typeof where?.action === 'string') {
+                return Promise.resolve(
+                  events.filter((item) => item.action === where.action),
+                );
+              }
+
+              return Promise.resolve(events);
+            }),
             create: jest.fn().mockResolvedValue({
               id: 'event-created',
               createdAt: new Date(),
@@ -617,7 +701,11 @@ describe('MatchEventsService - live integrity', () => {
       event(LiveMatchEventType.MATCH_START),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -636,7 +724,11 @@ describe('MatchEventsService - live integrity', () => {
       event(LiveMatchEventType.HALF_TIME),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -653,7 +745,11 @@ describe('MatchEventsService - live integrity', () => {
       event(LiveMatchEventType.MATCH_START),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -675,7 +771,11 @@ describe('MatchEventsService - live integrity', () => {
       }),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -697,7 +797,11 @@ describe('MatchEventsService - live integrity', () => {
       }),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -718,7 +822,11 @@ describe('MatchEventsService - live integrity', () => {
       }),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -737,7 +845,11 @@ describe('MatchEventsService - live integrity', () => {
       event(LiveMatchEventType.SECOND_HALF_START),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -757,7 +869,11 @@ describe('MatchEventsService - live integrity', () => {
       event(LiveMatchEventType.SECOND_HALF_START),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -776,7 +892,11 @@ describe('MatchEventsService - live integrity', () => {
       event(LiveMatchEventType.HALF_TIME),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -795,7 +915,11 @@ describe('MatchEventsService - live integrity', () => {
       event(LiveMatchEventType.HALF_TIME),
     ]);
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -867,7 +991,11 @@ describe('MatchEventsService - advanced match facts', () => {
   }
 
   it('accepte une blessure documentée pour un joueur de la feuille', async () => {
-    const service = new MatchEventsService(makeFactsPrisma());
+    const service = new MatchEventsService(makeFactsPrisma(), {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -881,7 +1009,11 @@ describe('MatchEventsService - advanced match facts', () => {
   });
 
   it('refuse une blessure sans joueur', async () => {
-    const service = new MatchEventsService(makeFactsPrisma());
+    const service = new MatchEventsService(makeFactsPrisma(), {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -894,7 +1026,11 @@ describe('MatchEventsService - advanced match facts', () => {
   });
 
   it('refuse une blessure sans description', async () => {
-    const service = new MatchEventsService(makeFactsPrisma());
+    const service = new MatchEventsService(makeFactsPrisma(), {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -907,7 +1043,11 @@ describe('MatchEventsService - advanced match facts', () => {
   });
 
   it('accepte un incident documenté sans joueur', async () => {
-    const service = new MatchEventsService(makeFactsPrisma());
+    const service = new MatchEventsService(makeFactsPrisma(), {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -919,7 +1059,11 @@ describe('MatchEventsService - advanced match facts', () => {
   });
 
   it('refuse un incident sans description', async () => {
-    const service = new MatchEventsService(makeFactsPrisma());
+    const service = new MatchEventsService(makeFactsPrisma(), {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -930,7 +1074,11 @@ describe('MatchEventsService - advanced match facts', () => {
   });
 
   it('accepte une observation officielle documentée', async () => {
-    const service = new MatchEventsService(makeFactsPrisma());
+    const service = new MatchEventsService(makeFactsPrisma(), {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -942,7 +1090,11 @@ describe('MatchEventsService - advanced match facts', () => {
   });
 
   it('refuse une observation vide', async () => {
-    const service = new MatchEventsService(makeFactsPrisma());
+    const service = new MatchEventsService(makeFactsPrisma(), {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.create(actor, 'match-1', {
@@ -1018,7 +1170,11 @@ describe('MatchEventsService - post-match entries', () => {
 
   it('accepte une réserve technique après la fin du match', async () => {
     const prisma = makePostMatchPrisma();
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.createPostMatchEntry(actor, 'match-1', {
@@ -1037,7 +1193,11 @@ describe('MatchEventsService - post-match entries', () => {
     const prisma = makePostMatchPrisma(
       MatchStatus.IN_PROGRESS,
     );
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.createPostMatchEntry(actor, 'match-1', {
@@ -1051,7 +1211,11 @@ describe('MatchEventsService - post-match entries', () => {
 
   it('refuse une réserve technique sans club', async () => {
     const prisma = makePostMatchPrisma();
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.createPostMatchEntry(actor, 'match-1', {
@@ -1071,7 +1235,11 @@ describe('MatchEventsService - post-match entries', () => {
         id: 'signature-1',
       });
 
-    const service = new MatchEventsService(prisma);
+    const service = new MatchEventsService(prisma, {
+  createSuspension: jest.fn(),
+  createYellowCardSuspensionIfThresholdReached: jest.fn(),
+  serveSuspensionsForCompletedMatch: jest.fn(),
+} as any);
 
     await expect(
       service.createPostMatchEntry(actor, 'match-1', {

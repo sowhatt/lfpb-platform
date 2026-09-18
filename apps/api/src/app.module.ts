@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module";
 import { CompetitionsModule } from "./competitions/competitions.module";
 import { DatabaseModule } from "./database/database.module";
+import { DisciplineModule } from "./discipline/discipline.module";
 import { HealthController } from "./health.controller";
 import { IamModule } from "./iam/iam.module";
 import { MatchEventsModule } from "./match-events/match-events.module";
@@ -19,6 +20,7 @@ import { RegistriesModule } from "./registries/registries.module";
       envFilePath: [".env", "../../.env"],
     }),
     DatabaseModule,
+    DisciplineModule,
     AuthModule,
     CompetitionsModule,
     IamModule,

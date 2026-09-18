@@ -15,12 +15,16 @@ import {
   Role,
 } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
+import { DisciplineService } from '../discipline/discipline.service';
 import { AuthenticatedActor } from '../iam/domain/actor';
 import { AddMatchSheetPlayerDto } from './dto/add-match-sheet-player.dto';
 
 @Injectable()
 export class MatchSheetsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly discipline: DisciplineService,
+  ) {}
 
   async eligiblePlayers(actor: AuthenticatedActor, matchId: string, clubId: string) {
     const match = await this.prisma.match.findUnique({
@@ -79,6 +83,19 @@ export class MatchSheetsService {
 
     const matchDate = match.kickoffAt;
 
+    const disciplineStates = await Promise.all(
+      registrations.map((registration) =>
+        this.discipline.getPlayerDisciplineState(
+          match.competition.id,
+          registration.id,
+        ),
+      ),
+    );
+
+    const disciplineByRegistrationId = new Map(
+      disciplineStates.map((state) => [state.registrationId, state]),
+    );
+
     return {
       match: {
         id: match.id,
@@ -95,6 +112,15 @@ export class MatchSheetsService {
       players: registrations.map((registration) => {
         const license = registration.licenses[0] ?? null;
         const reasons: string[] = [];
+        const discipline =
+          disciplineByRegistrationId.get(registration.id) ?? null;
+
+        if (discipline?.activeSuspension) {
+          const remaining = discipline.activeSuspension.matchesRemaining;
+          reasons.push(
+            `Suspension disciplinaire active — ${remaining} match${remaining > 1 ? 's' : ''} à purger`,
+          );
+        }
 
         if (
           registration.status === RegistrationStatus.SUSPENDED ||
@@ -146,6 +172,13 @@ export class MatchSheetsService {
             : null,
           eligible: reasons.length === 0,
           reasons,
+          discipline: discipline
+            ? {
+                yellowCards: discipline.yellowCards,
+                redCards: discipline.redCards,
+                activeSuspension: discipline.activeSuspension,
+              }
+            : null,
         };
       }),
     };

@@ -20,7 +20,19 @@ describe('MatchSheetsService', () => {
     auditLog: { create: jest.fn() },
   } as any;
 
-  const service = new MatchSheetsService(prisma);
+  const discipline = {
+    getPlayerDisciplineState: jest.fn().mockImplementation(
+      async (_competitionId: string, registrationId: string) => ({
+        competitionId: 'competition-1',
+        registrationId,
+        yellowCards: 0,
+        redCards: 0,
+        activeSuspension: null,
+      }),
+    ),
+  } as any;
+
+  const service = new MatchSheetsService(prisma, discipline);
 
   beforeEach(() => {
     jest.clearAllMocks();
