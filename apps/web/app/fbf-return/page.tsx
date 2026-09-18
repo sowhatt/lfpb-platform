@@ -217,8 +217,31 @@ export default function FbfReturnPage() {
                     <td>
                       {license.status === 'TRANSMITTED_TO_FBF' ? (
                         <span className="row-actions">
-                          <button type="button" onClick={() => { setSelected(license); setMode('ISSUE'); setError(''); setMessage(''); }}>Enregistrer une délivrance</button>
-                          <button type="button" onClick={() => { setSelected(license); setMode('REJECT'); setError(''); setMessage(''); }}>Enregistrer un refus</button>
+                          <button
+                            type="button"
+                            className="table-action table-action-primary"
+                            onClick={() => {
+                              setSelected(license);
+                              setMode('ISSUE');
+                              setError('');
+                              setMessage('');
+                            }}
+                          >
+                            Délivrer
+                          </button>
+
+                          <button
+                            type="button"
+                            className="table-action table-action-danger"
+                            onClick={() => {
+                              setSelected(license);
+                              setMode('REJECT');
+                              setError('');
+                              setMessage('');
+                            }}
+                          >
+                            Refuser
+                          </button>
                         </span>
                       ) : 'Traité'}
                     </td>
@@ -242,7 +265,15 @@ export default function FbfReturnPage() {
 
         {selected && mode === 'REJECT' && (
           <form onSubmit={submitReject} className="entity-form">
-            <div style={{ gridColumn: '1 / span 3' }}><label>Motif officiel du refus *</label><input name="reason" required minLength={3} maxLength={500} /></div>
+            <div className="form-span-3">
+              <label>Motif officiel du refus *</label>
+              <input
+                name="reason"
+                required
+                minLength={3}
+                maxLength={500}
+              />
+            </div>
             <button disabled={busy}>{busy ? 'Enregistrement…' : 'Confirmer le refus'}</button>
             <button type="button" onClick={() => { setSelected(null); setMode(null); }}>Annuler</button>
           </form>

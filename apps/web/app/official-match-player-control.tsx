@@ -236,7 +236,9 @@ export function OfficialMatchPlayerControl({ token, matchId }: { token: string; 
   return <section className="data-panel" style={{ padding: 20 }}>
     <div style={{ padding: '20px 22px', borderRadius: 14, background: '#0b2c48', color: '#fff' }}>
       <label style={{ color: '#dfba54', fontSize: 9, fontWeight: 900, letterSpacing: '.13em' }}>AVANT-MATCH · CONTRÔLE OFFICIEL DE LA FEUILLE</label>
-      <h2 style={{ margin: '7px 0 4px', fontSize: 24 }}>Appeler le joueur, afficher sa licence, contrôler</h2>
+      <h2 style={{ margin: '7px 0 4px', fontSize: 24, color: '#fff' }}>
+  Appeler le joueur, afficher sa licence, contrôler
+</h2>
       <p style={{ margin: 0, color: '#b8c6d1', fontSize: 11 }}>L’officiel compare le joueur présent avec la photo officielle et valide le contrôle terrain.</p>
     </div>
 

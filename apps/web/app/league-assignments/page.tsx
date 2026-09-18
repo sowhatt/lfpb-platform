@@ -127,7 +127,14 @@ export default function LeagueAssignmentsPage() {
       </form>
       <section className="data-panel"><div className="title"><div><label>SUIVI OPÉRATIONNEL</label><h2>Désignations en cours</h2></div><span className="badge">{assignments.length} mission(s)</span></div>
         {!loading && assignments.length === 0 && <div className="empty">Aucune désignation enregistrée.</div>}
-        {assignments.length > 0 && <div className="table-wrap"><table><thead><tr><th>Rencontre</th><th>Officiel</th><th>Rôle</th><th>Date</th><th>Stade</th><th>Statut</th><th>Action</th></tr></thead><tbody>{assignments.map((a) => <tr key={a.id}><td><strong>{a.match.homeClub.shortName} — {a.match.awayClub.shortName}</strong></td><td>{a.officialProfile.registration.person.firstName} {a.officialProfile.registration.person.lastName}</td><td>{roleLabel(a.role)}</td><td>{formatDate(a.match.kickoffAt)}</td><td>{a.match.venue?.name ?? 'À définir'}</td><td><span className={`badge ${statusClass(a.status)}`}>{statusLabel(a.status)}</span></td><td>{['DRAFT','SENT','ACCEPTED'].includes(a.status) ? <button type="button" onClick={() => void cancelAssignment(a)} disabled={workingId === a.id}>{workingId === a.id ? 'Annulation…' : 'Annuler'}</button> : '—'}</td></tr>)}</tbody></table></div>}
+        {assignments.length > 0 && <div className="table-wrap"><table><thead><tr><th>Rencontre</th><th>Officiel</th><th>Rôle</th><th>Date</th><th>Stade</th><th>Statut</th><th>Action</th></tr></thead><tbody>{assignments.map((a) => <tr key={a.id}><td><strong>{a.match.homeClub.shortName} — {a.match.awayClub.shortName}</strong></td><td>{a.officialProfile.registration.person.firstName} {a.officialProfile.registration.person.lastName}</td><td>{roleLabel(a.role)}</td><td>{formatDate(a.match.kickoffAt)}</td><td>{a.match.venue?.name ?? 'À définir'}</td><td><span className={`badge ${statusClass(a.status)}`}>{statusLabel(a.status)}</span></td><td>{['DRAFT','SENT','ACCEPTED'].includes(a.status) ? <button
+  type="button"
+  className="table-action table-action-danger"
+  onClick={() => void cancelAssignment(a)}
+  disabled={workingId === a.id}
+>
+  {workingId === a.id ? 'Annulation…' : 'Annuler'}
+</button> : '—'}</td></tr>)}</tbody></table></div>}
       </section>
     </main>
   </div>;

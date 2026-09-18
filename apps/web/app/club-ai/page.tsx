@@ -8,6 +8,29 @@ type Actor = {
   memberships: Array<{ organizationId: string; role: string }>;
 };
 
+function AccessScreen({
+  title,
+  message,
+  actionLabel,
+}: {
+  title: string;
+  message: string;
+  actionLabel: string;
+}) {
+  return (
+    <main className="portal-page">
+      <section className="portal-access-card data-panel">
+        <label className="portal-eyebrow">DIGITAL FOOT · CLUB</label>
+        <h1>{title}</h1>
+        <p>{message}</p>
+        <a className="portal-link-button" href="/">
+          {actionLabel}
+        </a>
+      </section>
+    </main>
+  );
+}
+
 export default function ClubAiPage() {
   const [token, setToken] = useState('');
   const [actor, setActor] = useState<Actor | null>(null);
@@ -15,7 +38,9 @@ export default function ClubAiPage() {
   useEffect(() => {
     const savedToken = sessionStorage.getItem('lfpb-token') ?? '';
     const savedActor = sessionStorage.getItem('lfpb-actor');
+
     setToken(savedToken);
+
     if (savedActor) {
       try {
         setActor(JSON.parse(savedActor) as Actor);
@@ -25,43 +50,55 @@ export default function ClubAiPage() {
     }
   }, []);
 
-  const membership = actor?.memberships?.[0];
+  const membership = actor?.memberships?.find(
+    (candidate) => candidate.role === 'CLUB_ADMIN',
+  );
 
-  if (!token || !membership) {
+  if (!token || !actor) {
     return (
-      <main style={{ maxWidth: 960, margin: '48px auto', padding: 24 }}>
-        <section className="data-panel">
-          <h1>Assistant IA du club</h1>
-          <p>Connectez-vous d’abord à la plateforme LFPB, puis ouvrez de nouveau cette page.</p>
-          <a href="/">Retour à la connexion</a>
-        </section>
-      </main>
+      <AccessScreen
+        title="Assistant IA du club"
+        message="Connectez-vous d’abord à Digital Foot pour accéder aux outils intelligents de votre club."
+        actionLabel="← Retour à la connexion"
+      />
     );
   }
 
-  if (membership.role !== 'CLUB_ADMIN') {
+  if (!membership) {
     return (
-      <main style={{ maxWidth: 960, margin: '48px auto', padding: 24 }}>
-        <section className="data-panel">
-          <h1>Assistant IA du club</h1>
-          <p>Cette première version est réservée à l’espace CLUB.</p>
-          <a href="/">Retour au tableau de bord</a>
-        </section>
-      </main>
+      <AccessScreen
+        title="Accès réservé"
+        message="L’assistant IA joueur est réservé aux administrateurs de club."
+        actionLabel="← Retour au tableau de bord"
+      />
     );
   }
 
   return (
-    <main style={{ maxWidth: 1100, margin: '32px auto', padding: 24 }}>
-      <div className="workspace-actions">
+    <main className="portal-page portal-page-wide">
+      <header className="workspace-actions portal-hero">
         <div>
-          <label>LF · Digital Foot AI</label>
+          <label>DIGITAL FOOT AI · ESPACE CLUB</label>
           <h1>Recherche vocale joueur</h1>
-          <p>{actor.email}</p>
+          <p>
+            Recherche intelligente et accès rapide au référentiel de votre club.
+          </p>
         </div>
-        <a href="/">← Tableau de bord</a>
-      </div>
-      <ClubAiAssistant token={token} organizationId={membership.organizationId} />
+
+        <div className="portal-hero-actions">
+          <span className="portal-user-chip">{actor.email}</span>
+          <a className="portal-back-link" href="/">
+            ← Tableau de bord
+          </a>
+        </div>
+      </header>
+
+      <section className="portal-content">
+        <ClubAiAssistant
+          token={token}
+          organizationId={membership.organizationId}
+        />
+      </section>
     </main>
   );
 }

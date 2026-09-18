@@ -936,3 +936,978 @@
     grid-column: 2;
   }
 }
+
+/* =========================================================
+   DIGITAL FOOT DESIGN SYSTEM V1
+   Normalisation visuelle globale
+   ========================================================= */
+
+:root {
+  /* Brand */
+  --df-navy-950: #071f36;
+  --df-navy-900: #0b2c48;
+  --df-navy-800: #0d3150;
+  --df-navy-700: #123e5e;
+  --df-navy-600: #174d6b;
+
+  --df-gold-700: #98701b;
+  --df-gold-600: #b88919;
+  --df-gold-500: #d7af47;
+  --df-gold-400: #dfba54;
+
+  /* Surfaces */
+  --df-bg: #f5f7f9;
+  --df-surface: #ffffff;
+  --df-surface-soft: #f8fafb;
+  --df-surface-muted: #f1f4f6;
+
+  /* Text */
+  --df-text: #17283d;
+  --df-text-strong: #203147;
+  --df-text-secondary: #526275;
+  --df-text-muted: #7d8997;
+  --df-text-light: #9aa6b2;
+
+  /* Borders */
+  --df-border: #e2e7ea;
+  --df-border-soft: #edf0f2;
+
+  /* Semantic */
+  --df-success: #27704d;
+  --df-success-bg: #e7f4ec;
+
+  --df-warning: #916b18;
+  --df-warning-bg: #fbf1d9;
+
+  --df-danger: #9e3933;
+  --df-danger-bg: #fae8e6;
+
+  --df-info: #356b95;
+  --df-info-bg: #eaf2f8;
+
+  /* Typography */
+  --df-font-ui:
+    var(--font-inter),
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  --df-font-display:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  --df-text-xs: 11px;
+  --df-text-sm: 12px;
+  --df-text-md: 14px;
+  --df-text-lg: 16px;
+  --df-text-xl: 20px;
+  --df-text-2xl: 26px;
+  --df-text-3xl: 32px;
+
+  /* Radius */
+  --df-radius-sm: 7px;
+  --df-radius-md: 9px;
+  --df-radius-lg: 14px;
+  --df-radius-xl: 18px;
+
+  /* Spacing */
+  --df-space-1: 4px;
+  --df-space-2: 8px;
+  --df-space-3: 12px;
+  --df-space-4: 16px;
+  --df-space-5: 20px;
+  --df-space-6: 24px;
+  --df-space-8: 32px;
+
+  /* Shadows */
+  --df-shadow-sm: 0 4px 14px rgba(28, 46, 67, 0.04);
+  --df-shadow-md: 0 8px 24px rgba(28, 46, 67, 0.06);
+  --df-shadow-lg: 0 18px 45px rgba(7, 31, 54, 0.10);
+}
+
+/* ---------- Global typography ---------- */
+
+html {
+  font-family: var(--df-font-ui);
+  color: var(--df-text);
+  background: var(--df-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--df-font-ui);
+  color: var(--df-text);
+  background: var(--df-bg);
+  font-size: var(--df-text-md);
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+h1 {
+  margin: 8px 0 0;
+  color: var(--df-text);
+  font-family: var(--df-font-display);
+  font-size: var(--df-text-3xl);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+h2 {
+  color: var(--df-text);
+  font-family: var(--df-font-ui);
+  font-size: var(--df-text-xl);
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+h3 {
+  color: var(--df-text);
+  font-family: var(--df-font-ui);
+  font-size: var(--df-text-lg);
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+p {
+  line-height: 1.55;
+}
+
+/* ---------- Institutional eyebrow labels ---------- */
+
+header label,
+.title label,
+.planner label,
+.workspace-actions label,
+.login-card > label,
+.player-profile .player-identity > label,
+.license-section-heading label {
+  color: var(--df-gold-600);
+  font-family: var(--df-font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+/* ---------- Primary surfaces ---------- */
+
+.panel,
+.data-panel,
+.stats article,
+.entity-form,
+.player-profile {
+  border-color: var(--df-border);
+  background: var(--df-surface);
+  box-shadow: var(--df-shadow-sm);
+}
+
+.panel,
+.data-panel,
+.entity-form {
+  border-radius: var(--df-radius-lg);
+}
+
+.data-panel {
+  padding: var(--df-space-6);
+}
+
+/* ---------- Buttons ---------- */
+
+button {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.actions button,
+.entity-form > button,
+.workspace-actions button,
+.official-session-card button,
+.official-match-header button {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--df-radius-md);
+  font-size: var(--df-text-sm);
+  font-weight: 750;
+}
+
+.actions button {
+  border: 1px solid var(--df-border);
+  background: var(--df-surface);
+  color: var(--df-text-secondary);
+}
+
+.actions button:hover {
+  border-color: #ccd5db;
+  background: var(--df-surface-soft);
+  color: var(--df-navy-900);
+}
+
+.actions .primary,
+.entity-form > button,
+.btn-primary {
+  border: 1px solid var(--df-navy-800);
+  background: var(--df-navy-800);
+  color: #fff;
+}
+
+.actions .primary:hover,
+.entity-form > button:hover,
+.btn-primary:hover {
+  background: var(--df-navy-900);
+  border-color: var(--df-navy-900);
+}
+
+.btn-accent {
+  border: 1px solid var(--df-gold-500);
+  background: var(--df-gold-500);
+  color: var(--df-navy-950);
+}
+
+.btn-danger {
+  border: 1px solid #d6a3a0;
+  background: var(--df-danger-bg);
+  color: var(--df-danger);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ---------- Forms ---------- */
+
+.entity-form label,
+.login-card > span {
+  color: var(--df-text-secondary);
+  font-size: var(--df-text-xs);
+  font-weight: 700;
+}
+
+.entity-form input,
+.entity-form select,
+.entity-form textarea,
+.login-card input {
+  min-height: 42px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--df-border);
+  border-radius: var(--df-radius-md);
+  background: var(--df-surface);
+  color: var(--df-text);
+  font-size: var(--df-text-sm);
+  outline: none;
+}
+
+.entity-form input:focus,
+.entity-form select:focus,
+.entity-form textarea:focus,
+.login-card input:focus {
+  border-color: var(--df-info);
+  box-shadow: 0 0 0 3px rgba(53, 107, 149, 0.10);
+}
+
+/* ---------- Tables ---------- */
+
+table {
+  font-family: var(--df-font-ui);
+}
+
+th {
+  padding: 12px 14px;
+  background: var(--df-surface-soft);
+  color: var(--df-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+td {
+  padding: 14px;
+  border-bottom: 1px solid var(--df-border-soft);
+  color: var(--df-text-secondary);
+  font-size: var(--df-text-sm);
+}
+
+td strong {
+  color: var(--df-text-strong);
+  font-weight: 750;
+}
+
+tbody tr {
+  transition: background-color 120ms ease;
+}
+
+tbody tr:hover {
+  background: #fafcfd;
+}
+
+/* ---------- Status badges ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--df-surface-muted);
+  color: var(--df-text-secondary);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.badge.active,
+.badge.actif,
+.badge.approved,
+.badge.published,
+.badge.completed,
+.badge.accepted,
+.badge.issued_by_fbf,
+.badge.league_favorable {
+  background: var(--df-success-bg);
+  color: var(--df-success);
+}
+
+.badge.draft,
+.badge.generated,
+.badge.submitted,
+.badge.pending {
+  background: var(--df-warning-bg);
+  color: var(--df-warning);
+}
+
+.badge.transmitted_to_fbf,
+.badge.scheduled,
+.badge.sent,
+.badge.info {
+  background: var(--df-info-bg);
+  color: var(--df-info);
+}
+
+.badge.rejected,
+.badge.rejected_by_fbf,
+.badge.inactif,
+.badge.suspended,
+.badge.cancelled,
+.badge.expired {
+  background: var(--df-danger-bg);
+  color: var(--df-danger);
+}
+
+/* ---------- Feedback ---------- */
+
+.api-error,
+.form-error {
+  border-color: #edc3c0;
+  background: var(--df-danger-bg);
+  color: var(--df-danger);
+  font-size: var(--df-text-xs);
+}
+
+.success-message {
+  border-color: #b9ddc8;
+  background: var(--df-success-bg);
+  color: var(--df-success);
+  font-size: var(--df-text-xs);
+}
+
+/* ---------- Navigation ---------- */
+
+aside {
+  background: var(--df-navy-950);
+}
+
+.brand b {
+  border-color: var(--df-gold-500);
+  color: var(--df-gold-500);
+}
+
+nav button {
+  font-size: var(--df-text-sm);
+}
+
+nav button:hover,
+nav button.active {
+  background: #123654;
+  box-shadow: inset 3px 0 var(--df-gold-500);
+}
+
+/* ---------- Header ---------- */
+
+header p {
+  color: var(--df-text-muted);
+  font-size: var(--df-text-sm);
+}
+
+.title h2,
+.planner h2 {
+  font-family: var(--df-font-ui);
+  font-weight: 750;
+}
+
+/* ---------- Workspace hero ---------- */
+
+.workspace-actions {
+  border-radius: var(--df-radius-lg);
+  background: var(--df-navy-900);
+  box-shadow: var(--df-shadow-sm);
+}
+
+.workspace-actions h2 {
+  font-family: var(--df-font-ui);
+  font-size: var(--df-text-xl);
+}
+
+.workspace-actions p {
+  color: #b8c6d1;
+  font-size: var(--df-text-sm);
+}
+
+/* ---------- Responsive typography ---------- */
+
+@media (max-width: 720px) {
+  body {
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  h2 {
+    font-size: 19px;
+  }
+
+  .data-panel {
+    padding: 16px;
+  }
+
+  th {
+    font-size: 9px;
+  }
+
+  td {
+    font-size: 12px;
+  }
+
+  nav button {
+    font-size: 9px;
+  }
+}
+
+/* =========================================================
+   DIGITAL FOOT — PORTAL PAGE NORMALIZATION
+   Club AI / Officiels / écrans spécialisés
+   ========================================================= */
+
+.portal-page {
+  width: min(100% - 32px, 1180px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+.portal-page-wide {
+  width: min(100% - 40px, 1240px);
+}
+
+.portal-content {
+  margin-top: 24px;
+}
+
+.portal-access-card {
+  width: min(100%, 720px);
+  margin: 8vh auto 0;
+  padding: 36px;
+}
+
+.portal-access-card h1 {
+  margin-bottom: 12px;
+}
+
+.portal-access-card p {
+  max-width: 620px;
+  margin: 0 0 24px;
+  color: var(--df-text-secondary);
+  font-size: var(--df-text-md);
+}
+
+.portal-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--df-gold-600);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.portal-hero {
+  min-height: 132px;
+  margin-top: 0;
+  padding: 26px 28px;
+}
+
+.portal-hero h1 {
+  margin: 6px 0;
+  color: #fff;
+  font-size: 30px;
+}
+
+.portal-hero p {
+  max-width: 650px;
+  margin: 0;
+}
+
+.portal-hero-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.portal-user-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d9e1e7;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.portal-back-link,
+.portal-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: var(--df-radius-md);
+  font-family: var(--df-font-ui);
+  font-size: var(--df-text-sm);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.portal-back-link {
+  border: 1px solid rgba(215, 175, 71, 0.35);
+  background: var(--df-gold-500);
+  color: var(--df-navy-950);
+}
+
+.portal-back-link:hover {
+  background: var(--df-gold-400);
+}
+
+.portal-link-button {
+  border: 1px solid var(--df-navy-800);
+  background: var(--df-navy-800);
+  color: #fff;
+}
+
+.portal-link-button:hover {
+  background: var(--df-navy-900);
+}
+
+.portal-message-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.portal-message-section .api-error {
+  flex: 1;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .portal-page,
+  .portal-page-wide {
+    width: 100%;
+    padding: 16px 14px 92px;
+  }
+
+  .portal-hero {
+    min-height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .portal-hero h1 {
+    font-size: 26px;
+  }
+
+  .portal-hero-actions {
+    width: 100%;
+    align-items: flex-start;
+    margin-top: 14px;
+  }
+
+  .portal-access-card {
+    margin-top: 24px;
+    padding: 22px;
+  }
+
+  .portal-message-section {
+    flex-direction: column;
+  }
+}
+
+/* =========================================================
+   DIGITAL FOOT — OFFICIAL MATCH + FBF ACTIONS
+   ========================================================= */
+
+.portal-action-button,
+.portal-back-button {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: var(--df-radius-md);
+  font-family: var(--df-font-ui);
+  font-size: var(--df-text-sm);
+  font-weight: 750;
+}
+
+.portal-action-button {
+  border: 1px solid var(--df-navy-800);
+  background: var(--df-navy-800);
+  color: #fff;
+}
+
+.portal-action-button:hover {
+  background: var(--df-navy-900);
+}
+
+.portal-back-button {
+  border: 1px solid rgba(215, 175, 71, 0.35);
+  background: var(--df-gold-500);
+  color: var(--df-navy-950);
+}
+
+.portal-back-button:hover {
+  background: var(--df-gold-400);
+}
+
+.portal-loading-card {
+  margin-top: 8vh;
+  text-align: center;
+}
+
+.official-match-flow {
+  display: grid;
+  gap: 20px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-action {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: var(--df-radius-sm);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.table-action-primary {
+  border: 1px solid var(--df-info);
+  background: var(--df-info-bg);
+  color: var(--df-info);
+}
+
+.table-action-primary:hover {
+  background: #dcecf7;
+}
+
+.table-action-danger {
+  border: 1px solid #e3b5b1;
+  background: var(--df-danger-bg);
+  color: var(--df-danger);
+}
+
+.table-action-danger:hover {
+  background: #f7dcda;
+}
+
+.form-span-3 {
+  grid-column: span 3;
+}
+
+@media (max-width: 1000px) {
+  .form-span-3 {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-span-3 {
+    grid-column: 1;
+  }
+
+  .row-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-action {
+    width: 100%;
+  }
+}
+
+
+/* Dashboard metrics typography */
+
+.stats article > strong {
+  font-family: var(--df-font-ui);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+
+/* =========================================================
+   DIGITAL FOOT — RESPONSIVE FINAL V1
+   Desktop / tablette / mobile
+   ========================================================= */
+
+.table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 721px) and (max-width: 1100px) {
+  .shell > aside {
+    width: 210px;
+    padding: 24px 14px 20px;
+  }
+
+  .shell > main {
+    width: calc(100% - 210px);
+    margin-left: 210px;
+    padding: 30px 24px 48px;
+  }
+
+  .brand {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  nav button {
+    gap: 9px;
+    padding: 11px 9px;
+    font-size: 11px;
+  }
+
+  header {
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  header h1 {
+    font-size: 30px;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workspace-actions {
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .data-panel {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    padding-bottom: 82px;
+  }
+
+  .shell > aside {
+    height: 74px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .shell > aside nav button {
+    min-width: 68px;
+    min-height: 56px;
+    padding: 7px 5px;
+    gap: 5px;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .shell > aside nav i {
+    font-size: 17px;
+  }
+
+  .shell > main {
+    padding:
+      calc(18px + env(safe-area-inset-top))
+      14px
+      calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .actions button {
+    min-height: 44px;
+  }
+
+  .workspace-actions {
+    padding: 18px;
+  }
+
+  .workspace-actions h2 {
+    font-size: 20px;
+  }
+
+  .entity-form {
+    gap: 13px;
+    padding: 18px;
+  }
+
+  .entity-form input,
+  .entity-form select,
+  .entity-form textarea,
+  .login-card input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .entity-form > button,
+  .workspace-actions button {
+    min-height: 44px;
+  }
+
+  .data-panel {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .table-wrap table {
+    min-width: 680px;
+  }
+
+  th {
+    font-size: 10px;
+  }
+
+  td {
+    font-size: 12px;
+  }
+
+  .badge {
+    min-height: 26px;
+    font-size: 10px;
+  }
+
+  .portal-back-link,
+  .portal-link-button,
+  .portal-action-button,
+  .portal-back-button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 390px) {
+  .shell > main {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .shell > aside nav button {
+    min-width: 64px;
+    font-size: 10px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .stats {
+    gap: 8px;
+  }
+
+  .stats article {
+    padding: 13px;
+  }
+
+  .table-wrap table {
+    min-width: 640px;
+  }
+
+  .workspace-actions {
+    padding: 16px;
+  }
+}
+
+
+/* Official workspace contrast fix */
+
+.workspace-actions h1,
+.workspace-actions h2,
+.workspace-actions h3 {
+  color: #fff;
+}
+
+.workspace-actions label {
+  color: var(--df-gold-500);
+}
+
+.workspace-actions p {
+  color: #c3d0da;
+}
+
+.official-missions-summary h2 {
+  color: #fff;
+}
