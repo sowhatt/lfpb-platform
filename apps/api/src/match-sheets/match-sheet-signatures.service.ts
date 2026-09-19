@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  MatchHomologationStatus,
   MatchOfficialAssignmentStatus,
   MatchSheetStatus,
   MatchStatus,
@@ -292,6 +293,19 @@ export class MatchSheetSignaturesService {
               },
             },
           });
+
+          await tx.match.update({
+            where: { id: matchId },
+            data: {
+              homologationStatus: MatchHomologationStatus.PENDING,
+              officialHomeScore: null,
+              officialAwayScore: null,
+              homologationReason: null,
+              homologatedAt: null,
+              homologatedByUserId: null,
+            },
+          });
+
         }
 
         return signature;

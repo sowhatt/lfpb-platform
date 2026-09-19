@@ -8,8 +8,11 @@ import {
 import {
   CompetitionFormat,
   CompetitionStatus,
+  MatchHomologationStatus,
+  MatchSheetStatus,
   MatchStatus,
   OrganizationType,
+  Role,
   Prisma,
   ScheduleProposalStatus,
   VenueAssignmentType,
@@ -31,6 +34,7 @@ import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
 import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dto';
 import { UpdateMatchScheduleDto } from './dto/update-match-schedule.dto';
 import { ChangeMatchStatusDto } from './dto/change-match-status.dto';
+import { HomologateMatchDto } from './dto/homologate-match.dto';
 
 @Injectable()
 export class CompetitionsService {
@@ -1032,6 +1036,247 @@ export class CompetitionsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async listPendingHomologations(
+    actor: AuthenticatedActor,
+    competitionId: string,
+  ) {
+    const competition = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+    });
+
+    if (!competition) {
+      throw new NotFoundException('Compétition introuvable');
+    }
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      competition.organizationId,
+    );
+
+    return this.prisma.match.findMany({
+      where: {
+        competitionId,
+        homologationStatus: MatchHomologationStatus.PENDING,
+      },
+      include: {
+        round: true,
+        venue: true,
+        homeClub: { include: { organization: true } },
+        awayClub: { include: { organization: true } },
+        matchSheet: true,
+      },
+      orderBy: [{ kickoffAt: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
+  async getMatchHomologation(
+    actor: AuthenticatedActor,
+    matchId: string,
+  ) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        competition: true,
+        round: true,
+        venue: true,
+        homeClub: { include: { organization: true } },
+        awayClub: { include: { organization: true } },
+        matchSheet: true,
+        homologatedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match introuvable');
+    }
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      match.competition.organizationId,
+    );
+
+    const closure = await this.prisma.auditLog.findFirst({
+      where: {
+        resourceType: 'MatchOfficialClosure',
+        resourceId: matchId,
+        action: 'MATCH_OFFICIALLY_CLOSED',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const postMatchEntries = await this.prisma.auditLog.findMany({
+      where: {
+        resourceId: matchId,
+        action: { startsWith: 'MATCH_POST_MATCH_' },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return {
+      match,
+      officiallyClosed: Boolean(closure),
+      closure,
+      postMatchEntries,
+    };
+  }
+
+  async homologateMatch(
+    actor: AuthenticatedActor,
+    matchId: string,
+    input: HomologateMatchDto,
+  ) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        competition: true,
+        matchSheet: true,
+      },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match introuvable');
+    }
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      match.competition.organizationId,
+    );
+
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) =>
+        membership.organizationId === match.competition.organizationId &&
+        membership.role === Role.LIGUE_ADMIN,
+    );
+
+    if (!isLeagueAdmin) {
+      throw new ForbiddenException(
+        'Seule la Ligue peut homologuer un résultat',
+      );
+    }
+
+    if (match.status !== MatchStatus.COMPLETED) {
+      throw new BadRequestException(
+        'Le match doit être terminé avant homologation',
+      );
+    }
+
+    if (!match.matchSheet || match.matchSheet.status !== MatchSheetStatus.LOCKED) {
+      throw new BadRequestException(
+        'La feuille de match doit être verrouillée avant homologation',
+      );
+    }
+
+    if (match.homologationStatus !== MatchHomologationStatus.PENDING) {
+      throw new BadRequestException(
+        'Le match n’est pas en attente d’homologation',
+      );
+    }
+
+    if (match.homeScore === null || match.awayScore === null) {
+      throw new BadRequestException(
+        'Le score terrain doit être renseigné avant homologation',
+      );
+    }
+
+    const closure = await this.prisma.auditLog.findFirst({
+      where: {
+        resourceType: 'MatchOfficialClosure',
+        resourceId: matchId,
+        action: 'MATCH_OFFICIALLY_CLOSED',
+      },
+    });
+
+    if (!closure) {
+      throw new BadRequestException(
+        'La feuille de match doit être officiellement clôturée avant homologation',
+      );
+    }
+
+    const scoreChanged =
+      input.officialHomeScore !== match.homeScore ||
+      input.officialAwayScore !== match.awayScore;
+
+    const reason = input.reason?.trim();
+
+    if (scoreChanged && (!reason || reason.length < 3)) {
+      throw new BadRequestException(
+        'Un motif est obligatoire lorsque le score officiel diffère du score terrain',
+      );
+    }
+
+    const homologatedAt = new Date();
+
+    return this.prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const transition = await tx.match.updateMany({
+          where: {
+            id: matchId,
+            homologationStatus: MatchHomologationStatus.PENDING,
+          },
+          data: {
+            homologationStatus: MatchHomologationStatus.HOMOLOGATED,
+            officialHomeScore: input.officialHomeScore,
+            officialAwayScore: input.officialAwayScore,
+            homologationReason: reason ?? null,
+            homologatedAt,
+            homologatedByUserId: actor.userId,
+          },
+        });
+
+        if (transition.count !== 1) {
+          throw new ConflictException(
+            'Le match a déjà été homologué ou son statut a changé',
+          );
+        }
+
+        const updated = await tx.match.findUnique({
+          where: { id: matchId },
+          include: {
+            round: true,
+            venue: true,
+            homeClub: { include: { organization: true } },
+            awayClub: { include: { organization: true } },
+          },
+        });
+
+        if (!updated) {
+          throw new NotFoundException('Match introuvable après homologation');
+        }
+
+        await tx.auditLog.create({
+          data: {
+            actorUserId: actor.userId,
+            organizationId: match.competition.organizationId,
+            action: 'MATCH_HOMOLOGATED',
+            resourceType: 'Match',
+            resourceId: matchId,
+            metadata: {
+              competitionId: match.competitionId,
+              terrainHomeScore: match.homeScore,
+              terrainAwayScore: match.awayScore,
+              officialHomeScore: input.officialHomeScore,
+              officialAwayScore: input.officialAwayScore,
+              scoreChanged,
+              reason: reason ?? null,
+              previousHomologationStatus: match.homologationStatus,
+              newHomologationStatus: MatchHomologationStatus.HOMOLOGATED,
+              homologatedAt: homologatedAt.toISOString(),
+            },
+          },
+        });
+
+        return updated;
+      },
+    );
   }
 
   listClubVenues(clubId: string) {

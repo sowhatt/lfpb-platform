@@ -29,6 +29,7 @@ import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dt
 import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
 import { UpdateMatchScheduleDto } from './dto/update-match-schedule.dto';
 import { ChangeMatchStatusDto } from './dto/change-match-status.dto';
+import { HomologateMatchDto } from './dto/homologate-match.dto';
 import { ScheduleMaterializationService } from './schedule-materialization.service';
 
 @Controller()
@@ -140,6 +141,34 @@ export class CompetitionsController {
     @Param('matchId', ParseUUIDPipe) matchId: string,
   ) {
     return this.competitions.listMatchHistory(actor, matchId);
+  }
+
+  @Get('competitions/:competitionId/homologations/pending')
+  @Roles(Role.LIGUE_ADMIN)
+  listPendingHomologations(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.listPendingHomologations(actor, competitionId);
+  }
+
+  @Get('matches/:matchId/homologation')
+  @Roles(Role.LIGUE_ADMIN)
+  getMatchHomologation(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+  ) {
+    return this.competitions.getMatchHomologation(actor, matchId);
+  }
+
+  @Post('matches/:matchId/homologate')
+  @Roles(Role.LIGUE_ADMIN)
+  homologateMatch(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Body() input: HomologateMatchDto,
+  ) {
+    return this.competitions.homologateMatch(actor, matchId, input);
   }
 
   @Get('clubs/:clubId/venues')

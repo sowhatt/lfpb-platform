@@ -165,6 +165,12 @@ enum MatchSheetStatus {
   LOCKED
 }
 
+enum MatchHomologationStatus {
+  PENDING
+  HOMOLOGATED
+  REJECTED
+}
+
 enum MatchSheetSide {
   HOME
   AWAY
@@ -237,6 +243,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   memberships Membership[]
+  homologatedMatches Match[] @relation("MatchHomologator")
   auditLogs AuditLog[] @relation("AuditActor")
   generatedScheduleProposals ScheduleProposal[] @relation("ProposalGenerator")
   decidedScheduleProposals ScheduleProposal[] @relation("ProposalDecider")
@@ -489,6 +496,12 @@ model Match {
   status MatchStatus @default(DRAFT)
   homeScore Int?
   awayScore Int?
+  homologationStatus MatchHomologationStatus?
+  officialHomeScore Int?
+  officialAwayScore Int?
+  homologationReason String?
+  homologatedAt DateTime?
+  homologatedByUserId String? @db.Uuid
   postponementReason String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -497,6 +510,7 @@ model Match {
   venue Venue? @relation(fields: [venueId], references: [id], onDelete: SetNull)
   homeClub Club @relation("HomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
   awayClub Club @relation("AwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
+  homologatedBy User? @relation("MatchHomologator", fields: [homologatedByUserId], references: [id], onDelete: SetNull)
   officialAssignments MatchOfficialAssignment[]
   matchSheet MatchSheet?
   @@index([competitionId, status, kickoffAt])
