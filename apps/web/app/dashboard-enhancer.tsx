@@ -8,6 +8,8 @@ import { OfficialMissionsWorkspace } from "./official-missions-workspace";
 import { LeagueCompetitionCalendar } from "./league-competition-calendar";
 import { LeagueMatchHomologation } from "./league-match-homologation";
 import { LeagueStandings } from "./league-standings";
+import { LeagueClubsManagement } from "./league-clubs-management";
+import { LeaguePlayersManagement } from "./league-players-management";
 
 type Actor = {
   memberships?: Array<{ organizationId: string; role: string }>;
@@ -84,7 +86,9 @@ export function DashboardEnhancer() {
     active === "Feuilles de match" ||
     active === "Calendrier des compétitions" ||
     active === "Homologation" ||
-    active === "Classement & statistiques";
+    active === "Classement & statistiques" ||
+    active === "Clubs" ||
+    active === "Joueurs";
 
   useEffect(() => {
     if (membership?.role !== "LIGUE_ADMIN") return;
@@ -154,6 +158,14 @@ export function DashboardEnhancer() {
       membership.role === "LIGUE_ADMIN"
     ) {
       return <LeagueStandings token={token} />;
+    }
+
+    if (active === "Clubs" && membership.role === "LIGUE_ADMIN") {
+      return <LeagueClubsManagement token={token} />;
+    }
+
+    if (active === "Joueurs" && membership.role === "LIGUE_ADMIN") {
+      return <LeaguePlayersManagement token={token} />;
     }
     if (active === "Assistant IA" && membership.role === "CLUB_ADMIN")
       return (

@@ -8,25 +8,25 @@ import {
   Post,
   Query,
   UseGuards,
-} from '@nestjs/common';
-import { Role } from '@prisma/client';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CurrentActor } from '../iam/current-actor.decorator';
-import { AuthenticatedActor } from '../iam/domain/actor';
-import { Roles } from '../iam/roles.decorator';
-import { RolesGuard } from '../iam/roles.guard';
-import { AddDocumentDto } from './dto/add-document.dto';
-import { CreateOfficialDto } from './dto/create-official.dto';
-import { CreatePlayerDto } from './dto/create-player.dto';
-import { CreateStaffDto } from './dto/create-staff.dto';
-import { DocumentDecisionDto } from './dto/document-decision.dto';
-import { UpdatePlayerPhotoDto } from './dto/update-player-photo.dto';
-import { UpdateStaffDto } from './dto/update-staff.dto';
-import { REGISTRY_REFERENCE_DATA } from './reference-data';
-import { RegistriesService } from './registries.service';
-import { StaffLifecycleService } from './staff-lifecycle.service';
+} from "@nestjs/common";
+import { Role } from "@prisma/client";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentActor } from "../iam/current-actor.decorator";
+import { AuthenticatedActor } from "../iam/domain/actor";
+import { Roles } from "../iam/roles.decorator";
+import { RolesGuard } from "../iam/roles.guard";
+import { AddDocumentDto } from "./dto/add-document.dto";
+import { CreateOfficialDto } from "./dto/create-official.dto";
+import { CreatePlayerDto } from "./dto/create-player.dto";
+import { CreateStaffDto } from "./dto/create-staff.dto";
+import { DocumentDecisionDto } from "./dto/document-decision.dto";
+import { UpdatePlayerPhotoDto } from "./dto/update-player-photo.dto";
+import { UpdateStaffDto } from "./dto/update-staff.dto";
+import { REGISTRY_REFERENCE_DATA } from "./reference-data";
+import { RegistriesService } from "./registries.service";
+import { StaffLifecycleService } from "./staff-lifecycle.service";
 
-@Controller('registries')
+@Controller("registries")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class RegistriesController {
   constructor(
@@ -34,21 +34,21 @@ export class RegistriesController {
     private readonly staffLifecycle: StaffLifecycleService,
   ) {}
 
-  @Get('references')
+  @Get("references")
   references() {
     return REGISTRY_REFERENCE_DATA;
   }
 
-  @Get('players')
+  @Get("players")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   listPlayers(
     @CurrentActor() actor: AuthenticatedActor,
-    @Query('organizationId') organizationId: string,
+    @Query("organizationId") organizationId: string,
   ) {
     return this.registries.listPlayers(actor, organizationId);
   }
 
-  @Post('players')
+  @Post("players")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   createPlayer(
     @CurrentActor() actor: AuthenticatedActor,
@@ -57,35 +57,50 @@ export class RegistriesController {
     return this.registries.createPlayer(actor, input);
   }
 
-  @Get('players/:registrationId')
+  @Get("player-360")
+  @Roles(Role.LIGUE_ADMIN)
+  listPlayer360(@CurrentActor() actor: AuthenticatedActor) {
+    return this.registries.listPlayer360(actor);
+  }
+
+  @Get("player-360/:personId")
+  @Roles(Role.LIGUE_ADMIN)
+  getPlayer360(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("personId", ParseUUIDPipe) personId: string,
+  ) {
+    return this.registries.getPlayer360(actor, personId);
+  }
+
+  @Get("players/:registrationId")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   getPlayer(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @Param("registrationId", ParseUUIDPipe) registrationId: string,
   ) {
     return this.registries.getPlayer(actor, registrationId);
   }
 
-  @Patch('players/:registrationId/photo')
+  @Patch("players/:registrationId/photo")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   updatePlayerPhoto(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @Param("registrationId", ParseUUIDPipe) registrationId: string,
     @Body() input: UpdatePlayerPhotoDto,
   ) {
     return this.registries.updatePlayerPhoto(actor, registrationId, input);
   }
 
-  @Get('staff')
+  @Get("staff")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   listStaff(
     @CurrentActor() actor: AuthenticatedActor,
-    @Query('organizationId') organizationId: string,
+    @Query("organizationId") organizationId: string,
   ) {
     return this.registries.listStaff(actor, organizationId);
   }
 
-  @Post('staff')
+  @Post("staff")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   createStaff(
     @CurrentActor() actor: AuthenticatedActor,
@@ -94,27 +109,27 @@ export class RegistriesController {
     return this.registries.createStaff(actor, input);
   }
 
-  @Patch('staff/:registrationId')
+  @Patch("staff/:registrationId")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   async updateStaff(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @Param("registrationId", ParseUUIDPipe) registrationId: string,
     @Body() input: UpdateStaffDto,
   ) {
     await this.staffLifecycle.assertStaffEditable(actor, registrationId);
     return this.registries.updateStaff(actor, registrationId, input);
   }
 
-  @Get('officials')
+  @Get("officials")
   @Roles(Role.LIGUE_ADMIN)
   listOfficials(
     @CurrentActor() actor: AuthenticatedActor,
-    @Query('organizationId') organizationId: string,
+    @Query("organizationId") organizationId: string,
   ) {
     return this.registries.listOfficials(actor, organizationId);
   }
 
-  @Post('officials')
+  @Post("officials")
   @Roles(Role.LIGUE_ADMIN)
   createOfficial(
     @CurrentActor() actor: AuthenticatedActor,
@@ -123,21 +138,21 @@ export class RegistriesController {
     return this.registries.createOfficial(actor, input);
   }
 
-  @Post(':registrationId/documents')
+  @Post(":registrationId/documents")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   addDocument(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('registrationId', ParseUUIDPipe) registrationId: string,
+    @Param("registrationId", ParseUUIDPipe) registrationId: string,
     @Body() input: AddDocumentDto,
   ) {
     return this.registries.addDocument(actor, registrationId, input);
   }
 
-  @Patch('documents/:documentId/decision')
+  @Patch("documents/:documentId/decision")
   @Roles(Role.LIGUE_ADMIN)
   decideDocument(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @Param("documentId", ParseUUIDPipe) documentId: string,
     @Body() input: DocumentDecisionDto,
   ) {
     return this.registries.decideDocument(actor, documentId, input);

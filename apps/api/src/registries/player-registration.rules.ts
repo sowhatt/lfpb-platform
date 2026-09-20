@@ -55,6 +55,21 @@ export function normalizeIdentityPart(value: string): string {
     .toLowerCase();
 }
 
+export function buildPlayerIdentityKey(input: {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+}): string {
+  const identity = [
+    'PLAYER',
+    normalizeIdentityPart(input.firstName),
+    normalizeIdentityPart(input.lastName),
+    input.birthDate,
+  ].join('|');
+
+  return createHash('sha256').update(identity).digest('hex');
+}
+
 export function buildPlayerDeduplicationKey(input: {
   organizationId: string;
   firstName: string;
@@ -63,10 +78,7 @@ export function buildPlayerDeduplicationKey(input: {
 }): string {
   const identity = [
     input.organizationId,
-    'PLAYER',
-    normalizeIdentityPart(input.firstName),
-    normalizeIdentityPart(input.lastName),
-    input.birthDate,
+    buildPlayerIdentityKey(input),
   ].join('|');
 
   return createHash('sha256').update(identity).digest('hex');

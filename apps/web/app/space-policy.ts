@@ -30,6 +30,7 @@ export function navigationForSpace(space: Space): string[] {
     "Homologation",
     "Classement & statistiques",
     "Clubs",
+    "Joueurs",
     "Licences",
     "Retours FBF",
     "Officiels",

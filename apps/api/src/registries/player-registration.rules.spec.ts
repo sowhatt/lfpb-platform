@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import {
   buildPlayerDeduplicationKey,
+  buildPlayerIdentityKey,
   parseStrictDate,
 } from './player-registration.rules';
 
@@ -47,4 +48,41 @@ describe('Player registration rules', () => {
       }),
     );
   });
+
+  it('produit la même identité joueur indépendamment du club', () => {
+    const player = {
+      firstName: ' CÉDRIC ',
+      lastName: 'DOSSOU',
+      birthDate: '2002-03-15',
+    };
+
+    expect(buildPlayerIdentityKey(player)).toBe(
+      buildPlayerIdentityKey({
+        firstName: 'cedric',
+        lastName: 'dossou',
+        birthDate: '2002-03-15',
+      }),
+    );
+  });
+
+  it('produit des clés inscription différentes pour deux clubs', () => {
+    const player = {
+      firstName: 'Cédric',
+      lastName: 'Dossou',
+      birthDate: '2002-03-15',
+    };
+
+    expect(
+      buildPlayerDeduplicationKey({
+        ...player,
+        organizationId: '72d68e06-4e23-49ff-b752-9fbfaa7099a4',
+      }),
+    ).not.toBe(
+      buildPlayerDeduplicationKey({
+        ...player,
+        organizationId: '82d68e06-4e23-49ff-b752-9fbfaa7099a4',
+      }),
+    );
+  });
+
 });
