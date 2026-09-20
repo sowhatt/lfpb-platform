@@ -1194,6 +1194,9 @@ describe("PlayerTransfersService makeEffective", () => {
         updateMany: jest.fn().mockResolvedValue({
           count: options.sourceCloseCount ?? 1,
         }),
+        findFirst: jest
+          .fn()
+          .mockResolvedValue(options.concurrentTargetRegistration ?? null),
         create: jest.fn().mockResolvedValue(targetRegistration),
       },
       license: {
@@ -1317,6 +1320,7 @@ describe("PlayerTransfersService makeEffective", () => {
           {
             id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
             status: LicenseStatus.SUBMITTED_TO_LEAGUE,
+            season: "2026-2027",
           },
         ],
       },
@@ -1336,6 +1340,7 @@ describe("PlayerTransfersService makeEffective", () => {
           {
             id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
             status: LicenseStatus.ISSUED_BY_FBF,
+            season: "2026-2027",
           },
         ],
       },
@@ -1358,6 +1363,7 @@ describe("PlayerTransfersService makeEffective", () => {
           {
             id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
             status: LicenseStatus.EXPIRED,
+            season: "2026-2027",
           },
         ],
       },
@@ -1448,6 +1454,7 @@ describe("PlayerTransfersService makeEffective", () => {
           {
             id: licenseId,
             status: LicenseStatus.ISSUED_BY_FBF,
+            season: "2026-2027",
           },
         ],
       },
@@ -1473,12 +1480,42 @@ describe("PlayerTransfersService makeEffective", () => {
           {
             id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
             status: LicenseStatus.EXPIRED,
+            season: "2026-2027",
           },
         ],
       },
     });
 
     await ctx.service.makeEffective(leagueActor, transferId);
+
+    expect(ctx.tx.license.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("ignore les licences historiques d'une autre saison", async () => {
+    const ctx = makeEffectiveContext({
+      sourceRegistration: {
+        licenses: [
+          {
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            status: LicenseStatus.SUBMITTED_TO_LEAGUE,
+            season: "2025-2026",
+          },
+          {
+            id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            status: LicenseStatus.ISSUED_BY_FBF,
+            season: "2025-2026",
+          },
+        ],
+      },
+    });
+
+    await expect(
+      ctx.service.makeEffective(leagueActor, transferId),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: PlayerTransferStatus.EFFECTIVE,
+      }),
+    );
 
     expect(ctx.tx.license.updateMany).not.toHaveBeenCalled();
   });
@@ -1511,6 +1548,37 @@ describe("PlayerTransfersService makeEffective", () => {
     expect(ctx.tx.registration.updateMany).not.toHaveBeenCalled();
     expect(ctx.tx.registration.create).not.toHaveBeenCalled();
     expect(ctx.tx.license.create).not.toHaveBeenCalled();
+    expect(ctx.tx.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("bloque une inscription concurrente créée dans le club d'accueil", async () => {
+    const ctx = makeEffectiveContext({
+      concurrentTargetRegistration: {
+        id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      },
+    });
+
+    await expect(
+      ctx.service.makeEffective(leagueActor, transferId),
+    ).rejects.toThrow(
+      "Ce joueur possède déjà une inscription active ou en cours dans le club d'accueil",
+    );
+
+    expect(ctx.tx.registration.findFirst).toHaveBeenCalledWith({
+      where: {
+        personId,
+        organizationId: targetOrganizationId,
+        category: RegistrationCategory.PLAYER,
+        status: {
+          not: RegistrationStatus.ARCHIVED,
+        },
+      },
+      select: { id: true },
+    });
+
+    expect(ctx.tx.registration.create).not.toHaveBeenCalled();
+    expect(ctx.tx.license.create).not.toHaveBeenCalled();
+    expect(ctx.tx.license.updateMany).not.toHaveBeenCalled();
     expect(ctx.tx.auditLog.create).not.toHaveBeenCalled();
   });
 
@@ -1550,5 +1618,214 @@ describe("PlayerTransfersService makeEffective", () => {
         }),
       }),
     });
+  });
+});
+
+describe("PlayerTransfersService read access", () => {
+  const transferId = "66666666-6666-4666-8666-666666666666";
+  const sourceOrganizationId = "44444444-4444-4444-8444-444444444444";
+  const targetOrganizationId = "55555555-5555-4555-8555-555555555555";
+  const otherOrganizationId = "77777777-7777-4777-8777-777777777777";
+
+  function makePrisma() {
+    return {
+      playerTransfer: {
+        findMany: jest.fn().mockResolvedValue([]),
+        findFirst: jest.fn().mockResolvedValue({
+          id: transferId,
+          sourceOrganizationId,
+          targetOrganizationId,
+        }),
+      },
+    };
+  }
+
+  function makeService(prisma: ReturnType<typeof makePrisma>) {
+    return new PlayerTransfersService(prisma as any, {} as any, {} as any);
+  }
+
+  it("permet à la Ligue de lister tous les transferts", async () => {
+    const prisma = makePrisma();
+    const service = makeService(prisma);
+
+    const leagueActor = {
+      userId: "11111111-1111-4111-8111-111111111111",
+      memberships: [
+        {
+          organizationId: "88888888-8888-4888-8888-888888888888",
+          role: Role.LIGUE_ADMIN,
+        },
+      ],
+    } as any;
+
+    await service.list(leagueActor);
+
+    expect(prisma.playerTransfer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {},
+      }),
+    );
+  });
+
+  it("limite la liste d'un club à ses transferts source ou destination", async () => {
+    const prisma = makePrisma();
+    const service = makeService(prisma);
+
+    const clubActor = {
+      userId: "11111111-1111-4111-8111-111111111111",
+      memberships: [
+        {
+          organizationId: sourceOrganizationId,
+          role: Role.CLUB_ADMIN,
+        },
+      ],
+    } as any;
+
+    await service.list(clubActor);
+
+    expect(prisma.playerTransfer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            {
+              sourceOrganizationId: {
+                in: [sourceOrganizationId],
+              },
+            },
+            {
+              targetOrganizationId: {
+                in: [sourceOrganizationId],
+              },
+            },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("permet au club source de lire le détail", async () => {
+    const prisma = makePrisma();
+    const service = makeService(prisma);
+
+    const actor = {
+      userId: "11111111-1111-4111-8111-111111111111",
+      memberships: [
+        {
+          organizationId: sourceOrganizationId,
+          role: Role.CLUB_ADMIN,
+        },
+      ],
+    } as any;
+
+    await service.get(actor, transferId);
+
+    expect(prisma.playerTransfer.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: transferId,
+          OR: expect.any(Array),
+        }),
+      }),
+    );
+  });
+
+  it("permet au club destination de lire le détail", async () => {
+    const prisma = makePrisma();
+    const service = makeService(prisma);
+
+    const actor = {
+      userId: "11111111-1111-4111-8111-111111111111",
+      memberships: [
+        {
+          organizationId: targetOrganizationId,
+          role: Role.CLUB_ADMIN,
+        },
+      ],
+    } as any;
+
+    await service.get(actor, transferId);
+
+    expect(prisma.playerTransfer.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: transferId,
+          OR: [
+            {
+              sourceOrganizationId: {
+                in: [targetOrganizationId],
+              },
+            },
+            {
+              targetOrganizationId: {
+                in: [targetOrganizationId],
+              },
+            },
+          ],
+        },
+        include: expect.any(Object),
+      }),
+    );
+  });
+
+  it("ne révèle pas un transfert inaccessible à un autre club", async () => {
+    const prisma = makePrisma();
+    prisma.playerTransfer.findFirst.mockResolvedValue(null);
+
+    const service = makeService(prisma);
+
+    const actor = {
+      userId: "11111111-1111-4111-8111-111111111111",
+      memberships: [
+        {
+          organizationId: otherOrganizationId,
+          role: Role.CLUB_ADMIN,
+        },
+      ],
+    } as any;
+
+    await expect(service.get(actor, transferId)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+
+    expect(prisma.playerTransfer.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: transferId,
+          OR: [
+            {
+              sourceOrganizationId: {
+                in: [otherOrganizationId],
+              },
+            },
+            {
+              targetOrganizationId: {
+                in: [otherOrganizationId],
+              },
+            },
+          ],
+        }),
+      }),
+    );
+  });
+
+  it("refuse la lecture à un acteur sans rôle Ligue ou Club", async () => {
+    const prisma = makePrisma();
+    const service = makeService(prisma);
+
+    const actor = {
+      userId: "11111111-1111-4111-8111-111111111111",
+      memberships: [
+        {
+          organizationId: otherOrganizationId,
+          role: Role.OFFICIEL,
+        },
+      ],
+    } as any;
+
+    await expect(service.list(actor)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+
+    expect(prisma.playerTransfer.findMany).not.toHaveBeenCalled();
   });
 });

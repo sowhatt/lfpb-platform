@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   ParseUUIDPipe,
   Post,
@@ -21,6 +22,21 @@ import { PlayerTransfersService } from "./player-transfers.service";
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PlayerTransfersController {
   constructor(private readonly playerTransfers: PlayerTransfersService) {}
+
+  @Get()
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  list(@CurrentActor() actor: AuthenticatedActor) {
+    return this.playerTransfers.list(actor);
+  }
+
+  @Get(":transferId")
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  get(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("transferId", ParseUUIDPipe) transferId: string,
+  ) {
+    return this.playerTransfers.get(actor, transferId);
+  }
 
   @Post(":transferId/effective")
   @Roles(Role.LIGUE_ADMIN)

@@ -39,6 +39,97 @@ export class PlayerTransfersService {
     private readonly transferStatus: PlayerTransferStatusService,
   ) {}
 
+  private transferReadInclude = {
+    person: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        birthDate: true,
+        nationality: true,
+        federationId: true,
+      },
+    },
+    season: true,
+    sourceOrganization: {
+      include: { club: true },
+    },
+    targetOrganization: {
+      include: { club: true },
+    },
+    sourceRegistration: {
+      include: {
+        playerProfile: true,
+        licenses: true,
+      },
+    },
+    targetRegistration: {
+      include: {
+        playerProfile: true,
+        licenses: true,
+      },
+    },
+  } satisfies Prisma.PlayerTransferInclude;
+
+  private transferReadScope(actor: AuthenticatedActor) {
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
+    if (isLeagueAdmin) return {};
+
+    const clubOrganizationIds = actor.memberships
+      .filter((membership) => membership.role === Role.CLUB_ADMIN)
+      .map((membership) => membership.organizationId);
+
+    if (clubOrganizationIds.length === 0) {
+      throw new ForbiddenException(
+        "Vous n'avez pas accès aux transferts de joueurs",
+      );
+    }
+
+    return {
+      OR: [
+        {
+          sourceOrganizationId: {
+            in: clubOrganizationIds,
+          },
+        },
+        {
+          targetOrganizationId: {
+            in: clubOrganizationIds,
+          },
+        },
+      ],
+    };
+  }
+
+  async list(actor: AuthenticatedActor) {
+    const where = this.transferReadScope(actor);
+
+    return this.prisma.playerTransfer.findMany({
+      where,
+      include: this.transferReadInclude,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+  }
+
+  async get(actor: AuthenticatedActor, transferId: string) {
+    const transfer = await this.prisma.playerTransfer.findFirst({
+      where: {
+        id: transferId,
+        ...this.transferReadScope(actor),
+      },
+      include: this.transferReadInclude,
+    });
+
+    if (!transfer) {
+      throw new NotFoundException("Transfert introuvable");
+    }
+
+    return transfer;
+  }
+
   async startLeagueReview(actor: AuthenticatedActor, transferId: string) {
     const isLeagueAdmin = actor.memberships.some(
       (membership) => membership.role === Role.LIGUE_ADMIN,
@@ -212,7 +303,11 @@ export class PlayerTransfersService {
       );
     }
 
-    const blockingLicense = sourceRegistration.licenses.find(
+    const sourceSeasonLicenses = sourceRegistration.licenses.filter(
+      (license) => license.season === transfer.season.name,
+    );
+
+    const blockingLicense = sourceSeasonLicenses.find(
       (license) =>
         license.status !== LicenseStatus.CANCELLED &&
         license.status !== LicenseStatus.EXPIRED &&
@@ -266,7 +361,25 @@ export class PlayerTransfersService {
         );
       }
 
-      const cancellableLicenses = sourceRegistration.licenses.filter(
+      const concurrentTargetRegistration = await tx.registration.findFirst({
+        where: {
+          personId: transfer.personId,
+          organizationId: transfer.targetOrganizationId,
+          category: RegistrationCategory.PLAYER,
+          status: {
+            not: RegistrationStatus.ARCHIVED,
+          },
+        },
+        select: { id: true },
+      });
+
+      if (concurrentTargetRegistration) {
+        throw new ConflictException(
+          "Ce joueur possède déjà une inscription active ou en cours dans le club d'accueil",
+        );
+      }
+
+      const cancellableLicenses = sourceSeasonLicenses.filter(
         (license) =>
           license.status === LicenseStatus.ISSUED_BY_FBF ||
           license.status === LicenseStatus.SUSPENDED,
