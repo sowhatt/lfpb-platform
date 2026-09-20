@@ -71,6 +71,18 @@ enum RegistrationStatus {
   ARCHIVED
 }
 
+enum PlayerTransferStatus {
+  DRAFT
+  REQUESTED
+  AGREED
+  OPPOSED
+  LEAGUE_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+  EFFECTIVE
+}
+
 enum PlayerPosition {
   GOALKEEPER
   DEFENDER
@@ -223,18 +235,20 @@ enum ScheduleProposalStatus {
 }
 
 model Organization {
-  id            String           @id @default(uuid()) @db.Uuid
-  name          String
-  code          String           @unique
-  type          OrganizationType
-  active        Boolean          @default(true)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  club          Club?
-  memberships   Membership[]
-  registrations Registration[]
-  auditLogs     AuditLog[]
-  competitions  Competition[]
+  id                      String           @id @default(uuid()) @db.Uuid
+  name                    String
+  code                    String           @unique
+  type                    OrganizationType
+  active                  Boolean          @default(true)
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  club                    Club?
+  memberships             Membership[]
+  registrations           Registration[]
+  auditLogs               AuditLog[]
+  competitions            Competition[]
+  outgoingPlayerTransfers PlayerTransfer[] @relation("PlayerTransferSourceOrganization")
+  incomingPlayerTransfers PlayerTransfer[] @relation("PlayerTransferTargetOrganization")
 
   @@index([type, active])
 }
@@ -277,6 +291,11 @@ model User {
   decidedScheduleProposals   ScheduleProposal[]        @relation("ProposalDecider")
   officialProfile            OfficialProfile?
   createdOfficialAssignments MatchOfficialAssignment[] @relation("AssignmentCreator")
+
+  createdPlayerTransfers      PlayerTransfer[] @relation("PlayerTransferCreator")
+  formerClubTransferDecisions PlayerTransfer[] @relation("PlayerTransferFormerClubDecider")
+  reviewedPlayerTransfers     PlayerTransfer[] @relation("PlayerTransferLeagueReviewer")
+  decidedPlayerTransfers      PlayerTransfer[] @relation("PlayerTransferLeagueDecider")
 }
 
 model Membership {
@@ -295,44 +314,91 @@ model Membership {
 }
 
 model Person {
-  id            String         @id @default(uuid()) @db.Uuid
-  firstName     String
-  lastName      String
-  birthDate     DateTime       @db.Date
-  nationality   String?
-  federationId  String?        @unique
-  identityKey   String?        @unique
-  photoData     Bytes?
-  photoMimeType String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  registrations Registration[]
+  id              String           @id @default(uuid()) @db.Uuid
+  firstName       String
+  lastName        String
+  birthDate       DateTime         @db.Date
+  nationality     String?
+  federationId    String?          @unique
+  identityKey     String?          @unique
+  photoData       Bytes?
+  photoMimeType   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  registrations   Registration[]
+  playerTransfers PlayerTransfer[] @relation("PlayerTransferPerson")
 
   @@index([lastName, firstName, birthDate])
 }
 
 model Registration {
-  id                String                 @id @default(uuid()) @db.Uuid
-  personId          String                 @db.Uuid
-  organizationId    String                 @db.Uuid
-  category          RegistrationCategory
-  deduplicationKey  String?                @unique
-  status            RegistrationStatus     @default(DRAFT)
-  startDate         DateTime               @db.Date
-  endDate           DateTime?              @db.Date
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  person            Person                 @relation(fields: [personId], references: [id], onDelete: Restrict)
-  organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  playerProfile     PlayerProfile?
-  staffProfile      StaffProfile?
-  officialProfile   OfficialProfile?
-  licenses          License[]
-  documents         RegistrationDocument[]
-  matchSheetPlayers MatchSheetPlayer[]
+  id                      String                 @id @default(uuid()) @db.Uuid
+  personId                String                 @db.Uuid
+  organizationId          String                 @db.Uuid
+  category                RegistrationCategory
+  deduplicationKey        String?                @unique
+  status                  RegistrationStatus     @default(DRAFT)
+  startDate               DateTime               @db.Date
+  endDate                 DateTime?              @db.Date
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  person                  Person                 @relation(fields: [personId], references: [id], onDelete: Restrict)
+  organization            Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  playerProfile           PlayerProfile?
+  staffProfile            StaffProfile?
+  officialProfile         OfficialProfile?
+  licenses                License[]
+  documents               RegistrationDocument[]
+  matchSheetPlayers       MatchSheetPlayer[]
+  outgoingPlayerTransfers PlayerTransfer[]       @relation("PlayerTransferSourceRegistration")
+  incomingPlayerTransfers PlayerTransfer[]       @relation("PlayerTransferTargetRegistration")
 
   @@index([organizationId, category, status])
   @@index([personId, status])
+}
+
+model PlayerTransfer {
+  id                        String               @id @default(uuid()) @db.Uuid
+  personId                  String               @db.Uuid
+  sourceRegistrationId      String               @db.Uuid
+  sourceOrganizationId      String               @db.Uuid
+  targetOrganizationId      String               @db.Uuid
+  targetRegistrationId      String?              @unique @db.Uuid
+  status                    PlayerTransferStatus @default(DRAFT)
+  requestedAt               DateTime?
+  formerClubDecidedAt       DateTime?
+  leagueReviewedAt          DateTime?
+  leagueDecidedAt           DateTime?
+  effectiveAt               DateTime?
+  requestedStartDate        DateTime             @db.Date
+  seasonId                  String               @db.Uuid
+  reason                    String?
+  formerClubReason          String?
+  leagueReason              String?
+  createdByUserId           String               @db.Uuid
+  formerClubDecidedByUserId String?              @db.Uuid
+  leagueReviewedByUserId    String?              @db.Uuid
+  leagueDecidedByUserId     String?              @db.Uuid
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+
+  person              Person        @relation("PlayerTransferPerson", fields: [personId], references: [id], onDelete: Restrict)
+  sourceRegistration  Registration  @relation("PlayerTransferSourceRegistration", fields: [sourceRegistrationId], references: [id], onDelete: Restrict)
+  targetRegistration  Registration? @relation("PlayerTransferTargetRegistration", fields: [targetRegistrationId], references: [id], onDelete: Restrict)
+  sourceOrganization  Organization  @relation("PlayerTransferSourceOrganization", fields: [sourceOrganizationId], references: [id], onDelete: Restrict)
+  targetOrganization  Organization  @relation("PlayerTransferTargetOrganization", fields: [targetOrganizationId], references: [id], onDelete: Restrict)
+  createdBy           User          @relation("PlayerTransferCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  formerClubDecidedBy User?         @relation("PlayerTransferFormerClubDecider", fields: [formerClubDecidedByUserId], references: [id], onDelete: SetNull)
+  leagueReviewedBy    User?         @relation("PlayerTransferLeagueReviewer", fields: [leagueReviewedByUserId], references: [id], onDelete: SetNull)
+  leagueDecidedBy     User?         @relation("PlayerTransferLeagueDecider", fields: [leagueDecidedByUserId], references: [id], onDelete: SetNull)
+  season              Season        @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+
+  @@index([personId, status])
+  @@index([seasonId, status])
+  @@index([sourceOrganizationId, status])
+  @@index([targetOrganizationId, status])
+  @@index([sourceRegistrationId])
+  @@index([createdAt])
 }
 
 model PlayerProfile {
@@ -413,15 +479,16 @@ model DocumentAnalysis {
 }
 
 model Season {
-  id           String        @id @default(uuid()) @db.Uuid
-  name         String        @unique
-  startDate    DateTime      @db.Date
-  endDate      DateTime      @db.Date
-  status       SeasonStatus  @default(DRAFT)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  competitions Competition[]
-  clubSeasons  ClubSeason[]
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String           @unique
+  startDate       DateTime         @db.Date
+  endDate         DateTime         @db.Date
+  status          SeasonStatus     @default(DRAFT)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  competitions    Competition[]
+  clubSeasons     ClubSeason[]
+  playerTransfers PlayerTransfer[]
 
   @@index([status, startDate])
 }

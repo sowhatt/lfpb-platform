@@ -15,6 +15,9 @@ import { OfficialMatchPlayerAccessService } from "./official-match-player-access
 import { OfficialMissionsController } from "./official-missions.controller";
 import { OfficialMissionsService } from "./official-missions.service";
 import { PlayerResolverService } from "./player-resolver.service";
+import { PlayerTransferStatusService } from "./player-transfer-status.service";
+import { PlayerTransfersController } from "./player-transfers.controller";
+import { PlayerTransfersService } from "./player-transfers.service";
 import { RegistrationStatusService } from "./registration-status.service";
 import { RegistriesController } from "./registries.controller";
 import { RegistriesService } from "./registries.service";
@@ -32,6 +35,7 @@ import { StaffLifecycleService } from "./staff-lifecycle.service";
     OfficialMatchPlayerAccessController,
     OfficialMissionsController,
     StaffLifecycleController,
+    PlayerTransfersController,
   ],
   providers: [
     RegistriesService,
@@ -46,6 +50,8 @@ import { StaffLifecycleService } from "./staff-lifecycle.service";
     OfficialMatchPlayerAccessService,
     OfficialMissionsService,
     StaffLifecycleService,
+    PlayerTransferStatusService,
+    PlayerTransfersService,
   ],
 })
 export class RegistriesModule {}
