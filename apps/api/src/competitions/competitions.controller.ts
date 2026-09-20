@@ -8,29 +8,29 @@ import {
   Post,
   Query,
   UseGuards,
-} from '@nestjs/common';
-import { Role } from '@prisma/client';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CurrentActor } from '../iam/current-actor.decorator';
-import { AuthenticatedActor } from '../iam/domain/actor';
-import { Roles } from '../iam/roles.decorator';
-import { RolesGuard } from '../iam/roles.guard';
-import { CompetitionsService } from './competitions.service';
-import { AssignClubVenueDto } from './dto/assign-club-venue.dto';
-import { CreateCompetitionDto } from './dto/create-competition.dto';
-import { CreateMatchDto } from './dto/create-match.dto';
-import { CreateRoundDto } from './dto/create-round.dto';
-import { CreateSeasonDto } from './dto/create-season.dto';
-import { CreateVenueDto } from './dto/create-venue.dto';
-import { CreateVenueUnavailabilityDto } from './dto/create-venue-unavailability.dto';
-import { EnrollClubDto } from './dto/enroll-club.dto';
-import { MaterializeScheduleDto } from './dto/materialize-schedule.dto';
-import { ScheduleProposalDecisionDto } from './dto/schedule-proposal-decision.dto';
-import { UpdatePlanningRulesDto } from './dto/update-planning-rules.dto';
-import { UpdateMatchScheduleDto } from './dto/update-match-schedule.dto';
-import { ChangeMatchStatusDto } from './dto/change-match-status.dto';
-import { HomologateMatchDto } from './dto/homologate-match.dto';
-import { ScheduleMaterializationService } from './schedule-materialization.service';
+} from "@nestjs/common";
+import { Role } from "@prisma/client";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentActor } from "../iam/current-actor.decorator";
+import { AuthenticatedActor } from "../iam/domain/actor";
+import { Roles } from "../iam/roles.decorator";
+import { RolesGuard } from "../iam/roles.guard";
+import { CompetitionsService } from "./competitions.service";
+import { AssignClubVenueDto } from "./dto/assign-club-venue.dto";
+import { CreateCompetitionDto } from "./dto/create-competition.dto";
+import { CreateMatchDto } from "./dto/create-match.dto";
+import { CreateRoundDto } from "./dto/create-round.dto";
+import { CreateSeasonDto } from "./dto/create-season.dto";
+import { CreateVenueDto } from "./dto/create-venue.dto";
+import { CreateVenueUnavailabilityDto } from "./dto/create-venue-unavailability.dto";
+import { EnrollClubDto } from "./dto/enroll-club.dto";
+import { MaterializeScheduleDto } from "./dto/materialize-schedule.dto";
+import { ScheduleProposalDecisionDto } from "./dto/schedule-proposal-decision.dto";
+import { UpdatePlanningRulesDto } from "./dto/update-planning-rules.dto";
+import { UpdateMatchScheduleDto } from "./dto/update-match-schedule.dto";
+import { ChangeMatchStatusDto } from "./dto/change-match-status.dto";
+import { HomologateMatchDto } from "./dto/homologate-match.dto";
+import { ScheduleMaterializationService } from "./schedule-materialization.service";
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -40,158 +40,263 @@ export class CompetitionsController {
     private readonly materialization: ScheduleMaterializationService,
   ) {}
 
-  @Get('seasons')
+  @Get("seasons")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
-  listSeasons() { return this.competitions.listSeasons(); }
+  listSeasons() {
+    return this.competitions.listSeasons();
+  }
 
-  @Post('seasons')
+  @Post("seasons")
   @Roles(Role.LIGUE_ADMIN)
-  createSeason(@CurrentActor() actor: AuthenticatedActor, @Body() input: CreateSeasonDto) { return this.competitions.createSeason(actor, input); }
+  createSeason(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Body() input: CreateSeasonDto,
+  ) {
+    return this.competitions.createSeason(actor, input);
+  }
 
-  @Get('competitions')
+  @Get("competitions")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
-  listCompetitions(@Query('seasonId') seasonId?: string) { return this.competitions.listCompetitions(seasonId); }
+  listCompetitions(@Query("seasonId") seasonId?: string) {
+    return this.competitions.listCompetitions(seasonId);
+  }
 
-  @Post('competitions')
+  @Post("competitions")
   @Roles(Role.LIGUE_ADMIN)
-  createCompetition(@CurrentActor() actor: AuthenticatedActor, @Body() input: CreateCompetitionDto) { return this.competitions.createCompetition(actor, input); }
+  createCompetition(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Body() input: CreateCompetitionDto,
+  ) {
+    return this.competitions.createCompetition(actor, input);
+  }
 
-  @Post('competitions/:competitionId/clubs')
+  @Post("competitions/:competitionId/clubs")
   @Roles(Role.LIGUE_ADMIN)
-  enrollClub(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string, @Body() input: EnrollClubDto) { return this.competitions.enrollClub(actor, competitionId, input); }
+  enrollClub(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+    @Body() input: EnrollClubDto,
+  ) {
+    return this.competitions.enrollClub(actor, competitionId, input);
+  }
 
-  @Get('competitions/:competitionId/schedule-proposals')
+  @Get("competitions/:competitionId/schedule-proposals")
   @Roles(Role.LIGUE_ADMIN, Role.COMPETITION_MANAGER, Role.SCHEDULE_APPROVER)
-  listScheduleProposals(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string) { return this.competitions.listScheduleProposals(actor, competitionId); }
+  listScheduleProposals(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.listScheduleProposals(actor, competitionId);
+  }
 
-  @Post('competitions/:competitionId/schedule-proposals/generate')
+  @Post("competitions/:competitionId/schedule-proposals/generate")
   @Roles(Role.LIGUE_ADMIN, Role.COMPETITION_MANAGER)
-  generateScheduleProposal(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string) { return this.competitions.generateScheduleProposal(actor, competitionId); }
+  generateScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.generateScheduleProposal(actor, competitionId);
+  }
 
-  @Patch('schedule-proposals/:proposalId/submit')
+  @Patch("schedule-proposals/:proposalId/submit")
   @Roles(Role.LIGUE_ADMIN, Role.COMPETITION_MANAGER)
-  submitScheduleProposal(@CurrentActor() actor: AuthenticatedActor, @Param('proposalId', ParseUUIDPipe) proposalId: string) { return this.competitions.submitScheduleProposal(actor, proposalId); }
+  submitScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("proposalId", ParseUUIDPipe) proposalId: string,
+  ) {
+    return this.competitions.submitScheduleProposal(actor, proposalId);
+  }
 
-  @Patch('schedule-proposals/:proposalId/decision')
+  @Patch("schedule-proposals/:proposalId/decision")
   @Roles(Role.SCHEDULE_APPROVER)
-  decideScheduleProposal(@CurrentActor() actor: AuthenticatedActor, @Param('proposalId', ParseUUIDPipe) proposalId: string, @Body() input: ScheduleProposalDecisionDto) { return this.competitions.decideScheduleProposal(actor, proposalId, input); }
+  decideScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("proposalId", ParseUUIDPipe) proposalId: string,
+    @Body() input: ScheduleProposalDecisionDto,
+  ) {
+    return this.competitions.decideScheduleProposal(actor, proposalId, input);
+  }
 
-  @Post('schedule-proposals/:proposalId/materialize')
+  @Post("schedule-proposals/:proposalId/materialize")
   @Roles(Role.LIGUE_ADMIN)
   materializeScheduleProposal(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+    @Param("proposalId", ParseUUIDPipe) proposalId: string,
     @Body() input: MaterializeScheduleDto,
   ) {
     return this.materialization.materialize(actor, proposalId, input);
   }
 
-  @Patch('schedule-proposals/:proposalId/publish')
+  @Patch("schedule-proposals/:proposalId/publish")
   @Roles(Role.LIGUE_ADMIN)
-  publishScheduleProposal(@CurrentActor() actor: AuthenticatedActor, @Param('proposalId', ParseUUIDPipe) proposalId: string) { return this.competitions.publishScheduleProposal(actor, proposalId); }
+  publishScheduleProposal(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("proposalId", ParseUUIDPipe) proposalId: string,
+  ) {
+    return this.competitions.publishScheduleProposal(actor, proposalId);
+  }
 
-  @Patch('competitions/:competitionId/planning-rules')
+  @Patch("competitions/:competitionId/planning-rules")
   @Roles(Role.LIGUE_ADMIN)
-  updatePlanningRules(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string, @Body() input: UpdatePlanningRulesDto) { return this.competitions.updatePlanningRules(actor, competitionId, input); }
+  updatePlanningRules(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+    @Body() input: UpdatePlanningRulesDto,
+  ) {
+    return this.competitions.updatePlanningRules(actor, competitionId, input);
+  }
 
-  @Get('competitions/:competitionId/fixture-plan/preview')
+  @Get("competitions/:competitionId/fixture-plan/preview")
   @Roles(Role.LIGUE_ADMIN)
-  previewFixturePlan(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string) { return this.competitions.previewFixturePlan(actor, competitionId); }
+  previewFixturePlan(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.previewFixturePlan(actor, competitionId);
+  }
 
-  @Get('competitions/:competitionId/rounds')
+  @Get("competitions/:competitionId/rounds")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
-  listRounds(@Param('competitionId', ParseUUIDPipe) competitionId: string) { return this.competitions.listRounds(competitionId); }
+  listRounds(@Param("competitionId", ParseUUIDPipe) competitionId: string) {
+    return this.competitions.listRounds(competitionId);
+  }
 
-  @Post('competitions/:competitionId/rounds')
+  @Post("competitions/:competitionId/rounds")
   @Roles(Role.LIGUE_ADMIN)
-  createRound(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string, @Body() input: CreateRoundDto) { return this.competitions.createRound(actor, competitionId, input); }
+  createRound(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+    @Body() input: CreateRoundDto,
+  ) {
+    return this.competitions.createRound(actor, competitionId, input);
+  }
 
-  @Get('competitions/:competitionId/matches')
+  @Get("competitions/:competitionId/matches")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
-  listMatches(@Param('competitionId', ParseUUIDPipe) competitionId: string) { return this.competitions.listMatches(competitionId); }
+  listMatches(@Param("competitionId", ParseUUIDPipe) competitionId: string) {
+    return this.competitions.listMatches(competitionId);
+  }
 
-  @Post('competitions/:competitionId/matches')
+  @Post("competitions/:competitionId/matches")
   @Roles(Role.LIGUE_ADMIN)
-  createMatch(@CurrentActor() actor: AuthenticatedActor, @Param('competitionId', ParseUUIDPipe) competitionId: string, @Body() input: CreateMatchDto) { return this.competitions.createMatch(actor, competitionId, input); }
+  createMatch(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+    @Body() input: CreateMatchDto,
+  ) {
+    return this.competitions.createMatch(actor, competitionId, input);
+  }
 
-  @Patch('matches/:matchId/schedule')
+  @Patch("matches/:matchId/schedule")
   @Roles(Role.LIGUE_ADMIN)
   updateMatchSchedule(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Param("matchId", ParseUUIDPipe) matchId: string,
     @Body() input: UpdateMatchScheduleDto,
   ) {
     return this.competitions.updateMatchSchedule(actor, matchId, input);
   }
 
-  @Patch('matches/:matchId/status')
+  @Patch("matches/:matchId/status")
   @Roles(Role.LIGUE_ADMIN)
   changeMatchStatus(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Param("matchId", ParseUUIDPipe) matchId: string,
     @Body() input: ChangeMatchStatusDto,
   ) {
     return this.competitions.changeMatchStatus(actor, matchId, input);
   }
 
-  @Get('matches/:matchId/history')
+  @Get("matches/:matchId/history")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
   listMatchHistory(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Param("matchId", ParseUUIDPipe) matchId: string,
   ) {
     return this.competitions.listMatchHistory(actor, matchId);
   }
 
-  @Get('competitions/:competitionId/homologations/pending')
+  @Get("competitions/:competitionId/standings")
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
+  getStandings(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.getStandings(actor, competitionId);
+  }
+
+  @Get("competitions/:competitionId/homologations/pending")
   @Roles(Role.LIGUE_ADMIN)
   listPendingHomologations(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
   ) {
     return this.competitions.listPendingHomologations(actor, competitionId);
   }
 
-  @Get('matches/:matchId/homologation')
+  @Get("matches/:matchId/homologation")
   @Roles(Role.LIGUE_ADMIN)
   getMatchHomologation(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Param("matchId", ParseUUIDPipe) matchId: string,
   ) {
     return this.competitions.getMatchHomologation(actor, matchId);
   }
 
-  @Post('matches/:matchId/homologate')
+  @Post("matches/:matchId/homologate")
   @Roles(Role.LIGUE_ADMIN)
   homologateMatch(
     @CurrentActor() actor: AuthenticatedActor,
-    @Param('matchId', ParseUUIDPipe) matchId: string,
+    @Param("matchId", ParseUUIDPipe) matchId: string,
     @Body() input: HomologateMatchDto,
   ) {
     return this.competitions.homologateMatch(actor, matchId, input);
   }
 
-  @Get('clubs/:clubId/venues')
+  @Get("clubs/:clubId/venues")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
-  listClubVenues(@Param('clubId', ParseUUIDPipe) clubId: string) { return this.competitions.listClubVenues(clubId); }
+  listClubVenues(@Param("clubId", ParseUUIDPipe) clubId: string) {
+    return this.competitions.listClubVenues(clubId);
+  }
 
-  @Post('clubs/:clubId/venues')
+  @Post("clubs/:clubId/venues")
   @Roles(Role.LIGUE_ADMIN)
-  assignClubVenue(@CurrentActor() actor: AuthenticatedActor, @Param('clubId', ParseUUIDPipe) clubId: string, @Body() input: AssignClubVenueDto) { return this.competitions.assignClubVenue(actor, clubId, input); }
+  assignClubVenue(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("clubId", ParseUUIDPipe) clubId: string,
+    @Body() input: AssignClubVenueDto,
+  ) {
+    return this.competitions.assignClubVenue(actor, clubId, input);
+  }
 
-  @Get('venues/:venueId/unavailabilities')
+  @Get("venues/:venueId/unavailabilities")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
-  listVenueUnavailabilities(@Param('venueId', ParseUUIDPipe) venueId: string) { return this.competitions.listVenueUnavailabilities(venueId); }
+  listVenueUnavailabilities(@Param("venueId", ParseUUIDPipe) venueId: string) {
+    return this.competitions.listVenueUnavailabilities(venueId);
+  }
 
-  @Post('venues/:venueId/unavailabilities')
+  @Post("venues/:venueId/unavailabilities")
   @Roles(Role.LIGUE_ADMIN)
-  createVenueUnavailability(@CurrentActor() actor: AuthenticatedActor, @Param('venueId', ParseUUIDPipe) venueId: string, @Body() input: CreateVenueUnavailabilityDto) { return this.competitions.createVenueUnavailability(actor, venueId, input); }
+  createVenueUnavailability(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("venueId", ParseUUIDPipe) venueId: string,
+    @Body() input: CreateVenueUnavailabilityDto,
+  ) {
+    return this.competitions.createVenueUnavailability(actor, venueId, input);
+  }
 
-  @Get('venues')
+  @Get("venues")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
-  listVenues() { return this.competitions.listVenues(); }
+  listVenues() {
+    return this.competitions.listVenues();
+  }
 
-  @Post('venues')
+  @Post("venues")
   @Roles(Role.LIGUE_ADMIN)
-  createVenue(@CurrentActor() actor: AuthenticatedActor, @Body() input: CreateVenueDto) { return this.competitions.createVenue(actor, input); }
+  createVenue(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Body() input: CreateVenueDto,
+  ) {
+    return this.competitions.createVenue(actor, input);
+  }
 }
