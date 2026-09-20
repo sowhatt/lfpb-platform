@@ -1441,6 +1441,227 @@ export class CompetitionsService {
     });
   }
 
+  async getPlayerStatistics(actor: AuthenticatedActor, competitionId: string) {
+    const competition = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        organizationId: true,
+      },
+    });
+
+    if (!competition) {
+      throw new NotFoundException("Compétition introuvable");
+    }
+
+    this.tenantAccess.assertOrganizationAccess(
+      actor,
+      competition.organizationId,
+    );
+
+    const homologatedMatches = await this.prisma.match.findMany({
+      where: {
+        competitionId,
+        homologationStatus: MatchHomologationStatus.HOMOLOGATED,
+      },
+      select: { id: true },
+    });
+
+    const matchIds = homologatedMatches.map((match) => match.id);
+
+    const events =
+      matchIds.length === 0
+        ? []
+        : await this.prisma.auditLog.findMany({
+            where: {
+              resourceType: "MatchEvent",
+              resourceId: { in: matchIds },
+              action: {
+                in: [
+                  "MATCH_EVENT_GOAL",
+                  "MATCH_EVENT_YELLOW_CARD",
+                  "MATCH_EVENT_RED_CARD",
+                ],
+              },
+            },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          });
+
+    const eventRows = events.flatMap((event) => {
+      if (
+        !event.metadata ||
+        typeof event.metadata !== "object" ||
+        Array.isArray(event.metadata)
+      ) {
+        return [];
+      }
+
+      const metadata = event.metadata as Record<string, unknown>;
+      const registrationId =
+        typeof metadata.registrationId === "string"
+          ? metadata.registrationId
+          : null;
+      const clubId =
+        typeof metadata.clubId === "string" ? metadata.clubId : null;
+
+      if (!registrationId || !clubId) {
+        return [];
+      }
+
+      return [
+        {
+          action: event.action,
+          registrationId,
+          clubId,
+        },
+      ];
+    });
+
+    const registrationIds = [
+      ...new Set(eventRows.map((event) => event.registrationId)),
+    ];
+    const clubIds = [...new Set(eventRows.map((event) => event.clubId))];
+
+    const [registrations, clubs] = await Promise.all([
+      registrationIds.length === 0
+        ? Promise.resolve([])
+        : this.prisma.registration.findMany({
+            where: { id: { in: registrationIds } },
+            select: {
+              id: true,
+              person: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  federationId: true,
+                },
+              },
+            },
+          }),
+      clubIds.length === 0
+        ? Promise.resolve([])
+        : this.prisma.club.findMany({
+            where: { id: { in: clubIds } },
+            select: {
+              id: true,
+              shortName: true,
+              organization: {
+                select: { name: true },
+              },
+            },
+          }),
+    ]);
+
+    const registrationById = new Map(
+      registrations.map((registration) => [registration.id, registration]),
+    );
+
+    const clubById = new Map(clubs.map((club) => [club.id, club]));
+
+    const statistics = new Map<
+      string,
+      {
+        registrationId: string;
+        firstName: string;
+        lastName: string;
+        federationId: string | null;
+        clubId: string;
+        clubName: string;
+        goals: number;
+        yellowCards: number;
+        redCards: number;
+      }
+    >();
+
+    for (const event of eventRows) {
+      const registration = registrationById.get(event.registrationId);
+      const club = clubById.get(event.clubId);
+
+      if (!registration || !club) {
+        continue;
+      }
+
+      const key = `${event.registrationId}:${event.clubId}`;
+
+      const row = statistics.get(key) ?? {
+        registrationId: event.registrationId,
+        firstName: registration.person.firstName,
+        lastName: registration.person.lastName,
+        federationId: registration.person.federationId ?? null,
+        clubId: event.clubId,
+        clubName: club.shortName || club.organization.name,
+        goals: 0,
+        yellowCards: 0,
+        redCards: 0,
+      };
+
+      if (event.action === "MATCH_EVENT_GOAL") {
+        row.goals += 1;
+      }
+
+      if (event.action === "MATCH_EVENT_YELLOW_CARD") {
+        row.yellowCards += 1;
+      }
+
+      if (event.action === "MATCH_EVENT_RED_CARD") {
+        row.redCards += 1;
+      }
+
+      statistics.set(key, row);
+    }
+
+    const players = [...statistics.values()].sort(
+      (a, b) =>
+        b.goals - a.goals ||
+        b.yellowCards - a.yellowCards ||
+        b.redCards - a.redCards ||
+        a.lastName.localeCompare(b.lastName, "fr") ||
+        a.firstName.localeCompare(b.firstName, "fr"),
+    );
+
+    const topScorers = players
+      .filter((player) => player.goals > 0)
+      .sort(
+        (a, b) =>
+          b.goals - a.goals ||
+          a.lastName.localeCompare(b.lastName, "fr") ||
+          a.firstName.localeCompare(b.firstName, "fr"),
+      );
+
+    const yellowCards = players
+      .filter((player) => player.yellowCards > 0)
+      .sort(
+        (a, b) =>
+          b.yellowCards - a.yellowCards ||
+          a.lastName.localeCompare(b.lastName, "fr") ||
+          a.firstName.localeCompare(b.firstName, "fr"),
+      );
+
+    const redCards = players
+      .filter((player) => player.redCards > 0)
+      .sort(
+        (a, b) =>
+          b.redCards - a.redCards ||
+          a.lastName.localeCompare(b.lastName, "fr") ||
+          a.firstName.localeCompare(b.firstName, "fr"),
+      );
+
+    return {
+      competition: {
+        id: competition.id,
+        name: competition.name,
+        code: competition.code,
+      },
+      homologatedMatchesCount: homologatedMatches.length,
+      players,
+      topScorers,
+      yellowCards,
+      redCards,
+    };
+  }
+
   listClubVenues(clubId: string) {
     return this.prisma.clubVenue.findMany({
       where: { clubId, active: true },

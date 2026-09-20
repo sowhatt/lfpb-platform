@@ -25,6 +25,31 @@ type StandingRow = {
   points: number;
 };
 
+type PlayerStatistic = {
+  registrationId: string;
+  firstName: string;
+  lastName: string;
+  federationId: string | null;
+  clubId: string;
+  clubName: string;
+  goals: number;
+  yellowCards: number;
+  redCards: number;
+};
+
+type PlayerStatisticsResponse = {
+  competition: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  homologatedMatchesCount: number;
+  players: PlayerStatistic[];
+  topScorers: PlayerStatistic[];
+  yellowCards: PlayerStatistic[];
+  redCards: PlayerStatistic[];
+};
+
 type StandingsResponse = {
   competition: {
     id: string;
@@ -71,6 +96,8 @@ export function LeagueStandings({ token }: { token: string }) {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionId, setCompetitionId] = useState("");
   const [data, setData] = useState<StandingsResponse | null>(null);
+  const [playerStats, setPlayerStats] =
+    useState<PlayerStatisticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -106,16 +133,25 @@ export function LeagueStandings({ token }: { token: string }) {
     setLoading(true);
     setError("");
 
-    void request<StandingsResponse>(
-      `/competitions/${competitionId}/standings`,
-      token,
-    )
-      .then(setData)
+    void Promise.all([
+      request<StandingsResponse>(
+        `/competitions/${competitionId}/standings`,
+        token,
+      ),
+      request<PlayerStatisticsResponse>(
+        `/competitions/${competitionId}/player-statistics`,
+        token,
+      ),
+    ])
+      .then(([standings, statistics]) => {
+        setData(standings);
+        setPlayerStats(statistics);
+      })
       .catch((cause) =>
         setError(
           cause instanceof Error
             ? cause.message
-            : "Chargement du classement impossible",
+            : "Chargement des statistiques impossible",
         ),
       )
       .finally(() => setLoading(false));
@@ -141,12 +177,19 @@ export function LeagueStandings({ token }: { token: string }) {
     setError("");
 
     try {
-      setData(
-        await request<StandingsResponse>(
+      const [standings, statistics] = await Promise.all([
+        request<StandingsResponse>(
           `/competitions/${competitionId}/standings`,
           token,
         ),
-      );
+        request<PlayerStatisticsResponse>(
+          `/competitions/${competitionId}/player-statistics`,
+          token,
+        ),
+      ]);
+
+      setData(standings);
+      setPlayerStats(statistics);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Actualisation impossible",
@@ -342,6 +385,128 @@ export function LeagueStandings({ token }: { token: string }) {
                 {data.rules.drawPoints} point · défaite {data.rules.lossPoints}{" "}
                 point. Les critères de départage restent provisoires jusqu’à
                 validation du règlement officiel de la compétition.
+              </p>
+            </div>
+          </article>
+
+          <article className="data-panel" style={{ marginTop: 20 }}>
+            <div className="workspace-actions">
+              <div>
+                <label>STATISTIQUES INDIVIDUELLES OFFICIELLES</label>
+                <h3>Joueurs</h3>
+                <p>
+                  Événements enregistrés lors des matchs homologués uniquement.
+                </p>
+              </div>
+
+              <div style={{ textAlign: "right" }}>
+                <strong>
+                  {playerStats?.homologatedMatchesCount ?? 0} match(s)
+                  homologué(s)
+                </strong>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 16,
+                marginTop: 18,
+              }}
+            >
+              {[
+                {
+                  title: "Meilleurs buteurs",
+                  valueLabel: "Buts",
+                  rows: playerStats?.topScorers ?? [],
+                  value: (player: PlayerStatistic) => player.goals,
+                },
+                {
+                  title: "Cartons jaunes",
+                  valueLabel: "CJ",
+                  rows: playerStats?.yellowCards ?? [],
+                  value: (player: PlayerStatistic) => player.yellowCards,
+                },
+                {
+                  title: "Cartons rouges",
+                  valueLabel: "CR",
+                  rows: playerStats?.redCards ?? [],
+                  value: (player: PlayerStatistic) => player.redCards,
+                },
+              ].map((block) => (
+                <div
+                  key={block.title}
+                  className="draft-warning"
+                  style={{ margin: 0, overflowX: "auto" }}
+                >
+                  <strong>{block.title}</strong>
+
+                  {block.rows.length === 0 ? (
+                    <p style={{ marginBottom: 0 }}>Aucune donnée homologuée.</p>
+                  ) : (
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        marginTop: 12,
+                      }}
+                    >
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: "left", padding: 8 }}>
+                            Joueur
+                          </th>
+                          <th style={{ textAlign: "left", padding: 8 }}>
+                            Club
+                          </th>
+                          <th style={{ textAlign: "center", padding: 8 }}>
+                            {block.valueLabel}
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {block.rows.map((player, index) => (
+                          <tr
+                            key={`${block.title}-${player.registrationId}-${player.clubId}`}
+                            style={{
+                              borderTop: "1px solid #e3e8ec",
+                            }}
+                          >
+                            <td style={{ padding: 8 }}>
+                              <strong>
+                                {block.title === "Meilleurs buteurs"
+                                  ? `${index + 1}. `
+                                  : ""}
+                                {player.firstName} {player.lastName}
+                              </strong>
+                            </td>
+                            <td style={{ padding: 8 }}>{player.clubName}</td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: 8,
+                              }}
+                            >
+                              <strong>{block.value(player)}</strong>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="draft-warning" style={{ marginTop: 18 }}>
+              <strong>Source des statistiques joueurs</strong>
+              <p style={{ marginBottom: 0 }}>
+                Les buts et cartons proviennent des événements réellement
+                enregistrés pendant les matchs homologués. Une correction
+                administrative du score officiel modifie le classement, mais ne
+                crée aucun but individuel fictif.
               </p>
             </div>
           </article>

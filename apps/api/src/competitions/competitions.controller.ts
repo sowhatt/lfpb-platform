@@ -216,6 +216,15 @@ export class CompetitionsController {
     return this.competitions.listMatchHistory(actor, matchId);
   }
 
+  @Get("competitions/:competitionId/player-statistics")
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
+  getPlayerStatistics(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.competitions.getPlayerStatistics(actor, competitionId);
+  }
+
   @Get("competitions/:competitionId/standings")
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN, Role.OFFICIEL)
   getStandings(
