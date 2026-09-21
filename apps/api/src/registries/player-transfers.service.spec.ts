@@ -15,17 +15,22 @@ import {
 import { PlayerTransfersService } from "./player-transfers.service";
 
 describe("PlayerTransfersService", () => {
-  const actor = {
-    userId: "11111111-1111-4111-8111-111111111111",
-    email: "club@example.com",
-    roles: [],
-    memberships: [],
-  } as any;
-
   const personId = "22222222-2222-4222-8222-222222222222";
   const sourceRegistrationId = "33333333-3333-4333-8333-333333333333";
   const sourceOrganizationId = "44444444-4444-4444-8444-444444444444";
   const targetOrganizationId = "55555555-5555-4555-8555-555555555555";
+
+  const actor = {
+    userId: "11111111-1111-4111-8111-111111111111",
+    email: "club@example.com",
+    roles: [],
+    memberships: [
+      {
+        organizationId: targetOrganizationId,
+        role: Role.CLUB_ADMIN,
+      },
+    ],
+  } as any;
 
   const input = {
     personId,
@@ -211,8 +216,18 @@ describe("PlayerTransfersService", () => {
       } as any,
     );
 
+    const sameClubActor = {
+      ...actor,
+      memberships: [
+        {
+          organizationId: sourceOrganizationId,
+          role: Role.CLUB_ADMIN,
+        },
+      ],
+    };
+
     await expect(
-      service.create(actor, {
+      service.create(sameClubActor, {
         ...input,
         targetOrganizationId: sourceOrganizationId,
       }),
@@ -1827,5 +1842,167 @@ describe("PlayerTransfersService read access", () => {
     );
 
     expect(prisma.playerTransfer.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("PlayerTransfersService candidate search", () => {
+  const leagueActor = {
+    userId: "00000000-0000-0000-0000-000000000001",
+    memberships: [
+      {
+        organizationId: "00000000-0000-0000-0000-000000000010",
+        role: Role.LIGUE_ADMIN,
+      },
+    ],
+  };
+
+  const targetClubId = "00000000-0000-0000-0000-000000000020";
+  const sourceClubId = "00000000-0000-0000-0000-000000000030";
+
+  const clubActor = {
+    userId: "00000000-0000-0000-0000-000000000002",
+    memberships: [
+      {
+        organizationId: targetClubId,
+        role: Role.CLUB_ADMIN,
+      },
+    ],
+  };
+
+  function makeCandidateService(registrations: any[]) {
+    const prisma = {
+      person: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: "00000000-0000-0000-0000-000000000100",
+            firstName: "Jean",
+            lastName: "Adjovi",
+            birthDate: new Date("2001-05-10"),
+            federationId: "FBF-001",
+            registrations,
+          },
+        ]),
+      },
+    };
+
+    const tenantAccess = {};
+
+    const transferStatus = {};
+
+    const service = new PlayerTransfersService(
+      prisma as never,
+      tenantAccess as never,
+      transferStatus as never,
+    );
+
+    return { service, prisma };
+  }
+
+  function activeRegistration(organizationId = sourceClubId) {
+    return {
+      id: "00000000-0000-0000-0000-000000000101",
+      organizationId,
+      status: RegistrationStatus.VALIDATED,
+      startDate: new Date("2026-08-01"),
+      endDate: null,
+      organization: {
+        id: organizationId,
+        name: organizationId === sourceClubId ? "Dragons FC" : "Club accueil",
+        code: organizationId === sourceClubId ? "DRAGONS" : "ACCUEIL",
+        club: {
+          shortName: organizationId === sourceClubId ? "Dragons" : "Accueil",
+        },
+      },
+      licenses: [
+        {
+          id: "00000000-0000-0000-0000-000000000102",
+          number: "LIC-001",
+          status: LicenseStatus.ISSUED_BY_FBF,
+          validFrom: new Date("2026-08-01"),
+          validUntil: new Date("2027-06-30"),
+        },
+      ],
+    };
+  }
+
+  it("refuse une recherche de moins de 2 caractères", async () => {
+    const { service, prisma } = makeCandidateService([]);
+
+    await expect(service.searchCandidates(clubActor, "A")).rejects.toThrow(
+      "Saisissez au moins 2 caractères",
+    );
+
+    expect(prisma.person.findMany).not.toHaveBeenCalled();
+  });
+
+  it("retourne au club un joueur actif dans un autre club", async () => {
+    const { service } = makeCandidateService([activeRegistration()]);
+
+    const result = await service.searchCandidates(clubActor, "Adjovi");
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      firstName: "Jean",
+      lastName: "Adjovi",
+      sourceRegistrationId: "00000000-0000-0000-0000-000000000101",
+      transferable: true,
+      blockingReason: null,
+      currentClub: {
+        organizationId: sourceClubId,
+        code: "DRAGONS",
+      },
+      currentLicense: {
+        number: "LIC-001",
+        status: LicenseStatus.ISSUED_BY_FBF,
+      },
+    });
+  });
+
+  it("bloque un joueur déjà inscrit dans le club d'accueil", async () => {
+    const { service } = makeCandidateService([
+      activeRegistration(targetClubId),
+    ]);
+
+    const result = await service.searchCandidates(clubActor, "Adjovi");
+
+    expect(result[0].transferable).toBe(false);
+    expect(result[0].blockingReason).toBe(
+      "Ce joueur appartient déjà au club d'accueil.",
+    );
+  });
+
+  it("signale plusieurs inscriptions simultanément actives", async () => {
+    const first = activeRegistration();
+
+    const second = {
+      ...activeRegistration("00000000-0000-0000-0000-000000000040"),
+      id: "00000000-0000-0000-0000-000000000103",
+    };
+
+    const { service } = makeCandidateService([first, second]);
+
+    const result = await service.searchCandidates(leagueActor, "Adjovi");
+
+    expect(result[0].transferable).toBe(false);
+    expect(result[0].sourceRegistrationId).toBeNull();
+    expect(result[0].dataQuality.multipleActiveRegistrations).toBe(true);
+  });
+
+  it("bloque un acteur sans rôle Ligue ou Club", async () => {
+    const { service, prisma } = makeCandidateService([]);
+
+    await expect(
+      service.searchCandidates(
+        {
+          userId: "00000000-0000-0000-0000-000000000099",
+          memberships: [],
+        },
+        "Adjovi",
+      ),
+    ).rejects.toThrow(
+      "Vous n'avez pas accès à la recherche de joueurs transférables",
+    );
+
+    expect(prisma.person.findMany).not.toHaveBeenCalled();
   });
 });

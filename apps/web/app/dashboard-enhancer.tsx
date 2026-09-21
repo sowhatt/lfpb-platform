@@ -10,6 +10,7 @@ import { LeagueMatchHomologation } from "./league-match-homologation";
 import { LeagueStandings } from "./league-standings";
 import { LeagueClubsManagement } from "./league-clubs-management";
 import { LeaguePlayersManagement } from "./league-players-management";
+import { PlayerTransfersWorkspace } from "./player-transfers-workspace";
 
 type Actor = {
   memberships?: Array<{ organizationId: string; role: string }>;
@@ -88,7 +89,8 @@ export function DashboardEnhancer() {
     active === "Homologation" ||
     active === "Classement & statistiques" ||
     active === "Clubs" ||
-    active === "Joueurs";
+    active === "Joueurs" ||
+    active === "Transferts";
 
   useEffect(() => {
     if (membership?.role !== "LIGUE_ADMIN") return;
@@ -166,6 +168,12 @@ export function DashboardEnhancer() {
 
     if (active === "Joueurs" && membership.role === "LIGUE_ADMIN") {
       return <LeaguePlayersManagement token={token} />;
+    }
+    if (
+      active === "Transferts" &&
+      ["LIGUE_ADMIN", "CLUB_ADMIN"].includes(membership.role)
+    ) {
+      return <PlayerTransfersWorkspace token={token} membership={membership} />;
     }
     if (active === "Assistant IA" && membership.role === "CLUB_ADMIN")
       return (

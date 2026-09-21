@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { Role } from "@prisma/client";
@@ -27,6 +28,15 @@ export class PlayerTransfersController {
   @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
   list(@CurrentActor() actor: AuthenticatedActor) {
     return this.playerTransfers.list(actor);
+  }
+
+  @Get("candidates/search")
+  @Roles(Role.LIGUE_ADMIN, Role.CLUB_ADMIN)
+  searchCandidates(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Query("q") query: string,
+  ) {
+    return this.playerTransfers.searchCandidates(actor, query);
   }
 
   @Get(":transferId")

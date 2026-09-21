@@ -117,6 +117,21 @@ export class RegistriesService {
       );
     }
 
+    const homonymCandidates = await this.prisma.person.findMany({
+      where: {
+        firstName: { equals: firstName, mode: "insensitive" },
+        lastName: { equals: lastName, mode: "insensitive" },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        birthDate: true,
+        federationId: true,
+      },
+      take: 5,
+    });
+
     const identityCandidates = await this.prisma.person.findMany({
       where: {
         OR: [

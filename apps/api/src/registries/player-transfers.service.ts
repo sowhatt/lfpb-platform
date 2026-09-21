@@ -104,6 +104,184 @@ export class PlayerTransfersService {
     };
   }
 
+  async searchCandidates(actor: AuthenticatedActor, rawQuery: string) {
+    const query = rawQuery?.trim() ?? "";
+
+    if (query.length < 2) {
+      throw new BadRequestException(
+        "Saisissez au moins 2 caractères pour rechercher un joueur",
+      );
+    }
+
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
+    const targetOrganizationIds = actor.memberships
+      .filter((membership) => membership.role === Role.CLUB_ADMIN)
+      .map((membership) => membership.organizationId);
+
+    if (!isLeagueAdmin && targetOrganizationIds.length === 0) {
+      throw new ForbiddenException(
+        "Vous n'avez pas accès à la recherche de joueurs transférables",
+      );
+    }
+
+    const people = await this.prisma.person.findMany({
+      where: {
+        AND: [
+          {
+            registrations: {
+              some: {
+                category: RegistrationCategory.PLAYER,
+              },
+            },
+          },
+          {
+            OR: [
+              {
+                firstName: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                lastName: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                federationId: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        birthDate: true,
+        federationId: true,
+        registrations: {
+          where: {
+            category: RegistrationCategory.PLAYER,
+          },
+          select: {
+            id: true,
+            organizationId: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                club: {
+                  select: {
+                    shortName: true,
+                  },
+                },
+              },
+            },
+            licenses: {
+              orderBy: [{ validFrom: "desc" }, { createdAt: "desc" }],
+              select: {
+                id: true,
+                number: true,
+                status: true,
+                validFrom: true,
+                validUntil: true,
+              },
+            },
+          },
+          orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
+        },
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      take: 20,
+    });
+
+    const now = new Date();
+
+    return people.map((person) => {
+      const currentRegistrations = person.registrations.filter(
+        (registration) =>
+          registration.status !== RegistrationStatus.ARCHIVED &&
+          registration.startDate <= now &&
+          (!registration.endDate || registration.endDate >= now),
+      );
+
+      const currentRegistration =
+        currentRegistrations.length === 1 ? currentRegistrations[0] : null;
+
+      const currentLicense =
+        currentRegistration?.licenses.find(
+          (license) =>
+            license.status !== LicenseStatus.CANCELLED &&
+            license.status !== LicenseStatus.EXPIRED &&
+            (!license.validFrom || license.validFrom <= now) &&
+            (!license.validUntil || license.validUntil >= now),
+        ) ?? null;
+
+      const alreadyInTargetClub =
+        !isLeagueAdmin &&
+        currentRegistration !== null &&
+        targetOrganizationIds.includes(currentRegistration.organizationId);
+
+      let transferable = true;
+      let blockingReason: string | null = null;
+
+      if (currentRegistrations.length > 1) {
+        transferable = false;
+        blockingReason =
+          "Plusieurs inscriptions joueur sont simultanément actives. Régularisation Ligue nécessaire.";
+      } else if (!currentRegistration) {
+        transferable = false;
+        blockingReason =
+          "Aucune inscription joueur actuellement active n'a été trouvée.";
+      } else if (alreadyInTargetClub) {
+        transferable = false;
+        blockingReason = "Ce joueur appartient déjà au club d'accueil.";
+      }
+
+      return {
+        personId: person.id,
+        firstName: person.firstName,
+        lastName: person.lastName,
+        birthDate: person.birthDate,
+        federationId: person.federationId,
+        sourceRegistrationId: currentRegistration?.id ?? null,
+        currentClub: currentRegistration
+          ? {
+              organizationId: currentRegistration.organization.id,
+              name: currentRegistration.organization.name,
+              code: currentRegistration.organization.code,
+              shortName:
+                currentRegistration.organization.club?.shortName ?? null,
+            }
+          : null,
+        currentLicense: currentLicense
+          ? {
+              id: currentLicense.id,
+              number: currentLicense.number,
+              status: currentLicense.status,
+            }
+          : null,
+        transferable,
+        blockingReason,
+        dataQuality: {
+          multipleActiveRegistrations: currentRegistrations.length > 1,
+        },
+      };
+    });
+  }
+
   async list(actor: AuthenticatedActor) {
     const where = this.transferReadScope(actor);
 
@@ -808,6 +986,22 @@ export class PlayerTransfersService {
       actor,
       input.targetOrganizationId,
     );
+
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
+    if (!isLeagueAdmin) {
+      const clubOrganizationIds = actor.memberships
+        .filter((membership) => membership.role === Role.CLUB_ADMIN)
+        .map((membership) => membership.organizationId);
+
+      if (!clubOrganizationIds.includes(input.targetOrganizationId)) {
+        throw new ForbiddenException(
+          "Un club ne peut créer une demande de transfert que pour lui-même",
+        );
+      }
+    }
 
     if (sourceRegistration.organizationId === input.targetOrganizationId) {
       throw new BadRequestException(

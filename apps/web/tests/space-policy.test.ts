@@ -14,6 +14,7 @@ test("les trois vues opérationnelles conservent leur navigation", () => {
     "Vue d’ensemble",
     "Effectif",
     "Staff",
+    "Transferts",
     "Licences",
     "Feuilles de match",
     "Assistant IA",
@@ -30,6 +31,7 @@ test("les trois vues opérationnelles conservent leur navigation", () => {
   const leagueNavigation = navigationForSpace("LIGUE");
 
   assert.ok(leagueNavigation.includes("Clubs"));
+  assert.ok(leagueNavigation.includes("Transferts"));
   assert.ok(leagueNavigation.includes("Officiels"));
   assert.ok(leagueNavigation.includes("Homologation"));
   assert.ok(leagueNavigation.includes("Classement & statistiques"));
