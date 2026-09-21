@@ -1,0 +1,15 @@
+{
+  "competition": "Ligue 2",
+  "season": "2026-2027",
+  "source": "Correction métier LFPB",
+  "overrides": [
+    {
+      "matchNumber": "CL234",
+      "sourceDate": "18/04/2024",
+      "correctedDate": "18/04/2027",
+      "reason": "Correction après contrôle manuel : la valeur 18/04/2024 provenait de l'extraction OCR ; date opérationnelle retenue pour la saison 2026-2027 : 18/04/2027.",
+      "validatedBy": "Contrôle manuel Digital Foot",
+      "validatedAt": "2026-09-21"
+    }
+  ]
+}

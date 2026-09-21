@@ -640,6 +640,7 @@ model Match {
   competitionId       String                    @db.Uuid
   roundId             String?                   @db.Uuid
   venueId             String?                   @db.Uuid
+  officialMatchNumber String?
   homeClubId          String                    @db.Uuid
   awayClubId          String                    @db.Uuid
   kickoffAt           DateTime?
@@ -664,6 +665,7 @@ model Match {
   officialAssignments MatchOfficialAssignment[]
   matchSheet          MatchSheet?
 
+  @@unique([competitionId, officialMatchNumber])
   @@index([competitionId, status, kickoffAt])
   @@index([homeClubId, kickoffAt])
   @@index([awayClubId, kickoffAt])

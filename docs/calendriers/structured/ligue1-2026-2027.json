@@ -1,0 +1,5252 @@
+{
+  "competition": "Ligue 1",
+  "season": "2026-2027",
+  "clubs": [
+    "AS COTONOU FC",
+    "ASPAC FC",
+    "ASVO FC",
+    "AYEMA FC",
+    "BANI GANSE FC",
+    "BUFFLES FC",
+    "CAVALIERS FC",
+    "COTON FC",
+    "DAMISSA FC",
+    "DJEFFA FC",
+    "DRAGONS FC",
+    "DYNAMO FC AB",
+    "ESPOIR FC",
+    "HODIO FC",
+    "LOTO POPO FC",
+    "PANTHERES FC",
+    "SOBEMAP FC",
+    "USS KRAKE FC"
+  ],
+  "venues": [
+    "ABOMEY",
+    "AVRANKOU",
+    "BANIKOARA",
+    "BEMBEREKE",
+    "COME",
+    "DJOUGOU",
+    "DOGBO",
+    "GRAND POPO",
+    "NIKKI",
+    "OUIDAH",
+    "POBE",
+    "SAVALOU",
+    "TOFFO"
+  ],
+  "rows": [
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL001",
+      "date": "26/09/2026",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 001",
+        "date": "26/09/2026",
+        "fixture": "BANI GANSE FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL002",
+      "date": "26/09/2026",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 002",
+        "date": "26/09/2026",
+        "fixture": "ASVO FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL003",
+      "date": "26/09/2026",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "COTON FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 003",
+        "date": "26/09/2026",
+        "fixture": "DRAGONS FC # COTON FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL004",
+      "date": "26/09/2026",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "ASPAC FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 004",
+        "date": "26/09/2026",
+        "fixture": "ESPOIR FC # ASPAC FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL005",
+      "date": "26/09/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "LOTO POPO FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 005",
+        "date": "26/09/2026",
+        "fixture": "DYNAMO FC AB # LOTO POPO FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL006",
+      "date": "27/09/2026",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "COME",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 006",
+        "date": "27/09/2026",
+        "fixture": "HODIO FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL007",
+      "date": "27/09/2026",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 007",
+        "date": "27/09/2026",
+        "fixture": "DJEFFA FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL008",
+      "date": "27/09/2026",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "AYEMA FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 008",
+        "date": "27/09/2026",
+        "fixture": "BUFFLES FC # AYEMA FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 1,
+      "matchNumber": "CL009",
+      "date": "27/09/2026",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 009",
+        "date": "27/09/2026",
+        "fixture": "DAMISSA FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL010",
+      "date": "03/10/2026",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "ASVO FC",
+      "venue": "POBE",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 010",
+        "date": "03/10/2026",
+        "fixture": "AYEMA FC # ASVO FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL011",
+      "date": "03/10/2026",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 011",
+        "date": "03/10/2026",
+        "fixture": "USS KRAKE FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL012",
+      "date": "03/10/2026",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 012",
+        "date": "03/10/2026",
+        "fixture": "AS COTONOU FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL013",
+      "date": "03/10/2026",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 013",
+        "date": "03/10/2026",
+        "fixture": "LOTO POPO FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL014",
+      "date": "03/10/2026",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 014",
+        "date": "03/10/2026",
+        "fixture": "PANTHERES FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL015",
+      "date": "04/10/2026",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 015",
+        "date": "04/10/2026",
+        "fixture": "COTON FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL016",
+      "date": "04/10/2026",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "NIKKI",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 016",
+        "date": "04/10/2026",
+        "fixture": "CAVALIERS FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL017",
+      "date": "04/10/2026",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 017",
+        "date": "04/10/2026",
+        "fixture": "ASPAC FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 2,
+      "matchNumber": "CL018",
+      "date": "04/10/2026",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "HODIO FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 018",
+        "date": "04/10/2026",
+        "fixture": "SOBEMAP FC # HODIO FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL019",
+      "date": "10/10/2026",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "AYEMA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 019",
+        "date": "10/10/2026",
+        "fixture": "AS COTONOU FC # AYEMA FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL020",
+      "date": "10/10/2026",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 020",
+        "date": "10/10/2026",
+        "fixture": "CAVALIERS FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL021",
+      "date": "10/10/2026",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 021",
+        "date": "10/10/2026",
+        "fixture": "BANI GANSE FC# LOTO POPO FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL022",
+      "date": "10/10/2026",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "ASPAC FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 022",
+        "date": "10/10/2026",
+        "fixture": "ASVO FC # ASPAC FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL023",
+      "date": "10/10/2026",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 023",
+        "date": "10/10/2026",
+        "fixture": "DRAGONS FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL024",
+      "date": "11/10/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "COTON FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 024",
+        "date": "11/10/2026",
+        "fixture": "DYNAMO FC AB # COTON FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL025",
+      "date": "11/10/2026",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 025",
+        "date": "11/10/2026",
+        "fixture": "BUFFLES FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL026",
+      "date": "11/10/2026",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "COME",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 026",
+        "date": "11/10/2026",
+        "fixture": "HODIO FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 3,
+      "matchNumber": "CL027",
+      "date": "11/10/2026",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 1,
+        "matchNumber": "CL 027",
+        "date": "11/10/2026",
+        "fixture": "ESPOIR FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL028",
+      "date": "17/10/2026",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "DOGBO",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 028",
+        "date": "17/10/2026",
+        "fixture": "DJEFFA FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL029",
+      "date": "17/10/2026",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "ASVO FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 029",
+        "date": "17/10/2026",
+        "fixture": "DAMISSA FC # ASVO FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL030",
+      "date": "17/10/2026",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 030",
+        "date": "17/10/2026",
+        "fixture": "COTON FC # CAVALIERS FC",
+        "time": "16 H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL031",
+      "date": "17/10/2026",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "HODIO FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 031",
+        "date": "17/10/2026",
+        "fixture": "ASPAC FC # HODIO FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL032",
+      "date": "17/10/2026",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 032",
+        "date": "17/10/2026",
+        "fixture": "ESPOIR FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL033",
+      "date": "18/10/2026",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 033",
+        "date": "18/10/2026",
+        "fixture": "USS KRAKE FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL034",
+      "date": "18/10/2026",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 034",
+        "date": "18/10/2026",
+        "fixture": "LOTO POPO FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL035",
+      "date": "18/10/2026",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 035",
+        "date": "18/10/2026",
+        "fixture": "SOBEMAP FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 4,
+      "matchNumber": "CL036",
+      "date": "18/10/2026",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "POBE",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 036",
+        "date": "18/10/2026",
+        "fixture": "AYEMA FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL037",
+      "date": "24/10/2026",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 037",
+        "date": "24/10/2026",
+        "fixture": "CAVALIERS FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL038",
+      "date": "24/10/2026",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 038",
+        "date": "24/10/2026",
+        "fixture": "PANTHERES FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL039",
+      "date": "24/10/2026",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "AYEMA FC",
+      "venue": "COME",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 039",
+        "date": "24/10/2026",
+        "fixture": "HODIO FC # AYEMA FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL040",
+      "date": "24/10/2026",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 040",
+        "date": "24/10/2026",
+        "fixture": "BANI GANSE FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL041",
+      "date": "24/10/2026",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "ASPAC FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 041",
+        "date": "24/10/2026",
+        "fixture": "DRAGONS FC # ASPAC FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL042",
+      "date": "25/10/2026",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 042",
+        "date": "25/10/ 2026",
+        "fixture": "ASVO FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL043",
+      "date": "25/10/2026",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 043",
+        "date": "25/10/2026",
+        "fixture": "AS COTONOU FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL044",
+      "date": "25/10/2026",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "COTON FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 044",
+        "date": "25/10/2026",
+        "fixture": "DAMISSA FC # COTON FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 5,
+      "matchNumber": "CL045",
+      "date": "25/10/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "BUFFLES FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 045",
+        "date": "25/10/2026",
+        "fixture": "DYNAMO FC AB # BUFFLES FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL046",
+      "date": "31/10/2026",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "POBE",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 046",
+        "date": "31/10/ 2026",
+        "fixture": "USS KRAKE FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL047",
+      "date": "31/10/2026",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "POBE",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 047",
+        "date": "31/10/2026",
+        "fixture": "AYEMA FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL048",
+      "date": "31/10/2026",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 048",
+        "date": "31/10/2026",
+        "fixture": "DJEFFA FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL049",
+      "date": "31/10/2026",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL049",
+        "date": "31/10/2026",
+        "fixture": "COTON FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL050",
+      "date": "31/10/2026",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 050",
+        "date": "31/10/2026",
+        "fixture": "ASPAC FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL051",
+      "date": "01/11/2026",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 051",
+        "date": "01/11/2026",
+        "fixture": "BUFFLES FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL052",
+      "date": "01/11/2026",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 052",
+        "date": "01/11/2026",
+        "fixture": "ESPOIR FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL053",
+      "date": "01/11/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "ASVO FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 053",
+        "date": "01/11/2026",
+        "fixture": "DYNAMO FC AB # ASVO FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 6,
+      "matchNumber": "CL054",
+      "date": "01/11/2026",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "HODIO FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 2,
+        "matchNumber": "CL 054",
+        "date": "01/11/2026",
+        "fixture": "DRAGONS FC # HODIO FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL055",
+      "date": "07/11/2026",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "ASPAC FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 055",
+        "date": "07/11/2026",
+        "fixture": "CAVALIERS FC # ASPAC FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL056",
+      "date": "07/11/2026",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "AYEMA FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 056",
+        "date": "07/11/2026",
+        "fixture": "PANTHERES FC # AYEMA FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL057",
+      "date": "07/11/2026",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 057",
+        "date": "07/11/2026",
+        "fixture": "AS COTONOU FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL058",
+      "date": "07/11/2026",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 058",
+        "date": "07/11/2026",
+        "fixture": "LOTO POPO FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL059",
+      "date": "07/11/2026",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 059",
+        "date": "07/11/2026",
+        "fixture": "BANI GANSE FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL060",
+      "date": "08/11/2026",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 060",
+        "date": "08/11/2026",
+        "fixture": "SOBEMAP FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL061",
+      "date": "08/11/2026",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 061",
+        "date": "08/11/2026",
+        "fixture": "DAMISSA FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL062",
+      "date": "08/11/2026",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "COTON FC",
+      "venue": "COME",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 062",
+        "date": "08/11/2026",
+        "fixture": "USS KRAKE FC # COTON FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 7,
+      "matchNumber": "CL063",
+      "date": "08/11/2026",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "ASVO FC",
+      "venue": "COME",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 063",
+        "date": "08/11/2026",
+        "fixture": "HODIO FC # ASVO FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL064",
+      "date": "14/11/2026",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "HODIO FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 064.",
+        "date": "14/11/2026",
+        "fixture": "DJEFFA FC # HODIO FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL065",
+      "date": "14/11/2026",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 065",
+        "date": "14/11/2026",
+        "fixture": "ESPOIR FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL066",
+      "date": "14/11/2026",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 066",
+        "date": "14/11/2026",
+        "fixture": "BUFFLES FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL067",
+      "date": "14/11/2026",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 067",
+        "date": "14/11/2026",
+        "fixture": "ASPAC FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL068",
+      "date": "14/11/2026",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 068",
+        "date": "14/11/2026",
+        "fixture": "ASVO FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL069",
+      "date": "15/11/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "AS COTONOU FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 069",
+        "date": "15/11/2026",
+        "fixture": "DYNAMO FC AB # AS COTONOU",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL070",
+      "date": "15/11/2026",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "COTON FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 070",
+        "date": "15/11/2026",
+        "fixture": "LOTO POPO FC # COTON FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL071",
+      "date": "15/11/2026",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 071",
+        "date": "15/11/2026",
+        "fixture": "BANI GANSE FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 8,
+      "matchNumber": "CL072",
+      "date": "15/11/2026",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "POBE",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 072",
+        "date": "15/11/2026",
+        "fixture": "AYEMA FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL073",
+      "date": "21/11/2026",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 073",
+        "date": "21/11/2026",
+        "fixture": "PANTHERES FC # DYNAMO FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL074",
+      "date": "21/11/2026",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 074",
+        "date": "21/11/2026",
+        "fixture": "COTON FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL075",
+      "date": "21/11/2026",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "AYEMA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 075",
+        "date": "21/11/2026",
+        "fixture": "SOBEMAP FC # AYEMA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL076",
+      "date": "21/11/2026",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 076",
+        "date": "21/11/2026",
+        "fixture": "CAVALIERS FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL077",
+      "date": "21/11/2026",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "COME",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 077",
+        "date": "21/11/2026",
+        "fixture": "ASVO FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL078",
+      "date": "22/11/2026",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "COME",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 078",
+        "date": "22/11/2026",
+        "fixture": "HODIO FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL079",
+      "date": "22/11/2026",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 079",
+        "date": "22/11/2026",
+        "fixture": "DAMISSA FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL080",
+      "date": "22/11/2026",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 080",
+        "date": "22/11/2026",
+        "fixture": "DRAGONS FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 9,
+      "matchNumber": "CL081",
+      "date": "22/11/2026",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "ASPAC FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 3,
+        "matchNumber": "CL 081",
+        "date": "22/11/2026",
+        "fixture": "USS KRAKE FC # ASPAC FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL082",
+      "date": "28/11/2026",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 082",
+        "date": "28/11/2026",
+        "fixture": "DJEFFA FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL083",
+      "date": "28/11/2026",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "HODIO FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 083",
+        "date": "28/11/2026",
+        "fixture": "ESPOIR FC # HODIO FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL084",
+      "date": "28/11/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "DRAGONS FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 084",
+        "date": "28/11/2026",
+        "fixture": "DYNAMO FC AB # DRAGONS FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL085",
+      "date": "28/11/2026",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "ASVO FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 085",
+        "date": "28/11/2026",
+        "fixture": "BUFFLES FC # ASVO FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL086",
+      "date": "28/11/2026",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 086",
+        "date": "28/11/2026",
+        "fixture": "ASPAC FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL087",
+      "date": "29/11/2026",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "COTON FC",
+      "venue": "POBE",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 087",
+        "date": "29/11/2026",
+        "fixture": "AYEMA FC # COTON FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL088",
+      "date": "29/11/2026",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 088",
+        "date": "29/11/2026",
+        "fixture": "LOTO POPO FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL089",
+      "date": "29/11/2026",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 089",
+        "date": "29/11/2026",
+        "fixture": "BANI GANSE FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 10,
+      "matchNumber": "CL090",
+      "date": "29/11/2026",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 090",
+        "date": "29/11/2026",
+        "fixture": "AS COTONOU FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL091",
+      "date": "05/12/2026",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 091",
+        "date": "05/12/2026",
+        "fixture": "SOBEMAP FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL092",
+      "date": "05/12/2026",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 092",
+        "date": "05/12/2026",
+        "fixture": "CAVALIERS FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL093",
+      "date": "05/12/2026",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 093",
+        "date": "05/12/ 2026",
+        "fixture": "PANTHERES FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL094",
+      "date": "05/12/2026",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 094",
+        "date": "05/12/2026",
+        "fixture": "USS KRAKE FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL095",
+      "date": "05/12/2026",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "ASPAC FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 095",
+        "date": "05/12/2026",
+        "fixture": "COTON FC # ASPAC FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL096",
+      "date": "06/12/2026",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 096",
+        "date": "06/12/2026",
+        "fixture": "DAMISSA FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL097",
+      "date": "06/12/2026",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 097",
+        "date": "06/12/2026",
+        "fixture": "ASVO FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL098",
+      "date": "06/12/2026",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "AYEMA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 098",
+        "date": "06/12/ 2026",
+        "fixture": "DRAGONS FC # AYEMA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 11,
+      "matchNumber": "CL099",
+      "date": "06/12/2026",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "HODIO FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 099",
+        "date": "06/12/2026",
+        "fixture": "BUFFLES FC # HODIO FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL100",
+      "date": "12/12/2026",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "POBE",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 100",
+        "date": "12/12/ 2026",
+        "fixture": "AYEMA FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL101",
+      "date": "12/12/2026",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 101",
+        "date": "12/12/ 2026",
+        "fixture": "COTON FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL102",
+      "date": "12/12/2026",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL102",
+        "date": "12/12/ 2026",
+        "fixture": "PANTHERES FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL103",
+      "date": "12/12/2026",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "ASVO FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 103",
+        "date": "12/12/2026",
+        "fixture": "LOTO POPO FC # ASVO FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL104",
+      "date": "12/12/2026",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 104",
+        "date": "12/12/2026",
+        "fixture": "AS COTONOU FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL105",
+      "date": "13/12/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "BANI GANSE FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 105",
+        "date": "13/12/ 2026",
+        "fixture": "DYNAMO FC AB # BANI GANSE",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL106",
+      "date": "13/12/2026",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 106",
+        "date": "13/12/2026",
+        "fixture": "DJEFFA FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL107",
+      "date": "13/12/2026",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "COME",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 107",
+        "date": "13/12/2026",
+        "fixture": "HODIO FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 12,
+      "matchNumber": "CL108",
+      "date": "13/12/2026",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 4,
+        "matchNumber": "CL 108",
+        "date": "13/12/ 2026",
+        "fixture": "ASPAC FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL109",
+      "date": "19/12/2026",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "COTON FC",
+      "venue": "COME",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 109",
+        "date": "19/12/2026",
+        "fixture": "HODIO FC # COTON FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL110",
+      "date": "19/12/2026",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 110",
+        "date": "19/12/2026",
+        "fixture": "DAMISSA FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL111",
+      "date": "19/12/2026",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 111",
+        "date": "19/12/2026",
+        "fixture": "BUFFLES FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL112",
+      "date": "19/12/2026",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 112",
+        "date": "19/12/2026",
+        "fixture": "ESPOIR FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL113",
+      "date": "19/12/2026",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 113",
+        "date": "19/12/ 2026",
+        "fixture": "BANI GANSE FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL114",
+      "date": "20/12/2026",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 114",
+        "date": "20/12/ 2026",
+        "fixture": "ASVO FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL115",
+      "date": "20/12/2026",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "ASPAC FC",
+      "venue": "POBE",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 115",
+        "date": "20/12/ 2026",
+        "fixture": "AYEMA FC # ASPAC FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL116",
+      "date": "20/12/2026",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 116",
+        "date": "20/12/2026",
+        "fixture": "SOBEMAP FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 13,
+      "matchNumber": "CL117",
+      "date": "20/12/2026",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 117",
+        "date": "20/12/2026",
+        "fixture": "CAVALIERS FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL118",
+      "date": "26/12/2026",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 118",
+        "date": "26/12/ 2026",
+        "fixture": "PANTHERES FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL119",
+      "date": "26/12/2026",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "AYEMA FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 119",
+        "date": "26/12/2026",
+        "fixture": "DJEFFA FC # AYEMA FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL120",
+      "date": "26/12/2026",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 120",
+        "date": "26/12/2026",
+        "fixture": "AS COTONOU FC # BANI GANSE",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL121",
+      "date": "26/12/2026",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 121",
+        "date": "26/12/2026",
+        "fixture": "LOTO POPO FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL122",
+      "date": "26/12/2026",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 122",
+        "date": "26/12/2026",
+        "fixture": "DRAGONS FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL123",
+      "date": "27/12/2026",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "ASVO FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 123",
+        "date": "27/12/ 2026",
+        "fixture": "COTON FC # ASVO FC",
+        "time": "16H",
+        "venue": "QUIDAH"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL124",
+      "date": "27/12/2026",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "HODIO FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 124",
+        "date": "27/12/ 2026",
+        "fixture": "USS KRAKE FC # HODIO FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL125",
+      "date": "27/12/2026",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 125",
+        "date": "27/12/ 2026",
+        "fixture": "ASPAC FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 14,
+      "matchNumber": "CL126",
+      "date": "27/12/2026",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "ESPOIR FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 126",
+        "date": "27/12/ 2026",
+        "fixture": "DYNAMO FC AB # ESPOIR FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL127",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 127",
+        "date": "05/01/2027",
+        "fixture": "DAMISSA FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL128",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 128",
+        "date": "05/01/2027",
+        "fixture": "BUFFLES FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL129",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "COME",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 129",
+        "date": "05/01/2027",
+        "fixture": "HODIO FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL130",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "COTON FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 130",
+        "date": "05/01/2027",
+        "fixture": "DJEFFA FC # COTON FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL131",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 131",
+        "date": "05/01/2027",
+        "fixture": "ESPOIR FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL132",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 132",
+        "date": "05/01/2027",
+        "fixture": "ASVO FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL133",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "ASPAC FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 133",
+        "date": "05/01/2027",
+        "fixture": "BANI GANSE FC # ASPAC FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL134",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 134",
+        "date": "05/01/2027",
+        "fixture": "SOBEMAP FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 15,
+      "matchNumber": "CL135",
+      "date": "05/01/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "POBE",
+      "source": {
+        "page": 5,
+        "matchNumber": "CL 135",
+        "date": "05/01/2027",
+        "fixture": "AYEMA FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL136",
+      "date": "09/01/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "AYEMA FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 136",
+        "date": "09/01/2027",
+        "fixture": "DYNAMO FC AB # AYEMA FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL137",
+      "date": "09/01/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "ASVO FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 137",
+        "date": "09/01/2027",
+        "fixture": "CAVALIERS FC # ASVO FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL138",
+      "date": "09/01/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 138",
+        "date": "09/01/2027",
+        "fixture": "COTON FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL139",
+      "date": "09/01/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "HODIO FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 139",
+        "date": "09/01/2027",
+        "fixture": "LOTO POPO FC # HODIO FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL140",
+      "date": "09/01/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 140",
+        "date": "09/01/2027",
+        "fixture": "DRAGONS FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL141",
+      "date": "10/01/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "ASPAC FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 141",
+        "date": "10/01/2027",
+        "fixture": "AS COTONOU FC # ASPAC FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL142",
+      "date": "10/01/2027",
+      "time": "00H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 142",
+        "date": "10/01/2027",
+        "fixture": "USS KRAKE FC # DJEFFA FC",
+        "time": "ADJOHOUN",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL143",
+      "date": "10/01/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 143",
+        "date": "10/01/2027",
+        "fixture": "PANTHERES FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 16,
+      "matchNumber": "CL144",
+      "date": "10/01/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 144",
+        "date": "10/01/2027",
+        "fixture": "SOBEMAP FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL145",
+      "date": "16/01/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 145",
+        "date": "16/01/2027",
+        "fixture": "ESPOIR FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL146",
+      "date": "16/01/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "TOFFO",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 146",
+        "date": "16/01/2027",
+        "fixture": "ASPAC FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL147",
+      "date": "16/01/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 147",
+        "date": "16/01/2027",
+        "fixture": "DJEFFA FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL148",
+      "date": "16/01/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "COME",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 148",
+        "date": "16/01/2027",
+        "fixture": "HODIO FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL149",
+      "date": "16/01/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "COTON FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 149",
+        "date": "16/01/2027",
+        "fixture": "BUFFLES FC # COTON FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL150",
+      "date": "17/01/2027",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 150",
+        "date": "17/01/2027",
+        "fixture": "ASVO FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL151",
+      "date": "17/01/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 151",
+        "date": "17/01/2027",
+        "fixture": "BANI GANSE FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL152",
+      "date": "17/01/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "POBE",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 152",
+        "date": "17/01/2027",
+        "fixture": "AYEMA FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 17,
+      "matchNumber": "CL153",
+      "date": "17/01/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 6,
+        "matchNumber": "CL 153",
+        "date": "17/01/2027",
+        "fixture": "DAMISSA FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL154",
+      "date": "13/02/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 154",
+        "date": "13/02/2027",
+        "fixture": "SOBEMAP FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL155",
+      "date": "13/02/2027",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "ASVO FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 155",
+        "date": "13/02/2027",
+        "fixture": "USS KRAKE FC # ASVO FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL156",
+      "date": "13/02/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 156",
+        "date": "13/02/2027",
+        "fixture": "COTON FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL157",
+      "date": "13/02/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 157",
+        "date": "13/02/2027",
+        "fixture": "ASPAC FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL158",
+      "date": "13/02/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 158",
+        "date": "13/02/2027",
+        "fixture": "LOTO POPO FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL159",
+      "date": "14/02/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "POBE",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 159",
+        "date": "14/02/2027",
+        "fixture": "AYEMA FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL160",
+      "date": "14/02/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 160",
+        "date": "14/02/2027",
+        "fixture": "PANTHERES FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL161",
+      "date": "14/02/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "HODIO FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 161",
+        "date": "14/02/2027",
+        "fixture": "AS COTONOU FC # HODIO FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 18,
+      "matchNumber": "CL162",
+      "date": "14/02/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 162",
+        "date": "14/02/2027",
+        "fixture": "CAVALIERS FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL163",
+      "date": "20/02/2027",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "AYEMA FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 163",
+        "date": "20/02/2027",
+        "fixture": "ASVO FC # AYEMA FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL164",
+      "date": "20/02/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 164",
+        "date": "20/02/2027",
+        "fixture": "DAMISSA FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL165",
+      "date": "20/02/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 165",
+        "date": "20/02/2027",
+        "fixture": "DRAGONS FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL166",
+      "date": "20/02/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 166",
+        "date": "20/02/2027",
+        "fixture": "BUFFLES FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL167",
+      "date": "20/02/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 167",
+        "date": "20/02/2027",
+        "fixture": "ESPOIR FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL168",
+      "date": "21/02/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "COTON FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 168",
+        "date": "21/02/2027",
+        "fixture": "BANI GANSE FC # COTON FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL169",
+      "date": "21/02/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "CAVALIERS FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 169",
+        "date": "21/02/2027",
+        "fixture": "DYNAMO FC AB # CAVALIERS FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL170",
+      "date": "21/02/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "ASPAC FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 170",
+        "date": "21/02/2027",
+        "fixture": "DJEFFA FC # ASPAC FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 19,
+      "matchNumber": "CL171",
+      "date": "21/02/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "COME",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 171",
+        "date": "21/02/2027",
+        "fixture": "HODIO FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL172",
+      "date": "27/02/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "POBE",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 172",
+        "date": "27/02/2027",
+        "fixture": "AYEMA FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL173",
+      "date": "27/02/2027",
+      "time": "00H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 173",
+        "date": "27/02/2027",
+        "fixture": "USS KRAKE FC # CAVALIERS FC",
+        "time": "ADJOHOUN",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL174",
+      "date": "27/02/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 174",
+        "date": "27/02/2027",
+        "fixture": "LOTO POPO FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL175",
+      "date": "27/02/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "ASVO FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 175",
+        "date": "27/02/2027",
+        "fixture": "ASPAC FC # ASVO FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL176",
+      "date": "27/02/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 176",
+        "date": "27/02/2027",
+        "fixture": "PANTHERES FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL177",
+      "date": "28/02/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 177",
+        "date": "28/02/2027",
+        "fixture": "COTON FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "QUIDAH"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL178",
+      "date": "28/02/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 178",
+        "date": "28/02/2027",
+        "fixture": "DJEFFA FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL179",
+      "date": "28/02/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "HODIO FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 179",
+        "date": "28/02/2027",
+        "fixture": "DAMISSA FC # HODIO FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 20,
+      "matchNumber": "CL180",
+      "date": "28/02/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 7,
+        "matchNumber": "CL 180",
+        "date": "28/02/2027",
+        "fixture": "SOBEMAP FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL181",
+      "date": "06/03/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "DJEFFA FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 181",
+        "date": "06/03/2027",
+        "fixture": "DYNAMO FC AB # DJEFFA FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL182",
+      "date": "06/03/2027",
+      "time": "00H",
+      "homeClub": "ASVO FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 182",
+        "date": "06/03/2027",
+        "fixture": "ASVO FC # DAMISSA FC",
+        "time": "ADJOHOUN",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL183",
+      "date": "06/03/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "COTON FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 183",
+        "date": "06/03/2027",
+        "fixture": "CAVALIERS FC # COTON FC",
+        "time": "16 H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL184",
+      "date": "06/03/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "ASPAC FC",
+      "venue": "COME",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 184",
+        "date": "06/03/2027",
+        "fixture": "HODIO FC # ASPAC FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL185",
+      "date": "06/03/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "AYEMA FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 185",
+        "date": "06/03/2027",
+        "fixture": "BANI GANSE FC # AYEMA FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL186",
+      "date": "07/03/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 186",
+        "date": "07/03/2027",
+        "fixture": "DRAGONS FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL187",
+      "date": "07/03/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 187",
+        "date": "07/03/2027",
+        "fixture": "AS COTONOU FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL188",
+      "date": "07/03/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 188",
+        "date": "07/03/2027",
+        "fixture": "PANTHERES FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 21,
+      "matchNumber": "CL189",
+      "date": "07/03/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 189",
+        "date": "07/03/2027",
+        "fixture": "BUFFLES FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL190",
+      "date": "13/03/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 190",
+        "date": "13/03/2027",
+        "fixture": "SOBEMAP FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL191",
+      "date": "13/03/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 191",
+        "date": "13/03/2027",
+        "fixture": "LOTO POPO FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL192",
+      "date": "13/03/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "HODIO FC",
+      "venue": "POBE",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 192",
+        "date": "13/03/2027",
+        "fixture": "AYEMA FC # HODIO FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL193",
+      "date": "13/03/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 193",
+        "date": "13/03/2027",
+        "fixture": "ESPOIR FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL194",
+      "date": "13/03/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 194",
+        "date": "13/03/2027",
+        "fixture": "ASPAC FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL195",
+      "date": "14/03/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "ASVO FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 195",
+        "date": "14/03/2027",
+        "fixture": "DJEFFA FC # ASVO FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL196",
+      "date": "14/03/2027",
+      "time": "00H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 196",
+        "date": "14/03/2027",
+        "fixture": "USS KRAKE FC # AS COTONOU FC",
+        "time": "ADJOHOUN",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL197",
+      "date": "14/03/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 197",
+        "date": "14/03/2027",
+        "fixture": "COTON FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 22,
+      "matchNumber": "CL198",
+      "date": "14/03/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "NIKKI",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 198",
+        "date": "14/03/2027",
+        "fixture": "BUFFLES FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL199",
+      "date": "20/03/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 199",
+        "date": "20/03/2027",
+        "fixture": "SOBEMAP FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL200",
+      "date": "20/03/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "AYEMA FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 200",
+        "date": "20/03/2027",
+        "fixture": "DAMISSA FC # AYEMA FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL201",
+      "date": "20/03/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 201",
+        "date": "20/03/2027",
+        "fixture": "BANI GANSE FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL202",
+      "date": "20/03/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "COTON FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 202",
+        "date": "20/03/2027",
+        "fixture": "PANTHERES FC # COTON FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL203",
+      "date": "20/03/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "ASPAC FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 203",
+        "date": "20/03/2027",
+        "fixture": "LOTO POPO FC # ASPAC FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL204",
+      "date": "21/03/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 204.",
+        "date": "21/03/2027",
+        "fixture": "AS COTONOU FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL205",
+      "date": "21/03/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 205",
+        "date": "21/03/2027",
+        "fixture": "CAVALIERS FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL206",
+      "date": "21/03/2027",
+      "time": "00H",
+      "homeClub": "ASVO FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "COME",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 206",
+        "date": "21/03/2027",
+        "fixture": "ASVO FC # DYNAMO FC AB",
+        "time": "ADJOHOUN",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 23,
+      "matchNumber": "CL207",
+      "date": "21/03/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "COME",
+      "source": {
+        "page": 8,
+        "matchNumber": "CL 207",
+        "date": "21/03/2027",
+        "fixture": "HODIO FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL208",
+      "date": "27/03/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 208",
+        "date": "27/03/2027",
+        "fixture": "ASPAC FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL209",
+      "date": "27/03/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "POBE",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 209",
+        "date": "27/03/2027",
+        "fixture": "AYEMA FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL210",
+      "date": "27/03/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 210",
+        "date": "27/03/2027",
+        "fixture": "ESPOIR FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL211",
+      "date": "27/03/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 211",
+        "date": "27/03/2027",
+        "fixture": "DJEFFA FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL212",
+      "date": "27/03/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 212",
+        "date": "27/03/2027",
+        "fixture": "BUFFLES FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL213",
+      "date": "28/03/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 213",
+        "date": "28/03/2027",
+        "fixture": "DRAGONS FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL214",
+      "date": "28/03/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "DAMISSA FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 214",
+        "date": "28/03/2027",
+        "fixture": "DYNAMO FC AB # DAMISSA FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL215",
+      "date": "28/03/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 215",
+        "date": "28/03/2027",
+        "fixture": "COTON FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 24,
+      "matchNumber": "CL216",
+      "date": "28/03/2027",
+      "time": "00H",
+      "homeClub": "ASVO FC",
+      "awayClub": "HODIO FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 216",
+        "date": "28/03/2027",
+        "fixture": "ASVO FC # HODIO FC",
+        "time": "ADJOHOUN",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL217",
+      "date": "03/04/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "COME",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 217",
+        "date": "03/04/2027",
+        "fixture": "HODIO FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL218",
+      "date": "03/04/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "ASVO FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 218",
+        "date": "03/04/2027",
+        "fixture": "SOBEMAP FC # ASVO FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL219",
+      "date": "03/04/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 219",
+        "date": "03/04/2027",
+        "fixture": "CAVALIERS FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL220",
+      "date": "03/04/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "ASPAC FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 220",
+        "date": "03/04/2027",
+        "fixture": "PANTHERES FC # ASPAC FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL221",
+      "date": "03/04/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "TOFFO",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 221",
+        "date": "03/04/2027",
+        "fixture": "AS COTONOU FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL222",
+      "date": "04/04/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 222",
+        "date": "04/04/2027",
+        "fixture": "COTON FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "QUIDAH"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL223",
+      "date": "04/04/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 223",
+        "date": "04/04/2027",
+        "fixture": "DAMISSA FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL224",
+      "date": "04/04/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 224",
+        "date": "04/04/2027",
+        "fixture": "DRAGONS FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 25,
+      "matchNumber": "CL225",
+      "date": "04/04/2027",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "AYEMA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 225",
+        "date": "04/04/2027",
+        "fixture": "USS KRAKE FC # AYEMA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL226",
+      "date": "10/04/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "PANTHERES FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 226",
+        "date": "10/04/2027",
+        "fixture": "DYNAMO FC AB # PANTHERES FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL227",
+      "date": "10/04/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "COTON FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 227",
+        "date": "10/04/2027",
+        "fixture": "AS COTONOU FC # COTON FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL228",
+      "date": "10/04/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "POBE",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 228",
+        "date": "10/04/2027",
+        "fixture": "AYEMA FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL229",
+      "date": "10/04/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 229",
+        "date": "10/04/2027",
+        "fixture": "DJEFFA FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL230",
+      "date": "10/04/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "ASVO FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 230",
+        "date": "10/04/2027",
+        "fixture": "ESPOIR FC # ASVO FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL231",
+      "date": "11/04/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "HODIO FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 231",
+        "date": "11/04/2027",
+        "fixture": "BANI GANSE FC # HODIO FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL232",
+      "date": "11/04/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 232",
+        "date": "11/04/2027",
+        "fixture": "BUFFLES FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL233",
+      "date": "11/04/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 233",
+        "date": "11/04/2027",
+        "fixture": "LOTO POPO FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 26,
+      "matchNumber": "CL234",
+      "date": "11/04/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 9,
+        "matchNumber": "CL 234",
+        "date": "11/04/2027",
+        "fixture": "ASPAC FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL235",
+      "date": "17/04/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 235",
+        "date": "17/04/2027",
+        "fixture": "DAMISSA FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL236",
+      "date": "17/04/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "COME",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 236",
+        "date": "17/04/2027",
+        "fixture": "HODIO FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL237",
+      "date": "17/04/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 237",
+        "date": "17/04/2027",
+        "fixture": "DRAGONS FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL238",
+      "date": "17/04/2027",
+      "time": "00H",
+      "homeClub": "ASVO FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 238",
+        "date": "17/04/2027",
+        "fixture": "ASVO FC # BUFFLES FC",
+        "time": "ADJOHOUN",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL239",
+      "date": "17/04/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 239",
+        "date": "17/04/2027",
+        "fixture": "CAVALIERS FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL240",
+      "date": "18/04/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "AYEMA FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 240",
+        "date": "18/04/2027",
+        "fixture": "COTON FC # AYEMA FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL241",
+      "date": "18/04/2027",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 241",
+        "date": "18/04/2027",
+        "fixture": "USS KRAKE FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL242",
+      "date": "18/04/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 242",
+        "date": "18/04/2027",
+        "fixture": "PANTHERES FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 27,
+      "matchNumber": "CL243",
+      "date": "18/04/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "ASPAC FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 243",
+        "date": "18/04/2027",
+        "fixture": "SOBEMAP FC # ASPAC FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL244",
+      "date": "24/04/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 244",
+        "date": "24/04/2027",
+        "fixture": "DJEFFA FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL245",
+      "date": "24/04/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 245",
+        "date": "24/04/2027",
+        "fixture": "LOTO POPO FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL246",
+      "date": "24/04/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 246",
+        "date": "24/04/2027",
+        "fixture": "AS COTONOU FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL247",
+      "date": "24/04/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "COME",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 247",
+        "date": "24/04/2027",
+        "fixture": "HODIO FC # BUFFLES FC #",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL248",
+      "date": "24/04/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "USS KRAKE FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 248",
+        "date": "24/04/2027",
+        "fixture": "DYNAMO FC AB # USS KRAKE FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL249",
+      "date": "25/04/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "COTON FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 249",
+        "date": "25/04/2027",
+        "fixture": "ASPAC FC # COTON FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL250",
+      "date": "25/04/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 250",
+        "date": "25/04/2027",
+        "fixture": "ESPOIR FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL251",
+      "date": "25/04/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "ASVO FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 251",
+        "date": "25/04/2027",
+        "fixture": "BANI GANSE FC # ASVO FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 28,
+      "matchNumber": "CL252",
+      "date": "25/04/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "POBE",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 252",
+        "date": "25/04/2027",
+        "fixture": "AYEMA FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL253",
+      "date": "01/05/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "AYEMA FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 253",
+        "date": "01/05/2027",
+        "fixture": "ESPOIR FC # AYEMA FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL254",
+      "date": "01/05/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "COTON FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 254",
+        "date": "01/05/2027",
+        "fixture": "SOBEMAP FC # COTON FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL255",
+      "date": "01/05/2027",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 255",
+        "date": "01/05/2027",
+        "fixture": "USS KRAKE FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL256",
+      "date": "01/05/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 256",
+        "date": "01/05/2027",
+        "fixture": "DAMISSA FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL257",
+      "date": "01/05/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "HODIO FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 257",
+        "date": "01/05/2027",
+        "fixture": "CAVALIERS FC # HODIO FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL258",
+      "date": "02/05/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 258",
+        "date": "02/05/2027",
+        "fixture": "DRAGONS FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL259",
+      "date": "02/05/2027",
+      "time": "00H",
+      "homeClub": "ASVO FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 259",
+        "date": "02/05/2027",
+        "fixture": "ASVO FC # LOTO POPO FC",
+        "time": "ADJOHOUN",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL260",
+      "date": "02/05/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "ASPAC FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 260",
+        "date": "02/05/2027",
+        "fixture": "BUFFLES FC # ASPAC FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 29,
+      "matchNumber": "CL261",
+      "date": "02/05/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 10,
+        "matchNumber": "CL 261",
+        "date": "02/05/2027",
+        "fixture": "BANI GANSE FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL262",
+      "date": "08/05/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "HODIO FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 262",
+        "date": "08/05/2027",
+        "fixture": "COTON FC # HODIO FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL263",
+      "date": "08/05/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 263",
+        "date": "08/05/2027",
+        "fixture": "LOTO POPO FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL264",
+      "date": "08/05/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "AYEMA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 264",
+        "date": "08/05/2027",
+        "fixture": "ASPAC FC # AYEMA FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL265",
+      "date": "08/05/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 265",
+        "date": "08/05/2027",
+        "fixture": "DJEFFA FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL266",
+      "date": "08/05/2027",
+      "time": "00H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 266",
+        "date": "08/05/2027",
+        "fixture": "USS KRAKE FC # BANI GANSE FC",
+        "time": "ADJOHOUN",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL267",
+      "date": "09/05/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 267",
+        "date": "09/05/2027",
+        "fixture": "DRAGONS FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL268",
+      "date": "09/05/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "SOBEMAP FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 268",
+        "date": "09/05/2027",
+        "fixture": "DYNAMO FC AB # SOBEMAP FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL269",
+      "date": "09/05/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 269",
+        "date": "09/05/2027",
+        "fixture": "PANTHERES FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 30,
+      "matchNumber": "CL270",
+      "date": "09/05/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "ASVO FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 270",
+        "date": "09/05/2027",
+        "fixture": "AS COTONOU FC # ASVO FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL271",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 271",
+        "date": "15/05/2027",
+        "fixture": "BUFFLES FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL272",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "POBE",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 272",
+        "date": "15/05/2027",
+        "fixture": "AYEMA FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL273",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 273",
+        "date": "15/05/2027",
+        "fixture": "BANI GANSE FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL274",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 274",
+        "date": "15/05/2027",
+        "fixture": "SOBEMAP FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL275",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "COTON FC",
+      "venue": "COME",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 275",
+        "date": "15/05/2027",
+        "fixture": "ASVO FC # COTON FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL276",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "COME",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 276",
+        "date": "15/05/2027",
+        "fixture": "HODIO FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL277",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "ASPAC FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 277",
+        "date": "15/05/2027",
+        "fixture": "DAMISSA FC # ASPAC FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL278",
+      "date": "15/05/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 278",
+        "date": "15/05/2027",
+        "fixture": "ESPOIR FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 31,
+      "matchNumber": "CL279",
+      "date": "16/05/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 279",
+        "date": "16/05/2027",
+        "fixture": "CAVALIERS FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL280",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 280",
+        "date": "22/05/2027",
+        "fixture": "DRAGONS FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL281",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 281",
+        "date": "22/05/2027",
+        "fixture": "USS KRAKE FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL282",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 282",
+        "date": "22/05/2027",
+        "fixture": "AS COTONOU FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL283",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "HODIO FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 283",
+        "date": "22/05/2027",
+        "fixture": "DYNAMO FC AB # HODIO FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL284",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 284",
+        "date": "22/05/2027",
+        "fixture": "COTON FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL285",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 285",
+        "date": "22/05/2027",
+        "fixture": "LOTO POPO FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL286",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "ASVO FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 286",
+        "date": "22/05/2027",
+        "fixture": "PANTHERES FC # ASVO FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL287",
+      "date": "22/05/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "AYEMA FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 287",
+        "date": "22/05/2027",
+        "fixture": "CAVALIERS FC # AYEMA FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 32,
+      "matchNumber": "CL288",
+      "date": "23/05/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 11,
+        "matchNumber": "CL 288",
+        "date": "23/05/2027",
+        "fixture": "ASPAC FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL289",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "AYEMA FC",
+      "awayClub": "DYNAMO FC AB",
+      "venue": "POBE",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 289",
+        "date": "29/05/2027",
+        "fixture": "AYEMA FC # DYNAMO FC AB",
+        "time": "16H",
+        "venue": "POBE"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL290",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "ASVO FC",
+      "awayClub": "CAVALIERS FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 290",
+        "date": "29/05/2027",
+        "fixture": "ASVO FC # CAVALIERS FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL291",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "ESPOIR FC",
+      "awayClub": "COTON FC",
+      "venue": "SAVALOU",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 291",
+        "date": "29/05/2027",
+        "fixture": "ESPOIR FC # COTON FC",
+        "time": "16H",
+        "venue": "SAVALOU"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL292",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "HODIO FC",
+      "awayClub": "LOTO POPO FC",
+      "venue": "COME",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 292",
+        "date": "29/05/2027",
+        "fixture": "HODIO FC # LOTO POPO FC",
+        "time": "16H",
+        "venue": "COME"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL293",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "BANI GANSE FC",
+      "awayClub": "DRAGONS FC",
+      "venue": "BANIKOARA",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 293",
+        "date": "29/05/2027",
+        "fixture": "BANI GANSE FC # DRAGONS FC",
+        "time": "16H",
+        "venue": "BANIKOARA"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL294",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "ASPAC FC",
+      "awayClub": "AS COTONOU FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 294",
+        "date": "29/05/2027",
+        "fixture": "ASPAC FC # AS COTONOU FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL295",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "DJEFFA FC",
+      "awayClub": "USS KRAKE FC",
+      "venue": "DOGBO",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 295",
+        "date": "29/05/2027",
+        "fixture": "DJEFFA FC # USS KRAKE FC",
+        "time": "16H",
+        "venue": "DOGBO"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL296",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "DAMISSA FC",
+      "awayClub": "PANTHERES FC",
+      "venue": "BEMBEREKE",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 296",
+        "date": "29/05/2027",
+        "fixture": "DAMISSA FC # PANTHERES FC",
+        "time": "16H",
+        "venue": "BEMBEREKE"
+      }
+    },
+    {
+      "roundNumber": 33,
+      "matchNumber": "CL297",
+      "date": "29/05/2027",
+      "time": "16H",
+      "homeClub": "BUFFLES FC",
+      "awayClub": "SOBEMAP FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 297",
+        "date": "29/05/2027",
+        "fixture": "BUFFLES FC # SOBEMAP FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL298",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "USS KRAKE FC",
+      "awayClub": "ESPOIR FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 298",
+        "date": "05/06/2027",
+        "fixture": "USS KRAKE FC # ESPOIR FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL299",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "DYNAMO FC AB",
+      "awayClub": "ASPAC FC",
+      "venue": "ABOMEY",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 299",
+        "date": "05/06/2027",
+        "fixture": "DYNAMO FC AB # ASPAC FC",
+        "time": "16H",
+        "venue": "ABOMEY"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL300",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "SOBEMAP FC",
+      "awayClub": "DAMISSA FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 300",
+        "date": "05/06/2027",
+        "fixture": "SOBEMAP FC # DAMISSA FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL301",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "PANTHERES FC",
+      "awayClub": "HODIO FC",
+      "venue": "DJOUGOU",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 301",
+        "date": "05/06/2027",
+        "fixture": "PANTHERES FC # HODIO FC",
+        "time": "16H",
+        "venue": "DJOUGOU"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL302",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "COTON FC",
+      "awayClub": "BUFFLES FC",
+      "venue": "OUIDAH",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 302",
+        "date": "05/06/2027",
+        "fixture": "COTON FC # BUFFLES FC",
+        "time": "16H",
+        "venue": "OUIDAH"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL303",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "AS COTONOU FC",
+      "awayClub": "DJEFFA FC",
+      "venue": "TOFFO",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 303",
+        "date": "05/06/2027",
+        "fixture": "AS COTONOU FC # DJEFFA FC",
+        "time": "16H",
+        "venue": "TOFFO"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL304",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "CAVALIERS FC",
+      "awayClub": "BANI GANSE FC",
+      "venue": "NIKKI",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 304",
+        "date": "05/06/2027",
+        "fixture": "CAVALIERS FC # BANI GANSE FC",
+        "time": "16H",
+        "venue": "NIKKI"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL305",
+      "date": "05/06/2027",
+      "time": "16H",
+      "homeClub": "LOTO POPO FC",
+      "awayClub": "AYEMA FC",
+      "venue": "GRAND POPO",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 305",
+        "date": "05/06/2027",
+        "fixture": "LOTO POPO FC # AYEMA FC",
+        "time": "16H",
+        "venue": "GRAND POPO"
+      }
+    },
+    {
+      "roundNumber": 34,
+      "matchNumber": "CL306",
+      "date": "06/06/2027",
+      "time": "16H",
+      "homeClub": "DRAGONS FC",
+      "awayClub": "ASVO FC",
+      "venue": "AVRANKOU",
+      "source": {
+        "page": 12,
+        "matchNumber": "CL 306",
+        "date": "06/06/2027",
+        "fixture": "DRAGONS FC # ASVO FC",
+        "time": "16H",
+        "venue": "AVRANKOU"
+      }
+    }
+  ],
+  "validation": {
+    "matchCount": 306,
+    "clubCount": 18,
+    "venueCount": 13,
+    "missingNumbers": [],
+    "missingFields": [],
+    "outOfSeason": [],
+    "issues": []
+  }
+}

@@ -1,3 +1,5 @@
+import { PreviewOfficialCalendarDto } from './dto/preview-official-calendar.dto';
+import { OfficialCalendarImportService } from './official-calendar-import.service';
 import {
   Body,
   Controller,
@@ -37,6 +39,7 @@ import { ScheduleMaterializationService } from "./schedule-materialization.servi
 export class CompetitionsController {
   constructor(
     private readonly competitions: CompetitionsService,
+    private readonly officialCalendarImport: OfficialCalendarImportService,
     private readonly materialization: ScheduleMaterializationService,
   ) {}
 
@@ -144,6 +147,32 @@ export class CompetitionsController {
     @Body() input: UpdatePlanningRulesDto,
   ) {
     return this.competitions.updatePlanningRules(actor, competitionId, input);
+  }
+
+
+
+  @Post("competitions/:competitionId/official-calendar/import")
+  @Roles(Role.LIGUE_ADMIN)
+  importOfficialCalendar(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+    @Body() input: PreviewOfficialCalendarDto,
+  ) {
+    return this.officialCalendarImport.importCalendar(
+      actor,
+      competitionId,
+      input,
+    );
+  }
+
+  @Post("competitions/:competitionId/official-calendar/preview")
+  @Roles(Role.LIGUE_ADMIN)
+  previewOfficialCalendar(
+    @CurrentActor() actor: AuthenticatedActor,
+    @Param("competitionId", ParseUUIDPipe) competitionId: string,
+    @Body() input: PreviewOfficialCalendarDto,
+  ) {
+    return this.officialCalendarImport.preview(actor, competitionId, input);
   }
 
   @Get("competitions/:competitionId/fixture-plan/preview")

@@ -5,6 +5,7 @@ import { CompetitionsController } from './competitions.controller';
 import { CompetitionsService } from './competitions.service';
 import { FixturePlannerService } from './fixture-planner.service';
 import { FixtureQualityService } from './fixture-quality.service';
+import { OfficialCalendarImportService } from './official-calendar-import.service';
 import { ScheduleMaterializationService } from './schedule-materialization.service';
 
 @Module({
@@ -14,6 +15,7 @@ import { ScheduleMaterializationService } from './schedule-materialization.servi
     CompetitionsService,
     FixturePlannerService,
     FixtureQualityService,
+    OfficialCalendarImportService,
     ScheduleMaterializationService,
   ],
 })

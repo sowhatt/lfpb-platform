@@ -1,0 +1,339 @@
+from pathlib import Path
+from collections import Counter, defaultdict
+from datetime import datetime
+import json
+import re
+import sys
+
+ROOT = Path("docs/calendriers/ocr")
+OUT = Path("docs/calendriers/structured")
+OUT.mkdir(parents=True, exist_ok=True)
+
+LINE_RE = re.compile(
+    r"conf=(?P<conf>[\d.]+)\s+"
+    r"x=(?P<x>[\d.]+)\s+"
+    r"y=(?P<y>[\d.]+)\s+"
+    r"w=(?P<w>[\d.]+)\s+"
+    r"h=(?P<h>[\d.]+)\s+\|\s+(?P<text>.*)$"
+)
+
+MATCH_RE = re.compile(r"^CL\s*([0-9]{3})$", re.I)
+DATE_RE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
+TIME_RE = re.compile(r"^\d{1,2}H(?:\d{2})?$", re.I)
+
+def read_items(folder):
+    pages = []
+    for path in sorted(folder.glob("page-*.txt")):
+        page_no = int(re.search(r"(\d+)", path.stem).group(1))
+        items = []
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            m = LINE_RE.match(raw.strip())
+            if not m:
+                continue
+            d = m.groupdict()
+            items.append({
+                "page": page_no,
+                "conf": float(d["conf"]),
+                "x": float(d["x"]),
+                "y": float(d["y"]),
+                "w": float(d["w"]),
+                "h": float(d["h"]),
+                "text": d["text"].strip(),
+            })
+        pages.append((page_no, items))
+    return pages
+
+def normalize_match_number(text):
+    m = MATCH_RE.match(text.strip())
+    if not m:
+        return None
+    return f"CL{int(m.group(1)):03d}"
+
+def nearest(items, y, predicate, max_delta=0.018):
+    candidates = [
+        item for item in items
+        if predicate(item) and abs(item["y"] - y) <= max_delta
+    ]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda item: abs(item["y"] - y))
+
+def parse_league(folder, league_name):
+    pages = read_items(folder)
+    rows = []
+
+    for page_no, items in pages:
+        match_items = []
+        for item in items:
+            number = normalize_match_number(item["text"])
+            if number:
+                match_items.append((number, item))
+
+        for number, match_item in match_items:
+            y = match_item["y"]
+
+            date_item = nearest(
+                items, y,
+                lambda i: 0.15 <= i["x"] <= 0.31 and DATE_RE.match(i["text"])
+            )
+
+            fixture_item = nearest(
+                items, y,
+                lambda i: 0.29 <= i["x"] <= 0.66 and "#" in i["text"],
+                0.022
+            )
+
+            time_item = nearest(
+                items, y,
+                lambda i: 0.64 <= i["x"] <= 0.74 and TIME_RE.match(i["text"])
+            )
+
+            venue_item = nearest(
+                items, y,
+                lambda i: 0.73 <= i["x"] <= 0.90
+                and i["text"]
+                and not DATE_RE.match(i["text"])
+                and not TIME_RE.match(i["text"])
+                and "#" not in i["text"],
+                0.022
+            )
+
+            fixture = fixture_item["text"].strip() if fixture_item else ""
+            home = ""
+            away = ""
+
+            if "#" in fixture:
+                home, away = [part.strip() for part in fixture.split("#", 1)]
+
+            numeric = int(number[2:])
+
+            rows.append({
+                "roundNumber": ((numeric - 1) // 9) + 1,
+                "matchNumber": number,
+                "date": date_item["text"].strip() if date_item else "",
+                "time": time_item["text"].strip().upper() if time_item else "",
+                "homeClub": home,
+                "awayClub": away,
+                "venue": venue_item["text"].strip() if venue_item else "",
+                "sourcePage": page_no,
+                "sourceY": round(y, 6),
+            })
+
+    rows.sort(key=lambda r: int(r["matchNumber"][2:]))
+
+    clubs = sorted({
+        club
+        for row in rows
+        for club in (row["homeClub"], row["awayClub"])
+        if club
+    })
+
+    venues = sorted({row["venue"] for row in rows if row["venue"]})
+
+    issues = []
+
+    numbers = [row["matchNumber"] for row in rows]
+    expected_numbers = [f"CL{i:03d}" for i in range(1, 307)]
+
+    if len(rows) != 306:
+        issues.append(f"Nombre de matchs = {len(rows)} au lieu de 306")
+
+    missing_numbers = sorted(set(expected_numbers) - set(numbers))
+    duplicate_numbers = sorted(
+        number for number, count in Counter(numbers).items() if count > 1
+    )
+
+    if missing_numbers:
+        issues.append("Numéros manquants : " + ", ".join(missing_numbers))
+
+    if duplicate_numbers:
+        issues.append("Numéros dupliqués : " + ", ".join(duplicate_numbers))
+
+    round_counts = Counter(row["roundNumber"] for row in rows)
+    bad_rounds = {
+        rnd: count
+        for rnd, count in sorted(round_counts.items())
+        if count != 9
+    }
+    if bad_rounds:
+        issues.append(f"Journées différentes de 9 matchs : {bad_rounds}")
+
+    missing_fields = []
+    for row in rows:
+        for field in ("date", "time", "homeClub", "awayClub", "venue"):
+            if not row[field]:
+                missing_fields.append(f"{row['matchNumber']}:{field}")
+
+    if missing_fields:
+        issues.append(
+            f"Champs manquants ({len(missing_fields)}) : "
+            + ", ".join(missing_fields[:50])
+        )
+
+    if len(clubs) != 18:
+        issues.append(f"Nombre de clubs distincts = {len(clubs)} au lieu de 18")
+
+    club_matches = Counter()
+    home_counts = Counter()
+    away_counts = Counter()
+
+    for row in rows:
+        if row["homeClub"]:
+            club_matches[row["homeClub"]] += 1
+            home_counts[row["homeClub"]] += 1
+        if row["awayClub"]:
+            club_matches[row["awayClub"]] += 1
+            away_counts[row["awayClub"]] += 1
+
+    for club in clubs:
+        if club_matches[club] != 34:
+            issues.append(
+                f"{club}: {club_matches[club]} matchs au lieu de 34"
+            )
+        if home_counts[club] != 17:
+            issues.append(
+                f"{club}: {home_counts[club]} domicile au lieu de 17"
+            )
+        if away_counts[club] != 17:
+            issues.append(
+                f"{club}: {away_counts[club]} extérieur au lieu de 17"
+            )
+
+    pair_counts = Counter()
+    directed_pairs = Counter()
+
+    for row in rows:
+        h = row["homeClub"]
+        a = row["awayClub"]
+        if not h or not a:
+            continue
+        pair_counts[tuple(sorted((h, a)))] += 1
+        directed_pairs[(h, a)] += 1
+
+    bad_pairs = {
+        " / ".join(pair): count
+        for pair, count in pair_counts.items()
+        if count != 2
+    }
+    if bad_pairs:
+        issues.append(
+            f"Confrontations aller-retour incohérentes : {bad_pairs}"
+        )
+
+    for pair, count in pair_counts.items():
+        if count == 2:
+            a, b = pair
+            if directed_pairs[(a, b)] != 1 or directed_pairs[(b, a)] != 1:
+                issues.append(
+                    f"Alternance domicile/extérieur incorrecte : {a} / {b}"
+                )
+
+    out_of_season = []
+    for row in rows:
+        if not row["date"]:
+            continue
+        try:
+            dt = datetime.strptime(row["date"], "%d/%m/%Y")
+        except ValueError:
+            issues.append(
+                f"{row['matchNumber']}: date non reconnue {row['date']}"
+            )
+            continue
+
+        if not (
+            datetime(2026, 9, 1)
+            <= dt
+            <= datetime(2027, 7, 31)
+        ):
+            out_of_season.append(
+                {
+                    "matchNumber": row["matchNumber"],
+                    "date": row["date"],
+                    "homeClub": row["homeClub"],
+                    "awayClub": row["awayClub"],
+                    "venue": row["venue"],
+                }
+            )
+
+    if out_of_season:
+        issues.append(
+            f"{len(out_of_season)} date(s) hors saison"
+        )
+
+    result = {
+        "competition": league_name,
+        "season": "2026-2027",
+        "source": "Calendrier officiel CELTIIS LFPB",
+        "clubs": clubs,
+        "venues": venues,
+        "rows": rows,
+        "validation": {
+            "matchCount": len(rows),
+            "clubCount": len(clubs),
+            "venueCount": len(venues),
+            "roundCounts": dict(sorted(round_counts.items())),
+            "outOfSeason": out_of_season,
+            "issues": issues,
+        },
+    }
+
+    slug = "ligue1" if "1" in league_name else "ligue2"
+    path = OUT / f"{slug}-2026-2027.json"
+    path.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    return result, path
+
+def show(result, path):
+    print()
+    print("=" * 72)
+    print(result["competition"])
+    print("=" * 72)
+    print("Fichier :", path)
+    print("Matchs  :", result["validation"]["matchCount"])
+    print("Clubs   :", result["validation"]["clubCount"])
+    print("Stades  :", result["validation"]["venueCount"])
+
+    print()
+    print("CLUBS")
+    for club in result["clubs"]:
+        print(" -", club)
+
+    print()
+    print("STADES")
+    for venue in result["venues"]:
+        print(" -", venue)
+
+    print()
+    print("DATES HORS SAISON")
+    if result["validation"]["outOfSeason"]:
+        for row in result["validation"]["outOfSeason"]:
+            print(
+                f" - {row['matchNumber']} | {row['date']} | "
+                f"{row['homeClub']} - {row['awayClub']} | "
+                f"{row['venue']}"
+            )
+    else:
+        print(" - aucune")
+
+    print()
+    print("ANOMALIES")
+    if result["validation"]["issues"]:
+        for issue in result["validation"]["issues"]:
+            print(" -", issue)
+    else:
+        print(" - aucune")
+
+l1, l1_path = parse_league(ROOT / "ligue1", "Ligue 1")
+l2, l2_path = parse_league(ROOT / "ligue2", "Ligue 2")
+
+show(l1, l1_path)
+show(l2, l2_path)
+
+if l1["validation"]["matchCount"] != 306:
+    sys.exit(2)
+
+if l2["validation"]["matchCount"] != 306:
+    sys.exit(3)
