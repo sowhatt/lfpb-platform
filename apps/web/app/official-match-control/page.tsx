@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MatchSheetSignaturesPanel } from '../match-sheet-signatures-panel';
 import { OfficialLiveMatchControl } from '../official-live-match-control';
 import { OfficialFourthOfficialWorkspace } from '../official-fourth-official-workspace';
 import { OfficialAssistantRefereeWorkspace } from '../official-assistant-referee-workspace';
 import { OfficialAdministrativeWorkspace } from '../official-administrative-workspace';
-import { OfficialMatchPlayerControlGpt } from '../official-match-player-control-gpt';
+import { OfficialRefereeWorkspace } from '../official-referee-workspace';
 import { OfficialPostMatchReport } from '../official-post-match-report';
-import { OfficialPreMatchGate } from '../official-pre-match-gate';
 
 type Actor = {
   email: string;
@@ -304,6 +302,12 @@ export default function OfficialMatchControlPage() {
             matchId={matchId}
             assignmentRole={assignmentRole}
           />
+        ) : assignmentRole === 'REFEREE' ? (
+          <OfficialRefereeWorkspace
+            token={token}
+            matchId={matchId}
+            memberships={actor.memberships}
+          />
         ) : (
           <>
             <OfficialLiveMatchControl
@@ -312,23 +316,10 @@ export default function OfficialMatchControlPage() {
               assignmentRole={assignmentRole}
             />
 
-            {assignmentRole === 'REFEREE' && (
-              <OfficialPreMatchGate token={token} matchId={matchId} />
-            )}
-
-            {assignmentRole === 'REFEREE' && (
-              <OfficialMatchPlayerControlGpt token={token} matchId={matchId} />
-            )}
-
-            <OfficialPostMatchReport token={token} matchId={matchId} />
-
-            {assignmentRole === 'REFEREE' && (
-              <MatchSheetSignaturesPanel
-                token={token}
-                matchId={matchId}
-                memberships={actor.memberships}
-              />
-            )}
+            <OfficialPostMatchReport
+              token={token}
+              matchId={matchId}
+            />
           </>
         )}
       </section>

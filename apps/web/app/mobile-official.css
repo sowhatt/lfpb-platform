@@ -700,3 +700,189 @@
     padding: 15px;
   }
 }
+
+.referee-workspace {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+}
+
+.referee-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  align-items: flex-start;
+  padding: 26px;
+  border-radius: 18px;
+  background: #0b2c48;
+  color: #fff;
+}
+
+.referee-hero label {
+  color: #dfba54;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.referee-hero h2 {
+  margin: 7px 0 8px;
+  color: #fff;
+}
+
+.referee-hero p {
+  max-width: 760px;
+  margin: 0;
+  color: #c0cbd5;
+  line-height: 1.5;
+}
+
+.referee-role-chip {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(223, 186, 84, .45);
+  border-radius: 999px;
+  background: rgba(223, 186, 84, .12);
+  color: #f1cf72;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.referee-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.referee-steps article {
+  display: flex;
+  gap: 12px;
+  padding: 17px;
+  border: 1px solid #dfe6eb;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.referee-steps article > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #0b2c48;
+  color: #dfba54;
+  font-weight: 900;
+}
+
+.referee-steps strong {
+  display: block;
+  color: #17283d;
+}
+
+.referee-steps small {
+  display: block;
+  margin-top: 5px;
+  color: #748191;
+  line-height: 1.4;
+}
+
+.referee-authority {
+  padding: 18px;
+  border: 1px solid #dce4e9;
+  border-radius: 14px;
+  background: #f7f9fa;
+}
+
+.referee-authority > strong {
+  display: block;
+  margin-bottom: 11px;
+  color: #17283d;
+}
+
+.referee-authority > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.referee-authority span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #e7f4ec;
+  color: #27704d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.referee-stage {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #dfe6eb;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.referee-stage-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #edf1f3;
+}
+
+.referee-stage-title > span {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: #0b2c48;
+  color: #dfba54;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.referee-stage-title strong {
+  display: block;
+  color: #17283d;
+}
+
+.referee-stage-title small {
+  display: block;
+  margin-top: 3px;
+  color: #748191;
+}
+
+.referee-stage-final {
+  border-color: #d8c078;
+}
+
+@media (max-width: 900px) {
+  .referee-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .referee-hero {
+    display: block;
+    padding: 18px;
+  }
+
+  .referee-role-chip {
+    display: inline-flex;
+    margin-top: 14px;
+  }
+
+  .referee-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .referee-stage {
+    padding: 14px;
+  }
+
+  .referee-stage-title {
+    align-items: flex-start;
+  }
+}
