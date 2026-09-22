@@ -22,7 +22,14 @@ export function navigationForSpace(space: Space): string[] {
     ];
   }
   if (space === "OFFICIEL") {
-    return ["Vue d’ensemble", "Mes rencontres", "Assistant vocal", "Stades"];
+    return [
+      "Accueil",
+      "Mes missions",
+      "Match du jour",
+      "Rapports",
+      "Historique",
+      "Assistant vocal",
+    ];
   }
   return [
     "Vue d’ensemble",

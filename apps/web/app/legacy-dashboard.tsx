@@ -281,7 +281,7 @@ export default function HomePage() {
       : space === 'CLUB'
         ? ['Vue d’ensemble', 'Effectif', 'Calendrier', 'Licences']
         : space === 'OFFICIEL'
-          ? ['Vue d’ensemble', 'Mes rencontres', 'Assistant vocal', 'Stades']
+          ? ['Accueil', 'Mes missions', 'Match du jour', 'Assistant vocal']
           : nav.slice(0, 4);
 
   const mobileSecondary = nav.filter(
@@ -319,7 +319,23 @@ export default function HomePage() {
             items: ['Référentiel compétitions'],
           },
         ]
-      : [{ label: '', items: nav }];
+      : space === 'OFFICIEL'
+        ? [
+            { label: '', items: ['Accueil'] },
+            {
+              label: 'MISSIONS',
+              items: ['Mes missions', 'Match du jour'],
+            },
+            {
+              label: 'APRÈS-MATCH',
+              items: ['Rapports', 'Historique'],
+            },
+            {
+              label: 'OUTILS',
+              items: ['Assistant vocal'],
+            },
+          ]
+        : [{ label: '', items: nav }];
 
   const navigationIcon = (item: string) => {
     const icons: Record<string, string> = {
@@ -329,6 +345,11 @@ export default function HomePage() {
       'Calendrier': '▦',
       'Rencontres': '⚽',
       'Mes rencontres': '⚽',
+      'Accueil': '⌂',
+      'Mes missions': '◎',
+      'Match du jour': '⚽',
+      'Rapports': '▧',
+      'Historique': '◷',
       'Clubs': '⬡',
       'Référentiel compétitions': '◫',
       'Classement & statistiques': '▤',
@@ -354,6 +375,12 @@ export default function HomePage() {
     setActive(item);
     setMobileMoreOpen(false);
   };
+  useEffect(() => {
+    if (space === 'OFFICIEL' && active === 'Vue d’ensemble') {
+      setActive('Accueil');
+    }
+  }, [space, active]);
+
   const upcoming = useMemo(() => [...visibleMatches].sort((a, b) => (a.kickoffAt ?? '').localeCompare(b.kickoffAt ?? '')).slice(0, 5), [visibleMatches]);
 
   if (!token || !actor) return <LoginScreen loading={loading} error={error} onSubmit={login} />;

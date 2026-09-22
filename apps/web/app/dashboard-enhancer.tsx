@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ClubAiAssistant } from "./club-ai-assistant";
 import { ClubMatchSignaturesWorkspace } from "./club-match-signatures-workspace";
 import { OfficialMissionsWorkspace } from "./official-missions-workspace";
+import { OfficialPortalWorkspace } from "./official-portal-workspace";
 import { LeagueCompetitionCalendar } from "./league-competition-calendar";
 import { LeagueOfficialCalendar } from "./league-official-calendar";
 import { LeagueMatchHomologation } from "./league-match-homologation";
@@ -84,7 +85,11 @@ export function DashboardEnhancer() {
   const membership = actor?.memberships?.[0];
   const enhanced =
     active === "Assistant IA" ||
-    active === "Mes rencontres" ||
+    active === "Mes missions" ||
+    active === "Accueil" ||
+    active === "Match du jour" ||
+    active === "Rapports" ||
+    active === "Historique" ||
     active === "Feuilles de match" ||
     active === "Calendrier officiel" ||
     active === "Calendrier assisté par IA" ||
@@ -197,8 +202,20 @@ export function DashboardEnhancer() {
       return (
         <ClubMatchSignaturesWorkspace token={token} membership={membership} />
       );
-    if (active === "Mes rencontres" && membership.role === "OFFICIEL")
+    if (active === "Accueil" && membership.role === "OFFICIEL")
+      return <OfficialPortalWorkspace token={token} mode="HOME" />;
+
+    if (active === "Mes missions" && membership.role === "OFFICIEL")
       return <OfficialMissionsWorkspace token={token} />;
+
+    if (active === "Match du jour" && membership.role === "OFFICIEL")
+      return <OfficialPortalWorkspace token={token} mode="TODAY" />;
+
+    if (active === "Rapports" && membership.role === "OFFICIEL")
+      return <OfficialPortalWorkspace token={token} mode="REPORTS" />;
+
+    if (active === "Historique" && membership.role === "OFFICIEL")
+      return <OfficialPortalWorkspace token={token} mode="HISTORY" />;
     return null;
   }, [active, membership, token]);
 
