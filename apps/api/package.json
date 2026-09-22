@@ -23,7 +23,8 @@
     "db:seed:professional-match-e2e": "ts-node prisma/seed-professional-match-e2e.ts",
     "db:studio": "prisma studio",
     "db:seed:official": "ts-node prisma/seed-official.ts",
-    "db:seed:league-demo": "ts-node prisma/seed-league-demo.ts"
+    "db:seed:league-demo": "ts-node prisma/seed-league-demo.ts",
+    "db:seed:official-recipe": "ts-node prisma/seed-official-recipe.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
