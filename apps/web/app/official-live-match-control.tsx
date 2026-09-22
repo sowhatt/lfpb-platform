@@ -59,6 +59,52 @@ const ROLE_LABELS: Record<OfficialMatchRole, string> = {
   DELEGATE: 'Délégué',
 };
 
+const ROLE_ASSISTANT_COPY: Record<
+  OfficialMatchRole,
+  {
+    title: string;
+    description: string;
+    placeholder: string;
+  }
+> = {
+  REFEREE: {
+    title: 'Préparer un événement de match',
+    description:
+      'Buts, cartons, remplacements, blessures, incidents et observations peuvent être préparés par saisie ou par la voix.',
+    placeholder: 'Ex. Carton jaune numéro 5 Dragons',
+  },
+  ASSISTANT_REFEREE_1: {
+    title: 'Signaler un fait de terrain',
+    description:
+      'Enregistrez uniquement une observation ou un incident relevant de votre mission d’assistant.',
+    placeholder: 'Ex. Observation : comportement dans ma zone à la 34e minute',
+  },
+  ASSISTANT_REFEREE_2: {
+    title: 'Signaler un fait de terrain',
+    description:
+      'Enregistrez uniquement une observation ou un incident relevant de votre mission d’assistant.',
+    placeholder: 'Ex. Incident près de la ligne de touche à la 58e minute',
+  },
+  FOURTH_OFFICIAL: {
+    title: 'Remplacement, incident ou observation',
+    description:
+      'Gérez les changements et documentez les faits autour des bancs et de la zone technique.',
+    placeholder: 'Ex. Remplacement : numéro 9 sort, numéro 18 entre pour Dragons',
+  },
+  MATCH_COMMISSIONER: {
+    title: 'Observation organisationnelle',
+    description:
+      'Consignez un incident ou une observation concernant l’organisation de la rencontre.',
+    placeholder: 'Ex. Incident : accès vestiaires retardé avant le coup d’envoi',
+  },
+  DELEGATE: {
+    title: 'Observation de délégation',
+    description:
+      'Consignez les faits administratifs, protocolaires ou organisationnels relevant de votre mission.',
+    placeholder: 'Ex. Observation : contrôle protocolaire effectué avant la rencontre',
+  },
+};
+
 export function OfficialLiveMatchControl({
   token,
   matchId,
@@ -73,6 +119,7 @@ export function OfficialLiveMatchControl({
  const canManageSheet=assignmentRole==='REFEREE';
  const allowedEventTypes=ROLE_EVENT_PERMISSIONS[assignmentRole]??[];
  const roleLabel=ROLE_LABELS[assignmentRole]??assignmentRole;
+ const assistantCopy=ROLE_ASSISTANT_COPY[assignmentRole];
 
  const playersById=useMemo(()=>{const map=new Map<string,SheetPlayer>();sheet?.players.forEach((p)=>map.set(p.registrationId,p));return map;},[sheet]); const profilesById=useMemo(()=>new Map(matchPlayers.map((p)=>[p.registrationId,p])),[matchPlayers]); const clock=useMemo(()=>clockFromEvents(live?.events??[],now),[live?.events,now]); const clockDisplay=displayMatchClock(clock),autoClock=officialClockMinute(clock),autoMinute=autoClock.minute;
  async function refresh(){const [sheetData,liveData,playerData]=await Promise.all([request<MatchSheet>(`/matches/${matchId}/sheet`,token),request<LiveState>(`/matches/${matchId}/events`,token),request<{players:MatchPlayer[]}>(`/official-match-access/${matchId}/players`,token)]);setSheet(sheetData);setLive(liveData);setMatchPlayers(playerData.players??[]);} useEffect(()=>{void refresh().catch((reason)=>setError(reason instanceof Error?reason.message:'Chargement impossible'));},[matchId,token]); useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),1000);return()=>window.clearInterval(timer);},[]); useEffect(()=>{if(!manualMinute&&clock.running)setMinute(autoMinute);},[autoMinute,clock.running,manualMinute]); useEffect(()=>{if(draft)window.setTimeout(()=>draftRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),50);},[draft]);
@@ -85,6 +132,6 @@ export function OfficialLiveMatchControl({
  {match?.status==='IN_PROGRESS'&&<div style={{marginTop:12,padding:14,border:'1px solid #dbe3ea',borderRadius:12,display:'flex',justifyContent:'space-between',gap:14,alignItems:'center',flexWrap:'wrap'}}><div><label>CHRONO OFFICIEL · {periodLabel(clock.period).toUpperCase()}</label><div style={{fontSize:30,fontWeight:900,marginTop:4}}>{clock.legacyClock?'Chrono historique non repris':clockDisplay.timeLabel}</div><small>{clock.legacyClock?'Ancien match de test : utilisez une nouvelle rencontre pour démarrer un chrono fiable.':manualMinute?`Correction manuelle active : ${minute}'`:`Minute événement automatique : ${autoClock.label}'`}</small></div>{manualMinute&&<button type="button" onClick={()=>{setManualMinute(false);setMinute(autoMinute);}}>↻ Reprendre le chrono</button>}</div>}
  <div className="workspace-actions" style={{marginTop:12,alignItems:'center'}}>{canManageSheet&&sheet?.status==='SUBMITTED'&&!sheet.validatedAt&&<button type="button" disabled={Boolean(busy)} onClick={()=>void action('Validation de la feuille',()=>post(`/matches/${matchId}/sheet/validate`))}>Valider la feuille</button>}{canManageSheet&&sheet?.status==='SUBMITTED'&&sheet.validatedAt&&<button type="button" disabled={Boolean(busy)} onClick={()=>void action('Verrouillage de la feuille',()=>post(`/matches/${matchId}/sheet/lock`))}>🔒 Verrouiller la feuille</button>}{canManageLifecycle&&sheet?.status==='LOCKED'&&match?.status==='SCHEDULED'&&<button type="button" disabled={Boolean(busy)} onClick={()=>void action('Coup d’envoi',()=>postEvent('MATCH_START'))}>▶ Coup d’envoi</button>}{canManageLifecycle&&sheet?.status==='LOCKED'&&match?.status==='IN_PROGRESS'&&<><label style={{display:'flex',alignItems:'center',gap:8}}>Minute événement<input style={{width:78}} type="number" min={0} max={130} value={manualMinute?minute:autoMinute} onChange={(event)=>{setMinute(Number(event.target.value));setManualMinute(true);}} /></label><button type="button" disabled={Boolean(busy)||clock.period==='HALF_TIME'||clock.legacyClock} onClick={()=>void action('Mi-temps',()=>postEvent('HALF_TIME'))}>Mi-temps</button><button type="button" disabled={Boolean(busy)||clock.period!=='HALF_TIME'||clock.legacyClock} onClick={()=>void action('Reprise',()=>postEvent('SECOND_HALF_START'))}>Reprise</button><button type="button" disabled={Boolean(busy)||clock.legacyClock} onClick={()=>void action('Fin du match',()=>postEvent('MATCH_END'))}>■ Fin du match</button></>}</div>
  <div style={{marginTop:20}}><h3>Compositions de la feuille de match</h3><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:14}}>{[{title:homeName,players:homePlayers},{title:awayName,players:awayPlayers}].map((team)=><div key={team.title} className="draft-warning" style={{margin:0}}><strong>{team.title} · {team.players.length} joueur(s)</strong>{team.players.map((player)=><div key={player.registrationId} style={{marginTop:8}}><b>#{player.shirtNumber}</b> · {playerName(player)}{player.role?` · ${player.role==='STARTER'?'Titulaire':player.role==='SUBSTITUTE'?'Remplaçant':player.role}`:''}</div>)}</div>)}</div></div>
- <div className="workspace-actions" style={{marginTop:20,display:'block'}}><label>ASSISTANT DIGITAL · {roleLabel.toUpperCase()}</label><h3>Préparer un événement autorisé</h3><p>Digital Foot adapte les événements disponibles à votre rôle officiel sur cette rencontre.</p><form onSubmit={analyzeCommand} style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:12}}><input value={command} onChange={(event)=>{setCommand(event.target.value);setError('');setMessage('');setDraft(null);}} placeholder="Ex. Carton jaune numéro 5 Dragons" style={{flex:'1 1 420px'}}/><OfficialLiveTranscriber token={token} disabled={Boolean(busy)||clock.legacyClock} onListeningChange={setDictating} onDelta={(text)=>{setError('');setMessage('');setDraft(null);setCommand(text);}} onFinal={async(text)=>{setCommand(text);await analyzeText(text);}} onError={(liveError)=>setError(liveError)}/><button type="submit" disabled={Boolean(busy)||dictating||!command.trim()||clock.legacyClock}>{dictating?'Dictée en cours…':busy==='Analyse'?'Analyse…':'Analyser'}</button></form>{draft&&<div ref={draftRef} className="draft-warning" style={{marginTop:14,border:'2px solid #eab308'}}><strong>À CONFIRMER · {eventLabels[draft.type]}</strong><div style={{marginTop:6}}>{draft.teamName&&<span>{draft.teamName} · </span>}{draft.player&&<span>N°{draft.player.shirtNumber} · {playerName(draft.player)} · </span>}{draft.secondaryPlayer&&<span>entrant N°{draft.secondaryPlayer.shirtNumber} · {playerName(draft.secondaryPlayer)} · </span>}<span>{draft.minute}e minute</span></div>{!liveReady&&<p style={{marginTop:8}}>La confirmation sera disponible après validation, verrouillage de la feuille et coup d’envoi.</p>}<div style={{marginTop:10,display:'flex',gap:8}}><button type="button" disabled={!liveReady||Boolean(busy)||clock.legacyClock} onClick={()=>void confirmDraft()}>✓ Confirmer et enregistrer</button><button type="button" disabled={Boolean(busy)} onClick={()=>setDraft(null)}>Annuler</button></div></div>}</div>
+ <div className="workspace-actions" style={{marginTop:20,display:'block'}}><label>ASSISTANT DIGITAL · {roleLabel.toUpperCase()}</label><h3>{assistantCopy.title}</h3><p>{assistantCopy.description}</p><form onSubmit={analyzeCommand} style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:12}}><input value={command} onChange={(event)=>{setCommand(event.target.value);setError('');setMessage('');setDraft(null);}} placeholder={assistantCopy.placeholder} style={{flex:'1 1 420px'}}/><OfficialLiveTranscriber token={token} disabled={Boolean(busy)||clock.legacyClock} onListeningChange={setDictating} onDelta={(text)=>{setError('');setMessage('');setDraft(null);setCommand(text);}} onFinal={async(text)=>{setCommand(text);await analyzeText(text);}} onError={(liveError)=>setError(liveError)}/><button type="submit" disabled={Boolean(busy)||dictating||!command.trim()||clock.legacyClock}>{dictating?'Dictée en cours…':busy==='Analyse'?'Analyse…':'Analyser'}</button></form>{draft&&<div ref={draftRef} className="draft-warning" style={{marginTop:14,border:'2px solid #eab308'}}><strong>À CONFIRMER · {eventLabels[draft.type]}</strong><div style={{marginTop:6}}>{draft.teamName&&<span>{draft.teamName} · </span>}{draft.player&&<span>N°{draft.player.shirtNumber} · {playerName(draft.player)} · </span>}{draft.secondaryPlayer&&<span>entrant N°{draft.secondaryPlayer.shirtNumber} · {playerName(draft.secondaryPlayer)} · </span>}<span>{draft.minute}e minute</span></div>{!liveReady&&<p style={{marginTop:8}}>La confirmation sera disponible après validation, verrouillage de la feuille et coup d’envoi.</p>}<div style={{marginTop:10,display:'flex',gap:8}}><button type="button" disabled={!liveReady||Boolean(busy)||clock.legacyClock} onClick={()=>void confirmDraft()}>✓ Confirmer et enregistrer</button><button type="button" disabled={Boolean(busy)} onClick={()=>setDraft(null)}>Annuler</button></div></div>}</div>
  <div style={{marginTop:18}}><h3>Événements en direct</h3>{live?.events.length?<div style={{display:'grid',gap:10}}>{[...live.events].reverse().map((event)=>{const player=event.registrationId?playersById.get(event.registrationId):undefined,profile=event.registrationId?profilesById.get(event.registrationId):undefined,card=cardVisual(event.type),initials=profile?`${profile.firstName?.[0]??''}${profile.lastName?.[0]??''}`:player?`${player.registration.person.firstName[0]}${player.registration.person.lastName[0]}`:'';return <div key={event.id} style={{display:'flex',alignItems:'center',gap:12,padding:12,border:card?`1px solid ${card.card}`:'1px solid #dbe3ea',borderRadius:12,background:card?.background??'#fff'}}><strong style={{minWidth:42,fontSize:18}}>{eventMinuteLabel(event)}</strong>{card&&<span style={{width:18,height:28,borderRadius:3,background:card.card,display:'inline-block'}}/>}{profile?.photoDataUrl?<img src={profile.photoDataUrl} alt={profile.fullName} style={{width:54,height:54,borderRadius:10,objectFit:'cover'}}/>:player?<div style={{width:54,height:54,borderRadius:10,display:'grid',placeItems:'center',background:'#e8edf2',fontWeight:800}}>{initials}</div>:null}<div style={{flex:1}}><strong style={{display:'block',color:card?.foreground}}>{eventLabels[event.type]??event.type}</strong>{player&&<span>{playerName(player)} · N°{player.shirtNumber} · {player.club.organization.name}</span>}{event.description&&<span style={{display:'block',marginTop:4}}>{event.description}</span>}</div>{event.scoreAfter&&<strong>{event.scoreAfter.home} - {event.scoreAfter.away}</strong>}</div>;})}</div>:<p>Aucun événement enregistré.</p>}</div></section>;
 }

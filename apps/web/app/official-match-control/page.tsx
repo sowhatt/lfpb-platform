@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { MatchSheetSignaturesPanel } from '../match-sheet-signatures-panel';
 import { OfficialLiveMatchControl } from '../official-live-match-control';
+import { OfficialFourthOfficialWorkspace } from '../official-fourth-official-workspace';
 import { OfficialMatchPlayerControlGpt } from '../official-match-player-control-gpt';
 import { OfficialPostMatchReport } from '../official-post-match-report';
 import { OfficialPreMatchGate } from '../official-pre-match-gate';
@@ -282,25 +283,37 @@ export default function OfficialMatchControlPage() {
       </header>
 
       <section className="official-match-flow portal-content">
-        <OfficialLiveMatchControl
-          token={token}
-          matchId={matchId}
-          assignmentRole={assignmentRole}
-        />
-        {assignmentRole === 'REFEREE' && (
-          <OfficialPreMatchGate token={token} matchId={matchId} />
-        )}
-        {assignmentRole === 'REFEREE' && (
-          <OfficialMatchPlayerControlGpt token={token} matchId={matchId} />
-        )}
-        <OfficialPostMatchReport token={token} matchId={matchId} />
+        {assignmentRole === 'FOURTH_OFFICIAL' ? (
+          <OfficialFourthOfficialWorkspace
+            token={token}
+            matchId={matchId}
+          />
+        ) : (
+          <>
+            <OfficialLiveMatchControl
+              token={token}
+              matchId={matchId}
+              assignmentRole={assignmentRole}
+            />
 
-        {assignmentRole === 'REFEREE' && (
-        <MatchSheetSignaturesPanel
-          token={token}
-          matchId={matchId}
-          memberships={actor.memberships}
-        />
+            {assignmentRole === 'REFEREE' && (
+              <OfficialPreMatchGate token={token} matchId={matchId} />
+            )}
+
+            {assignmentRole === 'REFEREE' && (
+              <OfficialMatchPlayerControlGpt token={token} matchId={matchId} />
+            )}
+
+            <OfficialPostMatchReport token={token} matchId={matchId} />
+
+            {assignmentRole === 'REFEREE' && (
+              <MatchSheetSignaturesPanel
+                token={token}
+                matchId={matchId}
+                memberships={actor.memberships}
+              />
+            )}
+          </>
         )}
       </section>
     </main>
