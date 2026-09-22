@@ -8,6 +8,7 @@ import {
   LicenseStatus,
   MatchEligibilityStatus,
   MatchOfficialAssignmentStatus,
+  MatchOfficialRole,
   MatchSheetSide,
   MatchSheetStatus,
   RegistrationCategory,
@@ -587,10 +588,20 @@ export class MatchSheetsService {
       });
 
       if (!assignment) {
-        throw new ForbiddenException('Cet officiel n’est pas affecté et confirmé sur cette rencontre');
+        throw new ForbiddenException(
+          'Cet officiel n’est pas affecté et confirmé sur cette rencontre',
+        );
+      }
+
+      if (assignment.role !== MatchOfficialRole.REFEREE) {
+        throw new ForbiddenException(
+          'Seul l’arbitre central désigné peut valider ou verrouiller la feuille de match',
+        );
       }
     }
 
-    return isLeagueAdmin ? Role.LIGUE_ADMIN : Role.OFFICIEL;
+    return isLeagueAdmin
+      ? Role.LIGUE_ADMIN
+      : MatchOfficialRole.REFEREE;
   }
 }

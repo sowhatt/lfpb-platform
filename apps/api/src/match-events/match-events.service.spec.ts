@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import {
+  MatchOfficialRole,
   MatchSheetPlayerRole,
   MatchSheetStatus,
   MatchStatus,
@@ -37,6 +38,7 @@ describe('MatchEventsService - substitutions', () => {
     officialAssignments: [
       {
         officialProfileId: 'official-registration',
+        role: MatchOfficialRole.REFEREE,
       },
     ],
   };

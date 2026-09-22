@@ -1,5 +1,6 @@
 import {
   MatchOfficialAssignmentStatus,
+  MatchOfficialRole,
   MatchSheetStatus,
   Role,
 } from '@prisma/client';
@@ -19,7 +20,11 @@ describe('MatchSheetPlayerControlsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.officialProfile.findUnique.mockResolvedValue({ registrationId: 'official-registration' });
-    prisma.matchOfficialAssignment.findFirst.mockResolvedValue({ id: 'assignment', status: MatchOfficialAssignmentStatus.ACCEPTED });
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue({
+      id: 'assignment',
+      status: MatchOfficialAssignmentStatus.ACCEPTED,
+      role: MatchOfficialRole.REFEREE,
+    });
   });
 
   it('persists a verified control by the assigned official', async () => {
@@ -39,6 +44,59 @@ describe('MatchSheetPlayerControlsService', () => {
         resourceId: 'sheet-player-home',
       }),
     }));
+  });
+
+  it('allows an assigned assistant to read player controls', async () => {
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue({
+      id: 'assignment',
+      status: MatchOfficialAssignmentStatus.ACCEPTED,
+      role: MatchOfficialRole.ASSISTANT_REFEREE_1,
+    });
+
+    prisma.matchSheet.findUnique.mockResolvedValue({
+      id: 'sheet',
+      status: MatchSheetStatus.SUBMITTED,
+      players: [
+        {
+          id: 'sheet-player-home',
+          registrationId: 'registration-home',
+          clubId: 'home-club',
+          side: 'HOME',
+          role: 'STARTER',
+          shirtNumber: 8,
+        },
+      ],
+    });
+
+    prisma.auditLog.findMany.mockResolvedValue([]);
+
+    const result = await service.list(officialActor(), 'match');
+
+    expect(result.total).toBe(1);
+    expect(result.pending).toBe(1);
+  });
+
+  it('blocks an assistant from validating a player on the field', async () => {
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue({
+      id: 'assignment',
+      status: MatchOfficialAssignmentStatus.ACCEPTED,
+      role: MatchOfficialRole.ASSISTANT_REFEREE_1,
+    });
+
+    await expect(
+      service.controlPlayer(
+        officialActor(),
+        'match',
+        'registration-home',
+        {
+          status: MatchSheetPlayerControlStatus.VERIFIED,
+        },
+      ),
+    ).rejects.toThrow(
+      'Seul l’arbitre central désigné peut valider le contrôle terrain des joueurs',
+    );
+
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
   });
 
   it('requires a reason when an anomaly is reported', async () => {

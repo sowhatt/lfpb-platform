@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   MatchOfficialAssignmentStatus,
+  MatchOfficialRole,
   MatchSheetStatus,
   MatchStatus,
   Prisma,
@@ -367,6 +368,7 @@ export class MatchEventsService {
 
   async create(actor: AuthenticatedActor, matchId: string, input: CreateMatchEventDto) {
     const match = await this.getAuthorizedMatch(actor, matchId, true);
+    await this.assertCanCreateEvent(actor, match, input.type);
     this.assertEventAllowed(match.status, input.type);
     await this.assertLifecycleSequence(matchId, input.type);
     this.assertClubBelongsToMatch(match, input.clubId);
@@ -537,13 +539,149 @@ export class MatchEventsService {
     });
   }
 
-  private async getAuthorizedMatch(actor: AuthenticatedActor, matchId: string, write: boolean) {
-    const match = await this.prisma.match.findUnique({ where: { id: matchId }, include: { competition: true, homeClub: true, awayClub: true, matchSheet: true, officialAssignments: { where: { status: MatchOfficialAssignmentStatus.ACCEPTED }, include: { officialProfile: true } } } });
-    if (!match) throw new NotFoundException('Rencontre introuvable');
-    const isLeagueAdmin = actor.memberships.some((membership) => membership.role === Role.LIGUE_ADMIN); const isOfficial = actor.memberships.some((membership) => membership.role === Role.OFFICIEL);
-    if (!write && (isLeagueAdmin || isOfficial)) return match; if (isLeagueAdmin) return match;
-    if (isOfficial) { const officialProfile = await this.prisma.officialProfile.findUnique({ where: { userId: actor.userId } }); const assigned = match.officialAssignments.some((assignment) => assignment.officialProfileId === officialProfile?.registrationId); if (assigned) return match; }
-    throw new ForbiddenException(write ? 'Seul un officiel affecté ou la Ligue peut saisir les événements du match' : 'Accès interdit à ce match');
+  private async getAuthorizedMatch(
+    actor: AuthenticatedActor,
+    matchId: string,
+    write: boolean,
+  ) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        competition: true,
+        homeClub: true,
+        awayClub: true,
+        matchSheet: true,
+        officialAssignments: {
+          where: { status: MatchOfficialAssignmentStatus.ACCEPTED },
+          include: { officialProfile: true },
+        },
+      },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Rencontre introuvable');
+    }
+
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
+    if (isLeagueAdmin) {
+      return match;
+    }
+
+    const isOfficial = actor.memberships.some(
+      (membership) => membership.role === Role.OFFICIEL,
+    );
+
+    if (isOfficial) {
+      const officialProfile = await this.prisma.officialProfile.findUnique({
+        where: { userId: actor.userId },
+        select: { registrationId: true },
+      });
+
+      const assigned =
+        officialProfile &&
+        match.officialAssignments.some(
+          (assignment) =>
+            assignment.officialProfileId === officialProfile.registrationId,
+        );
+
+      if (assigned) {
+        return match;
+      }
+    }
+
+    throw new ForbiddenException(
+      write
+        ? 'Seul un officiel affecté et confirmé ou la Ligue peut agir sur ce match'
+        : 'Vous n’êtes pas désigné sur cette rencontre',
+    );
+  }
+
+  private async assertCanCreateEvent(
+    actor: AuthenticatedActor,
+    match: {
+      officialAssignments: Array<{
+        officialProfileId: string;
+        role: MatchOfficialRole;
+      }>;
+    },
+    type: LiveMatchEventType,
+  ) {
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
+    if (isLeagueAdmin) return;
+
+    const officialProfile = await this.prisma.officialProfile.findUnique({
+      where: { userId: actor.userId },
+      select: { registrationId: true },
+    });
+
+    if (!officialProfile) {
+      throw new ForbiddenException('Profil officiel introuvable');
+    }
+
+    const assignment = match.officialAssignments.find(
+      (item) =>
+        item.officialProfileId === officialProfile.registrationId,
+    );
+
+    if (!assignment) {
+      throw new ForbiddenException(
+        'Vous n’êtes pas désigné et confirmé sur cette rencontre',
+      );
+    }
+
+    const allowedByRole: Record<
+      MatchOfficialRole,
+      LiveMatchEventType[]
+    > = {
+      [MatchOfficialRole.REFEREE]: [
+        LiveMatchEventType.MATCH_START,
+        LiveMatchEventType.HALF_TIME,
+        LiveMatchEventType.SECOND_HALF_START,
+        LiveMatchEventType.GOAL,
+        LiveMatchEventType.YELLOW_CARD,
+        LiveMatchEventType.RED_CARD,
+        LiveMatchEventType.SUBSTITUTION,
+        LiveMatchEventType.INCIDENT,
+        LiveMatchEventType.INJURY,
+        LiveMatchEventType.OBSERVATION,
+        LiveMatchEventType.MATCH_END,
+      ],
+      [MatchOfficialRole.ASSISTANT_REFEREE_1]: [
+        LiveMatchEventType.INCIDENT,
+        LiveMatchEventType.OBSERVATION,
+      ],
+      [MatchOfficialRole.ASSISTANT_REFEREE_2]: [
+        LiveMatchEventType.INCIDENT,
+        LiveMatchEventType.OBSERVATION,
+      ],
+      [MatchOfficialRole.FOURTH_OFFICIAL]: [
+        LiveMatchEventType.SUBSTITUTION,
+        LiveMatchEventType.INCIDENT,
+        LiveMatchEventType.OBSERVATION,
+      ],
+      [MatchOfficialRole.MATCH_COMMISSIONER]: [
+        LiveMatchEventType.INCIDENT,
+        LiveMatchEventType.OBSERVATION,
+      ],
+      [MatchOfficialRole.DELEGATE]: [
+        LiveMatchEventType.INCIDENT,
+        LiveMatchEventType.OBSERVATION,
+      ],
+    };
+
+    const allowedEvents = allowedByRole[assignment.role];
+
+    if (!allowedEvents || !allowedEvents.includes(type)) {
+      throw new ForbiddenException(
+        `Le rôle ${assignment.role ?? 'INCONNU'} n’est pas autorisé à enregistrer l’événement ${type}`,
+      );
+    }
   }
 
   private assertEventAllowed(status: MatchStatus, type: LiveMatchEventType) { if (type === LiveMatchEventType.MATCH_START) { if (status !== MatchStatus.SCHEDULED) throw new BadRequestException('Le match doit être planifié avant le coup d’envoi'); return; } if (status !== MatchStatus.IN_PROGRESS) throw new BadRequestException('Le match doit être en cours'); }

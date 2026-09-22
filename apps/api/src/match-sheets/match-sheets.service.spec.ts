@@ -1,6 +1,7 @@
 import {
   LicenseStatus,
   MatchOfficialAssignmentStatus,
+  MatchOfficialRole,
   MatchSheetPlayerRole,
   MatchSheetSide,
   MatchSheetStatus,
@@ -272,6 +273,7 @@ describe('MatchSheetsService', () => {
     prisma.matchOfficialAssignment.findFirst.mockResolvedValue({
       id: 'assignment',
       status: MatchOfficialAssignmentStatus.ACCEPTED,
+      role: MatchOfficialRole.REFEREE,
     });
     prisma.matchSheet.findUnique.mockResolvedValue({
       id: 'sheet',

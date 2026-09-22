@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   MatchOfficialAssignmentStatus,
+  MatchOfficialRole,
   MatchSheetStatus,
   Role,
 } from '@prisma/client';
@@ -101,7 +102,7 @@ export class MatchSheetPlayerControlsService {
   }
 
   async controlPlayer(actor: AuthenticatedActor, matchId: string, registrationId: string, input: ControlMatchSheetPlayerDto) {
-    await this.assertAssignedOfficial(actor, matchId);
+    await this.assertCanControlPlayers(actor, matchId);
 
     const sheet = await this.prisma.matchSheet.findUnique({
       where: { matchId },
@@ -188,26 +189,85 @@ export class MatchSheetPlayerControlsService {
     return summary;
   }
 
-  private async assertCanRead(actor: AuthenticatedActor, matchId: string) {
-    const isLeagueAdmin = actor.memberships.some((membership) => membership.role === Role.LIGUE_ADMIN);
+  private async assertCanRead(
+    actor: AuthenticatedActor,
+    matchId: string,
+  ) {
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
     if (isLeagueAdmin) return;
-    await this.assertAssignedOfficial(actor, matchId);
+
+    await this.getAcceptedOfficialAssignment(actor, matchId);
   }
 
-  private async assertAssignedOfficial(actor: AuthenticatedActor, matchId: string) {
-    const isOfficial = actor.memberships.some((membership) => membership.role === Role.OFFICIEL);
-    if (!isOfficial) throw new ForbiddenException('Seul un officiel désigné peut contrôler les joueurs');
+  private async assertCanControlPlayers(
+    actor: AuthenticatedActor,
+    matchId: string,
+  ) {
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
+    if (isLeagueAdmin) return;
+
+    const assignment = await this.getAcceptedOfficialAssignment(
+      actor,
+      matchId,
+    );
+
+    if (assignment.role !== MatchOfficialRole.REFEREE) {
+      throw new ForbiddenException(
+        'Seul l’arbitre central désigné peut valider le contrôle terrain des joueurs',
+      );
+    }
+  }
+
+  private async getAcceptedOfficialAssignment(
+    actor: AuthenticatedActor,
+    matchId: string,
+  ) {
+    const isOfficial = actor.memberships.some(
+      (membership) => membership.role === Role.OFFICIEL,
+    );
+
+    if (!isOfficial) {
+      throw new ForbiddenException(
+        'Seul un officiel désigné peut accéder au contrôle des joueurs',
+      );
+    }
 
     const official = await this.prisma.officialProfile.findUnique({
       where: { userId: actor.userId },
       select: { registrationId: true },
     });
-    if (!official) throw new ForbiddenException('Profil officiel introuvable');
 
-    const assignment = await this.prisma.matchOfficialAssignment.findFirst({
-      where: { matchId, officialProfileId: official.registrationId, status: MatchOfficialAssignmentStatus.ACCEPTED },
-      select: { id: true },
-    });
-    if (!assignment) throw new ForbiddenException('Cet officiel n’est pas affecté et confirmé sur cette rencontre');
+    if (!official) {
+      throw new ForbiddenException('Profil officiel introuvable');
+    }
+
+    const assignment =
+      await this.prisma.matchOfficialAssignment.findFirst({
+        where: {
+          matchId,
+          officialProfileId: official.registrationId,
+          status: MatchOfficialAssignmentStatus.ACCEPTED,
+        },
+        select: {
+          id: true,
+          role: true,
+          status: true,
+        },
+      });
+
+    if (!assignment) {
+      throw new ForbiddenException(
+        'Cet officiel n’est pas affecté et confirmé sur cette rencontre',
+      );
+    }
+
+    return assignment;
   }
+
 }
