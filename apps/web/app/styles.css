@@ -2903,7 +2903,7 @@ textarea {
 /* ---------- League club management ---------- */
 .league-club-form {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: end;
+  align-items: flex-end;
   margin-top: 20px;
 }
 
@@ -2924,7 +2924,7 @@ textarea {
 
 .league-club-form-actions {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
 }
 
 .league-club-form-actions button {
@@ -3671,5 +3671,688 @@ textarea {
 
   .league-player-stat-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* =========================================================
+   DIGITAL FOOT — PWA NAVIGATION PRO V2
+   ========================================================= */
+
+.mobile-nav,
+.mobile-more-backdrop {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .shell > aside {
+    height: 76px;
+    overflow: visible;
+  }
+
+  .shell > aside .desktop-nav {
+    display: none !important;
+  }
+
+  .shell > aside .mobile-nav {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+    height: 100%;
+    gap: 2px;
+    overflow: visible !important;
+  }
+
+  .shell > aside .mobile-nav button {
+    min-width: 0 !important;
+    max-width: none !important;
+    width: 100%;
+    min-height: 58px;
+    padding: 6px 2px;
+    flex: none;
+    font-size: 9px;
+    line-height: 1.05;
+    overflow: hidden;
+  }
+
+  .shell > aside .mobile-nav button span {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shell > aside .mobile-nav i {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .mobile-more-backdrop {
+    position: fixed;
+    z-index: 70;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(4, 18, 31, 0.52);
+    backdrop-filter: blur(3px);
+  }
+
+  .mobile-more-sheet {
+    width: 100%;
+    max-height: min(78dvh, 720px);
+    overflow-y: auto;
+    padding:
+      18px
+      16px
+      calc(22px + env(safe-area-inset-bottom));
+    border-radius: 24px 24px 0 0;
+    background: #fff;
+    box-shadow: 0 -20px 50px rgba(7, 31, 54, 0.2);
+  }
+
+  .mobile-more-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .mobile-more-header > div {
+    display: grid;
+    gap: 3px;
+  }
+
+  .mobile-more-header small {
+    color: #718291;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+  }
+
+  .mobile-more-header strong {
+    color: #102d44;
+    font-size: 20px;
+  }
+
+  .mobile-more-header > button {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: #eef3f6;
+    color: #17364d;
+    font-size: 24px;
+  }
+
+  .mobile-more-items {
+    display: grid;
+    gap: 6px;
+  }
+
+  .mobile-more-items > button,
+  .mobile-more-logout {
+    width: 100%;
+    min-height: 52px;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 13px;
+    background: #f7f9fa;
+    color: #18364c;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .mobile-more-items > button.active {
+    background: #eaf2f7;
+    color: #0b466d;
+  }
+
+  .mobile-more-items i,
+  .mobile-more-logout i {
+    font-style: normal;
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .mobile-more-items b {
+    font-size: 20px;
+    color: #8b99a5;
+  }
+
+  .mobile-more-logout {
+    margin-top: 12px;
+    grid-template-columns: 30px 1fr;
+    background: #fff4f1;
+    color: #9c3b32;
+  }
+}
+
+/* =========================================================
+   CALENDRIER OFFICIEL
+   ========================================================= */
+
+.official-calendar {
+  display: grid;
+  gap: 18px;
+}
+
+.official-calendar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #071f36, #123e5e);
+  color: #fff;
+}
+
+.official-calendar-heading > div {
+  min-width: 0;
+}
+
+.official-calendar-heading span {
+  color: #d9b351;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.official-calendar-heading h2 {
+  margin: 6px 0;
+  color: #fff;
+  font-size: 28px;
+}
+
+.official-calendar-heading p {
+  margin: 0;
+  color: #d5e0e8;
+}
+
+.official-calendar-heading > strong {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 12px;
+  background: rgba(255,255,255,.08);
+  font-size: 12px;
+}
+
+.official-calendar-filters {
+  position: sticky;
+  z-index: 10;
+  top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dfe7ec;
+  border-radius: 16px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 10px 30px rgba(13,49,80,.08);
+  backdrop-filter: blur(10px);
+}
+
+.official-calendar-filters label {
+  display: grid;
+  gap: 6px;
+  color: #506777;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.official-calendar-filters select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #ccd8e0;
+  border-radius: 11px;
+  background: #fff;
+  padding: 0 12px;
+  color: #17364d;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.official-calendar-round-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.official-calendar-round-nav button {
+  min-height: 42px;
+  border: 1px solid #d4dee5;
+  border-radius: 11px;
+  background: #fff;
+  color: #194765;
+  font-weight: 800;
+}
+
+.official-calendar-round-nav button:last-child {
+  justify-self: end;
+}
+
+.official-calendar-round-nav button:disabled {
+  opacity: .4;
+}
+
+.official-calendar-round-nav strong {
+  color: #17364d;
+}
+
+.official-match-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.official-match-card {
+  display: grid;
+  gap: 15px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #dfe7ec;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(13,49,80,.05);
+}
+
+.official-match-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #687d8d;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.official-match-card-top b {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef5f8;
+  color: #18506f;
+  font-size: 9px;
+}
+
+.official-match-date {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #536b7a;
+  font-size: 12px;
+}
+
+.official-match-date strong {
+  color: #17364d;
+}
+
+.official-match-teams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  color: #102d44;
+}
+
+.official-match-teams strong:last-child {
+  text-align: right;
+}
+
+.official-match-teams span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eef3f6;
+  color: #6c7e8b;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.official-match-venue {
+  padding-top: 12px;
+  border-top: 1px solid #edf1f4;
+  color: #738492;
+  font-size: 11px;
+}
+
+.official-match-venue strong {
+  color: #354e61;
+}
+
+.official-calendar-empty {
+  padding: 34px 20px;
+  border: 1px dashed #ccd7df;
+  border-radius: 16px;
+  background: #fff;
+  color: #718391;
+  text-align: center;
+}
+
+/* =========================================================
+   CLUBS — MOBILE CARDS
+   ========================================================= */
+
+@media (max-width: 1000px) {
+  .official-match-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .official-calendar {
+    gap: 14px;
+  }
+
+  .official-calendar-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .official-calendar-heading h2 {
+    font-size: 24px;
+  }
+
+  .official-calendar-heading > strong {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .official-calendar-filters {
+    top: 4px;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    padding: 11px;
+  }
+
+  .official-calendar-round-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .official-calendar-round-nav strong {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
+  }
+
+  .official-calendar-round-nav button {
+    grid-row: 2;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .official-match-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .official-match-card {
+    padding: 15px;
+  }
+
+  .league-clubs-table {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .league-clubs-table thead {
+    display: none;
+  }
+
+  .league-clubs-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .league-clubs-table tr {
+    display: block;
+    padding: 15px;
+    border: 1px solid #e0e7ec;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 6px 20px rgba(13,49,80,.05);
+  }
+
+  .league-clubs-table td {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 7px 0;
+    border: 0;
+  }
+
+  .league-clubs-table td::before {
+    content: attr(data-label);
+    color: #82909c;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .league-clubs-table td[data-label="Club"] {
+    display: block;
+    padding-bottom: 12px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #edf1f4;
+  }
+
+  .league-clubs-table td[data-label="Club"]::before {
+    display: none;
+  }
+
+  .league-clubs-table td[data-label="Club"] strong {
+    display: block;
+    color: #172f43;
+    font-size: 17px;
+  }
+
+  .league-clubs-table td[data-label="Club"] small {
+    color: #7b8994;
+  }
+
+  .league-clubs-table td[data-label="Action"] {
+    display: block;
+    padding-top: 12px;
+  }
+
+  .league-clubs-table td[data-label="Action"]::before {
+    display: none;
+  }
+
+  .league-clubs-table .league-club-manage-button {
+    width: 100%;
+    min-height: 46px;
+  }
+}
+
+/* =========================================================
+   DIGITAL FOOT — NAVIGATION METIER V3
+   ========================================================= */
+
+.desktop-nav {
+  display: block;
+}
+
+.desktop-nav-group {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 16px;
+}
+
+.desktop-nav-section-title {
+  margin: 5px 10px 7px;
+  color: #698399;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  line-height: 1;
+}
+
+.desktop-nav-group button {
+  width: 100%;
+}
+
+.desktop-nav-group button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.competition-reference-hero {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 720px) {
+  .desktop-nav-group {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   DIGITAL FOOT — FILTRES METIER V1
+   ========================================================= */
+
+.business-filter-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid #dfe7ed;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.business-filter-bar > div {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.business-filter-bar label,
+.league-player-filters label span {
+  color: #71808e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.business-filter-bar select,
+.league-player-filters select {
+  min-height: 44px;
+  padding: 0 38px 0 12px;
+  border: 1px solid #d9e2e8;
+  border-radius: 10px;
+  background: #fff;
+  color: #10283e;
+  font: inherit;
+  font-weight: 700;
+}
+
+.business-filter-bar strong {
+  color: #10283e;
+  white-space: nowrap;
+}
+
+.league-player-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.league-player-filters label {
+  display: grid;
+  gap: 5px;
+  min-width: 220px;
+}
+
+.league-player-filters input {
+  min-width: 340px;
+}
+
+@media (max-width: 720px) {
+  .business-filter-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .business-filter-bar > div,
+  .business-filter-bar select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .league-player-filters {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .league-player-filters label,
+  .league-player-filters input,
+  .league-player-filters select {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   DIGITAL FOOT — SIDEBAR DESKTOP SCROLL V1
+   ========================================================= */
+
+@media (min-width: 721px) {
+  .shell > aside {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .shell > aside .desktop-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 32px;
+    scrollbar-width: thin;
+  }
+
+  .shell > aside .desktop-nav::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .business-filter-bar-multiple {
+    justify-content: flex-start;
+  }
+
+  .business-filter-bar-multiple strong {
+    margin-left: auto;
+    align-self: flex-end;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
   }
 }

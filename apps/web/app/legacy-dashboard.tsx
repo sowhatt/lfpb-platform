@@ -12,7 +12,17 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 type Actor = { email: string; memberships: { organizationId: string; role: string }[] };
 type Organization = { id: string; name: string; code: string; type: string; active: boolean; club?: { id: string; shortName: string; division: string; city?: string } | null };
 type Competition = { id: string; name: string; code: string; format: string; status: string; division?: string; season?: { name: string }; entries?: unknown[] };
-type Match = { id: string; kickoffAt?: string; status: string; homeClub: { id: string; shortName: string }; awayClub: { id: string; shortName: string }; venue?: { name: string } | null; round?: { number: number } | null };
+type Match = {
+  id: string;
+  kickoffAt?: string;
+  status: string;
+  homeClub: { id: string; shortName: string };
+  awayClub: { id: string; shortName: string };
+  venue?: { name: string } | null;
+  round?: { number: number } | null;
+  competitionDivision?: string;
+  competitionCode?: string;
+};
 type Proposal = { id: string; version: number; status: string; qualityScore: number; generatedBy: string; createdAt: string };
 type Registration = { id: string; organizationId?: string; status: string; startDate?: string; person: { firstName: string; lastName: string; birthDate?: string; nationality?: string; federationId?: string; photoDataUrl?: string | null }; playerProfile?: { position: string; shirtNumber?: number } | null; staffProfile?: { function: string; qualification?: string } | null; officialProfile?: { function: string; level?: string } | null; licenses?: License[]; documents?: { id: string; type: string; status: string }[] };
 type License = { id: string; number?: string | null; season: string; status: string; rejectionReason?: string | null; registration?: Registration };
@@ -131,6 +141,7 @@ export default function HomePage() {
   const [token, setToken] = useState('');
   const [actor, setActor] = useState<Actor | null>(null);
   const [active, setActive] = useState('Vue d’ensemble');
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -151,12 +162,47 @@ export default function HomePage() {
       const orgs = await request<Organization[]>('/organizations', accessToken);
       const comps = role === 'FEDERATION_AGENT' ? [] : await request<Competition[]>('/competitions', accessToken);
       setOrganizations(orgs); setCompetitions(comps);
-      if (comps[0]) {
-        const [games, plans] = await Promise.all([
-          request<Match[]>(`/competitions/${comps[0].id}/matches`, accessToken),
-          request<Proposal[]>(`/competitions/${comps[0].id}/schedule-proposals`, accessToken).catch(() => []),
-        ]);
-        setMatches(games); setProposals(plans);
+      const officialCompetitions = comps.filter(
+        (competition) =>
+          competition.code === 'L1-2026-2027' ||
+          competition.code === 'L2-2026-2027',
+      );
+
+      const scheduleCompetitions =
+        officialCompetitions.length > 0
+          ? officialCompetitions
+          : comps.filter(
+              (competition) =>
+                competition.division === 'LIGUE_1' ||
+                competition.division === 'LIGUE_2',
+            );
+
+      if (scheduleCompetitions.length > 0) {
+        const gamesByCompetition = await Promise.all(
+          scheduleCompetitions.map(async (competition) => {
+            const games = await request<Match[]>(
+              `/competitions/${competition.id}/matches`,
+              accessToken,
+            );
+
+            return games.map((match) => ({
+              ...match,
+              competitionDivision: competition.division,
+              competitionCode: competition.code,
+            }));
+          }),
+        );
+
+        const plans = await request<Proposal[]>(
+          `/competitions/${scheduleCompetitions[0].id}/schedule-proposals`,
+          accessToken,
+        ).catch(() => []);
+
+        setMatches(gamesByCompetition.flat());
+        setProposals(plans);
+      } else {
+        setMatches([]);
+        setProposals([]);
       }
       if (membership && role === 'CLUB_ADMIN') {
         const query = `?organizationId=${membership.organizationId}`;
@@ -228,6 +274,86 @@ export default function HomePage() {
   const currentOrganizationId = actor?.memberships[0]?.organizationId;
   const visibleMatches = space === 'CLUB' && currentClubId ? matches.filter((match) => match.homeClub.id === currentClubId || match.awayClub.id === currentClubId) : matches;
   const nav = navigationForSpace(space);
+
+  const mobilePrimary =
+    space === 'LIGUE'
+      ? ['Vue d’ensemble', 'Calendrier officiel', 'Rencontres', 'Clubs']
+      : space === 'CLUB'
+        ? ['Vue d’ensemble', 'Effectif', 'Calendrier', 'Licences']
+        : space === 'OFFICIEL'
+          ? ['Vue d’ensemble', 'Mes rencontres', 'Assistant vocal', 'Stades']
+          : nav.slice(0, 4);
+
+  const mobileSecondary = nav.filter(
+    (item) => !mobilePrimary.includes(item),
+  );
+
+  const desktopGroups =
+    space === 'LIGUE'
+      ? [
+          { label: '', items: ['Vue d’ensemble'] },
+          {
+            label: 'COMPÉTITIONS',
+            items: [
+              'Calendrier officiel',
+              'Calendrier assisté par IA',
+              'Rencontres',
+              'Classement & statistiques',
+              'Homologation',
+            ],
+          },
+          {
+            label: 'CLUBS',
+            items: ['Clubs', 'Joueurs', 'Transferts'],
+          },
+          {
+            label: 'LICENCES',
+            items: ['Licences', 'Retours FBF'],
+          },
+          {
+            label: 'OFFICIELS',
+            items: ['Officiels', 'Désignations'],
+          },
+          {
+            label: 'ADMINISTRATION',
+            items: ['Référentiel compétitions'],
+          },
+        ]
+      : [{ label: '', items: nav }];
+
+  const navigationIcon = (item: string) => {
+    const icons: Record<string, string> = {
+      'Vue d’ensemble': '⌂',
+      'Calendrier officiel': '▦',
+      'Calendrier assisté par IA': '✦',
+      'Calendrier': '▦',
+      'Rencontres': '⚽',
+      'Mes rencontres': '⚽',
+      'Clubs': '⬡',
+      'Référentiel compétitions': '◫',
+      'Classement & statistiques': '▤',
+      'Homologation': '✓',
+      'Joueurs': '♙',
+      'Effectif': '♙',
+      'Transferts': '⇄',
+      'Licences': '◆',
+      'Retours FBF': '↩',
+      'Officiels': '◉',
+      'Désignations': '◎',
+      'Staff': '♟',
+      'Feuilles de match': '▧',
+      'Assistant IA': '✦',
+      'Assistant vocal': '◉',
+      'Stades': '⌖',
+    };
+
+    return icons[item] ?? '•';
+  };
+
+  const selectNavigation = (item: string) => {
+    setActive(item);
+    setMobileMoreOpen(false);
+  };
   const upcoming = useMemo(() => [...visibleMatches].sort((a, b) => (a.kickoffAt ?? '').localeCompare(b.kickoffAt ?? '')).slice(0, 5), [visibleMatches]);
 
   if (!token || !actor) return <LoginScreen loading={loading} error={error} onSubmit={login} />;
@@ -238,15 +364,112 @@ export default function HomePage() {
         <div className="brand"><b>LF</b><span><strong>LFPB</strong><small>Football professionnel</small></span></div>
         <div className="space-chip">ESPACE {space}</div>
         <div className="connected"><i /> Connecté à l’API</div>
-        <nav>{nav.map((item, i) => <button key={item} className={active === item ? 'active' : ''} onClick={() => setActive(item)}><i>{['⌂', '◫', '✦', '◆', '◉', '✓', '⬡'][i]}</i>{item}</button>)}<button className="mobile-logout" onClick={logout}><i>↪</i>Déconnexion</button></nav>
+        <nav className="desktop-nav">
+          {desktopGroups.map((group) => (
+            <div className="desktop-nav-group" key={group.label || 'principal'}>
+              {group.label && (
+                <div className="desktop-nav-section-title">{group.label}</div>
+              )}
+              {group.items.map((item) => (
+                <button
+                  key={item}
+                  className={active === item ? 'active' : ''}
+                  onClick={() => selectNavigation(item)}
+                >
+                  <i>{navigationIcon(item)}</i>
+                  <span>{item}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <nav className="mobile-nav" aria-label="Navigation principale">
+          {mobilePrimary.map((item) => (
+            <button
+              key={item}
+              className={active === item ? 'active' : ''}
+              onClick={() => selectNavigation(item)}
+            >
+              <i>{navigationIcon(item)}</i>
+              <span>
+                {item === 'Vue d’ensemble'
+                  ? 'Accueil'
+                  : item === 'Calendrier officiel'
+                    ? 'Calendrier'
+                    : item}
+              </span>
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className={mobileSecondary.includes(active) ? 'active' : ''}
+            onClick={() => setMobileMoreOpen((value) => !value)}
+            aria-expanded={mobileMoreOpen}
+          >
+            <i>•••</i>
+            <span>Plus</span>
+          </button>
+        </nav>
+
+        {mobileMoreOpen && (
+          <div
+            className="mobile-more-backdrop"
+            onClick={() => setMobileMoreOpen(false)}
+          >
+            <section
+              className="mobile-more-sheet"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mobile-more-header">
+                <div>
+                  <small>ESPACE {space}</small>
+                  <strong>Plus de fonctionnalités</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileMoreOpen(false)}
+                  aria-label="Fermer le menu"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mobile-more-items">
+                {mobileSecondary.map((item) => (
+                  <button
+                    type="button"
+                    key={item}
+                    className={active === item ? 'active' : ''}
+                    onClick={() => selectNavigation(item)}
+                  >
+                    <i>{navigationIcon(item)}</i>
+                    <span>{item}</span>
+                    <b>›</b>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className="mobile-more-logout"
+                onClick={logout}
+              >
+                <i>↪</i>
+                Déconnexion
+              </button>
+            </section>
+          </div>
+        )}
         <div className="user"><b>{actor.email.slice(0, 2).toUpperCase()}</b><span><strong>{actor.email}</strong><small>{actor.memberships[0]?.role.replaceAll('_', ' ')}</small></span><button onClick={logout}>↪</button></div>
       </aside>
       <main>
-        <header><div><label>{space === 'FEDERATION' ? 'FÉDÉRATION BÉNINOISE DE FOOTBALL' : space === 'CLUB' ? organizations[0]?.name : space === 'OFFICIEL' ? 'PORTAIL DES OFFICIELS' : 'DONNÉES TEMPS RÉEL · API LFPB'}</label><h1>{active}</h1><p>{loading ? 'Actualisation des données…' : space === 'FEDERATION' ? `${licenses.length} dossier(s) de licence` : space === 'CLUB' ? `${players.length} joueur(s) · ${staff.length} membre(s) du staff · ${licenses.length} dossier(s)` : `${clubs.length} clubs · ${competitions.length} compétition(s) · ${visibleMatches.length} rencontre(s)`}</p></div><div className="actions"><button onClick={() => loadDashboard(token, actor)}>↻ Actualiser</button>{space === 'LIGUE' && <button className="primary" onClick={() => setActive('Calendrier des compétitions')}>Ouvrir le calendrier</button>}</div></header>
+        <header><div><label>{space === 'FEDERATION' ? 'FÉDÉRATION BÉNINOISE DE FOOTBALL' : space === 'CLUB' ? organizations[0]?.name : space === 'OFFICIEL' ? 'PORTAIL DES OFFICIELS' : 'DONNÉES TEMPS RÉEL · API LFPB'}</label><h1>{active}</h1><p>{loading ? 'Actualisation des données…' : space === 'FEDERATION' ? `${licenses.length} dossier(s) de licence` : space === 'CLUB' ? `${players.length} joueur(s) · ${staff.length} membre(s) du staff · ${licenses.length} dossier(s)` : `${clubs.length} clubs · ${competitions.filter((competition) => competition.code === 'L1-2026-2027' || competition.code === 'L2-2026-2027').length} compétition(s) · ${visibleMatches.length} rencontre(s)`}</p></div><div className="actions"><button onClick={() => loadDashboard(token, actor)}>↻ Actualiser</button>{space === 'LIGUE' && <button className="primary" onClick={() => setActive('Calendrier officiel')}>Calendrier officiel</button>}</div></header>
         {error && <div className="api-error">{error}</div>}
         {active === 'Vue d’ensemble' && (space === 'FEDERATION' ? <FederationOverview licenses={licenses} /> : space === 'CLUB' ? <ClubOverview organization={organizations[0]} players={players} staff={staff} licenses={licenses} matches={upcoming} /> : space === 'OFFICIEL' ? <OfficialOverview matches={upcoming} /> : <Overview clubs={clubs} competitions={competitions} matches={upcoming} proposal={latestProposal} />)}
         {active === 'Clubs' && <ClubsView clubs={clubs} />}
-        {active === 'Compétitions' && <CompetitionsView competitions={competitions} />}
+        {active === 'Référentiel compétitions' && <CompetitionsView competitions={competitions} />}
         {active === 'Rencontres' && <MatchesView matches={matches} />}
 
         {active === 'Effectif' && currentOrganizationId && <PlayersWorkspace registrations={players} organizationId={currentOrganizationId} token={token} onCreated={() => loadDashboard(token, actor)} />}
@@ -311,7 +534,7 @@ function LoginScreen({ loading, error, onSubmit }: { loading: boolean; error: st
 }
 
 function Overview({ clubs, competitions, matches, proposal }: { clubs: Organization[]; competitions: Competition[]; matches: Match[]; proposal?: Proposal }) {
-  return <><section className="stats"><Stat value={String(clubs.length)} label="Clubs enregistrés" detail="Données PostgreSQL" /><Stat value={String(competitions.length)} label="Compétitions" detail="Toutes saisons" /><Stat value={String(matches.length)} label="Prochaines rencontres" detail="Calendrier actuel" /><Stat value={proposal ? `${proposal.qualityScore}%` : '—'} label="Qualité du calendrier" detail={proposal?.status ?? 'Aucune proposition'} /></section><section className="main-grid"><MatchesPanel matches={matches} /><article className="planner"><div className="orbit">DF</div><label>PLANIFICATEUR INTELLIGENT</label><h2>{proposal ? `Proposition v${proposal.version}` : 'Aucune proposition active'}</h2><p>Cette information provient maintenant de l’API de gouvernance du calendrier.</p><div className="score"><strong>{proposal?.qualityScore ?? '—'}</strong><span>/100<br />{proposal?.status ?? 'À générer'}</span></div></article></section></>;
+  return <><section className="stats"><Stat value={String(clubs.length)} label="Clubs enregistrés" detail="Données PostgreSQL" /><Stat value={String(competitions.filter((competition) => competition.code === 'L1-2026-2027' || competition.code === 'L2-2026-2027').length)} label="Compétitions officielles" detail="Saison 2026-2027" /><Stat value={String(matches.length)} label="Prochaines rencontres" detail="Calendrier actuel" /><Stat value={proposal ? `${proposal.qualityScore}%` : '—'} label="Qualité du calendrier" detail={proposal?.status ?? 'Aucune proposition'} /></section><section className="main-grid"><MatchesPanel matches={matches} /><article className="planner"><div className="orbit">DF</div><label>PLANIFICATEUR INTELLIGENT</label><h2>{proposal ? `Proposition v${proposal.version}` : 'Aucune proposition active'}</h2><p>Cette information provient maintenant de l’API de gouvernance du calendrier.</p><div className="score"><strong>{proposal?.qualityScore ?? '—'}</strong><span>/100<br />{proposal?.status ?? 'À générer'}</span></div></article></section></>;
 }
 function ClubOverview({ organization, players, staff, licenses, matches }: { organization?: Organization; players: Registration[]; staff: Registration[]; licenses: License[]; matches: Match[] }) {
   const issued = licenses.filter((license) => license.status === 'ISSUED_BY_FBF').length;
@@ -329,8 +552,163 @@ function OfficialOverview({ matches }: { matches: Match[] }) {
 function Stat({ value, label, detail }: { value: string; label: string; detail: string }) { return <article><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>; }
 function MatchesPanel({ matches }: { matches: Match[] }) { return <article className="panel fixtures"><div className="title"><span><label>API · RENCONTRES</label><h2>Prochaines rencontres</h2></span></div>{matches.length === 0 ? <Empty text="Aucune rencontre trouvée" /> : matches.map((game) => <div className="fixture" key={game.id}><b className="day">J{game.round?.number ?? '—'}<small>{formatDate(game.kickoffAt)}</small></b><div className="teams"><span>{game.homeClub.shortName}</span><em>VS</em><span>{game.awayClub.shortName}</span></div><div className="meta"><strong>{formatTime(game.kickoffAt)}</strong><small>⌖ {game.venue?.name ?? 'Stade à définir'}</small></div></div>)}</article>; }
 function ClubsView({ clubs }: { clubs: Organization[] }) { return <DataPanel title="Clubs gérés par la Ligue"><table><thead><tr><th>Club</th><th>Code</th><th>Division</th><th>Ville</th><th>État</th></tr></thead><tbody>{clubs.map((club) => <tr key={club.id}><td><strong>{club.name}</strong></td><td>{club.code}</td><td>{club.club?.division.replace('_', ' ')}</td><td>{club.club?.city ?? '—'}</td><td><Badge value={club.active ? 'ACTIF' : 'INACTIF'} /></td></tr>)}</tbody></table></DataPanel>; }
-function CompetitionsView({ competitions }: { competitions: Competition[] }) { return <DataPanel title="Compétitions"><table><thead><tr><th>Nom</th><th>Code</th><th>Format</th><th>Division</th><th>Statut</th></tr></thead><tbody>{competitions.map((c) => <tr key={c.id}><td><strong>{c.name}</strong></td><td>{c.code}</td><td>{c.format.replaceAll('_', ' ')}</td><td>{c.division?.replace('_', ' ') ?? '—'}</td><td><Badge value={c.status} /></td></tr>)}</tbody></table></DataPanel>; }
-function MatchesView({ matches }: { matches: Match[] }) { return <DataPanel title="Toutes les rencontres"><table><thead><tr><th>Journée</th><th>Affiche</th><th>Date</th><th>Stade</th><th>Statut</th></tr></thead><tbody>{matches.map((m) => <tr key={m.id}><td>J{m.round?.number ?? '—'}</td><td><strong>{m.homeClub.shortName} — {m.awayClub.shortName}</strong></td><td>{formatDate(m.kickoffAt)} · {formatTime(m.kickoffAt)}</td><td>{m.venue?.name ?? '—'}</td><td><Badge value={m.status} /></td></tr>)}</tbody></table></DataPanel>; }
+function CompetitionsView({ competitions }: { competitions: Competition[] }) {
+  const visibleCompetitions = competitions.filter((competition) => {
+    const technical = `${competition.name} ${competition.code}`.toUpperCase();
+    return !technical.includes('TEST') && !technical.includes('SMOKE');
+  });
+
+  return (
+    <>
+      <section className="welcome-card competition-reference-hero">
+        <span>ADMINISTRATION</span>
+        <h2>Référentiel compétitions</h2>
+        <p>
+          Cet écran contient les paramètres généraux des compétitions :
+          identité, code, format, division et statut. Le calendrier des matchs
+          se consulte dans « Calendrier officiel » et la génération se fait
+          dans « Calendrier assisté par IA ».
+        </p>
+      </section>
+
+      <DataPanel title="Compétitions officielles">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Code</th>
+              <th>Format</th>
+              <th>Division</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleCompetitions.map((competition) => (
+              <tr key={competition.id}>
+                <td><strong>{competition.name}</strong></td>
+                <td>{competition.code}</td>
+                <td>{competition.format.replaceAll('_', ' ')}</td>
+                <td>{competition.division?.replace('_', ' ') ?? '—'}</td>
+                <td><Badge value={competition.status} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </DataPanel>
+    </>
+  );
+}
+function MatchesView({ matches }: { matches: Match[] }) {
+  const [roundFilter, setRoundFilter] = useState('ALL');
+  const [leagueFilter, setLeagueFilter] = useState('ALL');
+
+  const rounds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          matches
+            .map((match) => match.round?.number)
+            .filter((value): value is number => typeof value === 'number'),
+        ),
+      ).sort((a, b) => a - b),
+    [matches],
+  );
+
+  const filteredMatches = matches.filter((match) => {
+    const roundMatches =
+      roundFilter === 'ALL' ||
+      String(match.round?.number ?? '') === roundFilter;
+
+    const leagueMatches =
+      leagueFilter === 'ALL' ||
+      match.competitionDivision === leagueFilter;
+
+    return roundMatches && leagueMatches;
+  });
+
+  return (
+    <>
+      <section className="business-filter-bar business-filter-bar-multiple">
+        <div>
+          <label htmlFor="match-league-filter">Ligue</label>
+          <select
+            id="match-league-filter"
+            value={leagueFilter}
+            onChange={(event) => setLeagueFilter(event.target.value)}
+          >
+            <option value="ALL">Toutes les ligues</option>
+            <option value="LIGUE_1">Ligue 1</option>
+            <option value="LIGUE_2">Ligue 2</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="match-round-filter">Journée</label>
+          <select
+            id="match-round-filter"
+            value={roundFilter}
+            onChange={(event) => setRoundFilter(event.target.value)}
+          >
+            <option value="ALL">Toutes les journées</option>
+            {rounds.map((round) => (
+              <option key={round} value={String(round)}>
+                J{round}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <strong>
+          {filteredMatches.length} rencontre
+          {filteredMatches.length > 1 ? 's' : ''}
+        </strong>
+      </section>
+
+      <DataPanel title="Toutes les rencontres">
+        {filteredMatches.length === 0 ? (
+          <Empty text="Aucune rencontre avec ces filtres" />
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Ligue</th>
+                <th>Journée</th>
+                <th>Affiche</th>
+                <th>Date</th>
+                <th>Stade</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMatches.map((match) => (
+                <tr key={match.id}>
+                  <td>
+                    {match.competitionDivision === 'LIGUE_1'
+                      ? 'Ligue 1'
+                      : match.competitionDivision === 'LIGUE_2'
+                        ? 'Ligue 2'
+                        : '—'}
+                  </td>
+                  <td>J{match.round?.number ?? '—'}</td>
+                  <td>
+                    <strong>
+                      {match.homeClub.shortName} — {match.awayClub.shortName}
+                    </strong>
+                  </td>
+                  <td>
+                    {formatDate(match.kickoffAt)} · {formatTime(match.kickoffAt)}
+                  </td>
+                  <td>{match.venue?.name ?? '—'}</td>
+                  <td><Badge value={match.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </DataPanel>
+    </>
+  );
+}
 function PlannerView({ proposals }: { proposals: Proposal[] }) { return <DataPanel title="Historique des propositions"><table><thead><tr><th>Version</th><th>Moteur</th><th>Qualité</th><th>Date</th><th>Statut</th></tr></thead><tbody>{proposals.map((p) => <tr key={p.id}><td><strong>Version {p.version}</strong></td><td>{p.generatedBy.endsWith('_FIXTURE_PLANNER_V1') ? 'Digital Foot · Planificateur V1' : p.generatedBy}</td><td>{p.qualityScore}/100</td><td>{formatDate(p.createdAt)}</td><td><Badge value={p.status} /></td></tr>)}</tbody></table>{proposals.length === 0 && <Empty text="Aucune proposition accessible avec ce rôle" />}</DataPanel>; }
 function PlayersWorkspace({ registrations, organizationId, token, onCreated }: { registrations: Registration[]; organizationId: string; token: string; onCreated: () => Promise<void> }) {
   const [creating, setCreating] = useState(false);
@@ -443,6 +821,52 @@ function LicenseWorkflowView({ authority, licenses, clubs, token, onChanged }: {
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
   const [checklist, setChecklist] = useState<LicenseChecklist | null>(null);
   const [checklistLoading, setChecklistLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const businessLicenses = useMemo(
+    () =>
+      licenses.filter((license) => {
+        const technicalValues = [
+          license.number,
+          license.season,
+          license.registration?.person?.firstName,
+          license.registration?.person?.lastName,
+          license.registration?.person?.federationId,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toUpperCase();
+
+        return !(
+          technicalValues.includes('TEST-') ||
+          technicalValues.includes('SMOKE-') ||
+          technicalValues.includes('DISCIPLINE-') ||
+          technicalValues.includes('PREMATCH-') ||
+          technicalValues.startsWith('TEST ') ||
+          technicalValues.startsWith('DISCIPLINE ')
+        );
+      }),
+    [licenses],
+  );
+
+  const availableLicenseStatuses = useMemo(
+    () =>
+      Array.from(
+        new Set(businessLicenses.map((license) => license.status)),
+      ).sort(),
+    [businessLicenses],
+  );
+
+  const filteredLicenses = useMemo(
+    () =>
+      statusFilter === 'ALL'
+        ? businessLicenses
+        : businessLicenses.filter(
+            (license) => license.status === statusFilter,
+          ),
+    [businessLicenses, statusFilter],
+  );
+
   const checklistPanelRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -757,14 +1181,35 @@ function LicenseWorkflowView({ authority, licenses, clubs, token, onChanged }: {
 
   return (
     <>
-      <DataPanel title={title}>
+      <section className="business-filter-bar">
+          <div>
+            <label htmlFor="license-status-filter">Statut</label>
+            <select
+              id="license-status-filter"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="ALL">Tous les statuts</option>
+              {availableLicenseStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {licenseStatusLabel(status)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <strong>
+            {filteredLicenses.length} dossier
+            {filteredLicenses.length > 1 ? 's' : ''}
+          </strong>
+        </section>
+        <DataPanel title={title}>
         {message && (
           <div className={messageIsError ? 'api-error' : 'success-message'}>
             {message}
           </div>
         )}
 
-        {licenses.length === 0 ? (
+        {filteredLicenses.length === 0 ? (
           <Empty text="Aucun dossier de licence enregistré" />
         ) : (
           <table>
@@ -780,7 +1225,7 @@ function LicenseWorkflowView({ authority, licenses, clubs, token, onChanged }: {
               </tr>
             </thead>
             <tbody>
-              {licenses.map((license) => {
+              {filteredLicenses.map((license) => {
                 const registration = license.registration;
                 const club = clubs.find(
                   (item) => item.id === registration?.organizationId,

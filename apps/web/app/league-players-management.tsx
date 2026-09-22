@@ -173,6 +173,7 @@ export function LeaguePlayersManagement({ token }: Props) {
   const [players, setPlayers] = useState<PlayerIndex[]>([]);
   const [selected, setSelected] = useState<Player360 | null>(null);
   const [query, setQuery] = useState("");
+  const [clubFilter, setClubFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
@@ -184,7 +185,26 @@ export function LeaguePlayersManagement({ token }: Props) {
 
     try {
       const data = await api<PlayerIndex[]>("/registries/player-360", token);
-      setPlayers(data);
+      const businessPlayers = data.filter((player) => {
+        const technicalValues = [
+          player.firstName,
+          player.lastName,
+          player.federationId,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toUpperCase();
+
+        return !(
+          technicalValues.includes("TEST-") ||
+          technicalValues.includes("SMOKE-") ||
+          technicalValues.includes("DISCIPLINE-") ||
+          technicalValues.includes("PREMATCH-") ||
+          technicalValues.startsWith("TEST ") ||
+          technicalValues.startsWith("DISCIPLINE ")
+        );
+      });
+      setPlayers(businessPlayers);
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -200,12 +220,32 @@ export function LeaguePlayersManagement({ token }: Props) {
     void loadPlayers();
   }, [loadPlayers]);
 
+  const clubs = useMemo(() => {
+    const byId = new Map<string, Club>();
+
+    players.forEach((player) => {
+      const club = player.current?.club;
+      if (club) byId.set(club.id, club);
+    });
+
+    return Array.from(byId.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, "fr"),
+    );
+  }, [players]);
+
   const filteredPlayers = useMemo(() => {
     const needle = normalize(query.trim());
 
-    if (!needle) return players;
-
     return players.filter((player) => {
+      if (
+        clubFilter !== "ALL" &&
+        player.current?.club?.id !== clubFilter
+      ) {
+        return false;
+      }
+
+      if (!needle) return true;
+
       const searchable = [
         player.firstName,
         player.lastName,
@@ -220,7 +260,7 @@ export function LeaguePlayersManagement({ token }: Props) {
 
       return searchable.includes(needle);
     });
-  }, [players, query]);
+  }, [players, query, clubFilter]);
 
   const anomalies = players.filter(
     (player) => player.dataQuality.multipleActiveRegistrations,
@@ -322,13 +362,31 @@ export function LeaguePlayersManagement({ token }: Props) {
             </small>
           </div>
 
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nom, prénom, identifiant FBF, club, licence…"
-            aria-label="Rechercher un joueur"
-          />
+          <div className="league-player-filters">
+            <label>
+              <span>Club</span>
+              <select
+                value={clubFilter}
+                onChange={(event) => setClubFilter(event.target.value)}
+                aria-label="Filtrer les joueurs par club"
+              >
+                <option value="ALL">Tous les clubs</option>
+                {clubs.map((club) => (
+                  <option key={club.id} value={club.id}>
+                    {club.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Nom, prénom, identifiant FBF, licence…"
+              aria-label="Rechercher un joueur"
+            />
+          </div>
         </div>
 
         {error ? <div className="league-player-error">{error}</div> : null}

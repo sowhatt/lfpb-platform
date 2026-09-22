@@ -375,7 +375,7 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
     return run(() => api<MaterializationResult>(`/schedule-proposals/${latest.id}/materialize`, token, {
       method: 'POST',
       body: JSON.stringify({ programmingWindows: windows, authorizedVenueIds }),
-    }), 'Calendrier opérationnel matérialisé.');
+    }), 'Proposition de calendrier matérialisée.');
   }
 
   function publish() {
@@ -399,7 +399,7 @@ export function LeagueCompetitionCalendar({ token, role }: Props) {
   return (
     <section className="calendar-cockpit">
       <div className="calendar-hero">
-        <div><span className="calendar-kicker">PLANIFICATION ASSISTÉE PAR DIGITAL FOOT</span><h2>Calendrier des compétitions</h2><p>Digital Foot prépare, contrôle et matérialise la proposition. La Ligue garde la décision et la publication.</p></div>
+        <div><span className="calendar-kicker">PLANIFICATION ASSISTÉE PAR DIGITAL FOOT</span><h2>Calendrier assisté par IA</h2><p>Digital Foot prépare, contrôle et matérialise la proposition. La Ligue garde la décision et la publication.</p></div>
         <div className="calendar-ai-badge"><b>IA</b><span>Optimisation & contrôle</span></div>
       </div>
 

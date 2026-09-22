@@ -11,3 +11,5 @@ coverage/
 
 # Documents locaux téléversés
 apps/api/storage/
+
+backups/

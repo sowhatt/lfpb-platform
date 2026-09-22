@@ -26,10 +26,11 @@ export function navigationForSpace(space: Space): string[] {
   }
   return [
     "Vue d’ensemble",
-    "Compétitions",
-    "Calendrier des compétitions",
-    "Homologation",
+    "Calendrier officiel",
+    "Calendrier assisté par IA",
+    "Rencontres",
     "Classement & statistiques",
+    "Homologation",
     "Clubs",
     "Joueurs",
     "Transferts",
@@ -37,6 +38,6 @@ export function navigationForSpace(space: Space): string[] {
     "Retours FBF",
     "Officiels",
     "Désignations",
-    "Rencontres",
+    "Référentiel compétitions",
   ];
 }

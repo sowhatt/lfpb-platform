@@ -6,6 +6,7 @@ import { ClubAiAssistant } from "./club-ai-assistant";
 import { ClubMatchSignaturesWorkspace } from "./club-match-signatures-workspace";
 import { OfficialMissionsWorkspace } from "./official-missions-workspace";
 import { LeagueCompetitionCalendar } from "./league-competition-calendar";
+import { LeagueOfficialCalendar } from "./league-official-calendar";
 import { LeagueMatchHomologation } from "./league-match-homologation";
 import { LeagueStandings } from "./league-standings";
 import { LeagueClubsManagement } from "./league-clubs-management";
@@ -85,7 +86,8 @@ export function DashboardEnhancer() {
     active === "Assistant IA" ||
     active === "Mes rencontres" ||
     active === "Feuilles de match" ||
-    active === "Calendrier des compétitions" ||
+    active === "Calendrier officiel" ||
+    active === "Calendrier assisté par IA" ||
     active === "Homologation" ||
     active === "Classement & statistiques" ||
     active === "Clubs" ||
@@ -143,7 +145,16 @@ export function DashboardEnhancer() {
   const content = useMemo(() => {
     if (!token || !membership) return null;
     if (
-      active === "Calendrier des compétitions" &&
+      active === "Calendrier officiel" &&
+      ["LIGUE_ADMIN", "COMPETITION_MANAGER", "SCHEDULE_APPROVER"].includes(
+        membership.role,
+      )
+    ) {
+      return <LeagueOfficialCalendar token={token} />;
+    }
+
+    if (
+      active === "Calendrier assisté par IA" &&
       ["LIGUE_ADMIN", "COMPETITION_MANAGER", "SCHEDULE_APPROVER"].includes(
         membership.role,
       )

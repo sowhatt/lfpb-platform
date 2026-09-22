@@ -132,6 +132,7 @@ export function LeagueClubsManagement({ token }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [divisionFilter, setDivisionFilter] = useState<"ALL" | "LIGUE_1" | "LIGUE_2">("ALL");
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [editingClub, setEditingClub] = useState(false);
@@ -542,6 +543,13 @@ export function LeagueClubsManagement({ token }: Props) {
     }
   }
 
+  const filteredClubs =
+    divisionFilter === "ALL"
+      ? clubs
+      : clubs.filter(
+          (club) => club.club?.division === divisionFilter,
+        );
+
   return (
     <section>
       <section className="welcome-card league-clubs-hero">
@@ -581,6 +589,30 @@ export function LeagueClubsManagement({ token }: Props) {
           <strong>{clubs.filter((club) => club.active).length}</strong>
           <small>Clubs actifs dans Digital Foot</small>
         </article>
+      </section>
+
+      <section className="business-filter-bar">
+        <div>
+          <label htmlFor="club-division-filter">Division</label>
+          <select
+            id="club-division-filter"
+            value={divisionFilter}
+            onChange={(event) =>
+              setDivisionFilter(
+                event.target.value as "ALL" | "LIGUE_1" | "LIGUE_2",
+              )
+            }
+          >
+            <option value="ALL">Tous les clubs</option>
+            <option value="LIGUE_1">Ligue 1</option>
+            <option value="LIGUE_2">Ligue 2</option>
+          </select>
+        </div>
+
+        <strong>
+          {filteredClubs.length} club
+          {filteredClubs.length > 1 ? "s" : ""}
+        </strong>
       </section>
 
       <article className="panel league-clubs-panel">
@@ -672,10 +704,10 @@ export function LeagueClubsManagement({ token }: Props) {
 
         {loading ? (
           <p>Chargement des clubs…</p>
-        ) : clubs.length === 0 ? (
+        ) : filteredClubs.length === 0 ? (
           <p>Aucun club enregistré.</p>
         ) : (
-          <table>
+          <table className="league-clubs-table">
             <thead>
               <tr>
                 <th>Club</th>
@@ -688,9 +720,9 @@ export function LeagueClubsManagement({ token }: Props) {
             </thead>
 
             <tbody>
-              {clubs.map((club) => (
+              {filteredClubs.map((club) => (
                 <tr key={club.id}>
-                  <td>
+                  <td data-label="Club">
                     <strong>{club.name}</strong>
                     <br />
                     <small>{club.club?.shortName ?? "—"}</small>
@@ -713,7 +745,7 @@ export function LeagueClubsManagement({ token }: Props) {
                       disabled={detailLoading}
                       onClick={() => void openClub(club.id)}
                     >
-                      Voir / Gérer
+                      Gérer le club
                     </button>
                   </td>
                 </tr>
