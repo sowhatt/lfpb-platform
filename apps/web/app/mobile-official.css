@@ -402,3 +402,152 @@
     padding: 15px;
   }
 }
+
+.assistant-referee-workspace {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.assistant-referee-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  align-items: flex-start;
+  padding: 24px;
+  border-radius: 18px;
+  background: #0b2c48;
+  color: #fff;
+}
+
+.assistant-referee-hero label {
+  color: #dfba54;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.assistant-referee-hero h2 {
+  margin: 7px 0 8px;
+  color: #fff;
+}
+
+.assistant-referee-hero p {
+  max-width: 760px;
+  margin: 0;
+  color: #c0cbd5;
+  line-height: 1.5;
+}
+
+.assistant-referee-role-chip {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(223, 186, 84, .45);
+  border-radius: 999px;
+  background: rgba(223, 186, 84, .12);
+  color: #f1cf72;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.assistant-referee-scope {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.assistant-referee-scope article {
+  display: flex;
+  gap: 12px;
+  padding: 17px;
+  border: 1px solid #dfe6eb;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.assistant-referee-scope article > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #0b2c48;
+  color: #dfba54;
+  font-weight: 900;
+}
+
+.assistant-referee-scope strong {
+  display: block;
+  color: #17283d;
+}
+
+.assistant-referee-scope small {
+  display: block;
+  margin-top: 5px;
+  color: #748191;
+  line-height: 1.4;
+}
+
+.assistant-referee-boundary {
+  padding: 18px;
+  border: 1px solid #dce4e9;
+  border-radius: 14px;
+  background: #f7f9fa;
+}
+
+.assistant-referee-boundary > strong {
+  display: block;
+  margin-bottom: 11px;
+  color: #17283d;
+}
+
+.assistant-referee-boundary > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assistant-referee-boundary span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #e7f4ec;
+  color: #27704d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.assistant-referee-boundary span.blocked {
+  background: #f1f3f5;
+  color: #89939d;
+}
+
+@media (max-width: 900px) {
+  .assistant-referee-scope {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .assistant-referee-hero {
+    display: block;
+    padding: 18px;
+  }
+
+  .assistant-referee-role-chip {
+    display: inline-flex;
+    margin-top: 14px;
+  }
+
+  .assistant-referee-scope {
+    grid-template-columns: 1fr;
+  }
+
+  .assistant-referee-scope article {
+    padding: 15px;
+  }
+
+  .assistant-referee-boundary {
+    padding: 15px;
+  }
+}
