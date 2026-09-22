@@ -5,6 +5,7 @@ import { MatchSheetSignaturesPanel } from '../match-sheet-signatures-panel';
 import { OfficialLiveMatchControl } from '../official-live-match-control';
 import { OfficialFourthOfficialWorkspace } from '../official-fourth-official-workspace';
 import { OfficialAssistantRefereeWorkspace } from '../official-assistant-referee-workspace';
+import { OfficialAdministrativeWorkspace } from '../official-administrative-workspace';
 import { OfficialMatchPlayerControlGpt } from '../official-match-player-control-gpt';
 import { OfficialPostMatchReport } from '../official-post-match-report';
 import { OfficialPreMatchGate } from '../official-pre-match-gate';
@@ -292,6 +293,13 @@ export default function OfficialMatchControlPage() {
         ) : assignmentRole === 'ASSISTANT_REFEREE_1' ||
           assignmentRole === 'ASSISTANT_REFEREE_2' ? (
           <OfficialAssistantRefereeWorkspace
+            token={token}
+            matchId={matchId}
+            assignmentRole={assignmentRole}
+          />
+        ) : assignmentRole === 'MATCH_COMMISSIONER' ||
+          assignmentRole === 'DELEGATE' ? (
+          <OfficialAdministrativeWorkspace
             token={token}
             matchId={matchId}
             assignmentRole={assignmentRole}
