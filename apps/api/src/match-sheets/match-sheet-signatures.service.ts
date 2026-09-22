@@ -8,6 +8,7 @@ import {
 import {
   MatchHomologationStatus,
   MatchOfficialAssignmentStatus,
+  MatchOfficialRole,
   MatchSheetStatus,
   MatchStatus,
   Role,
@@ -501,6 +502,12 @@ export class MatchSheetSignaturesService {
     if (!assignment) {
       throw new ForbiddenException(
         'Cet officiel n’est pas confirmé sur cette rencontre',
+      );
+    }
+
+    if (assignment.role !== MatchOfficialRole.REFEREE) {
+      throw new ForbiddenException(
+        'Seul l’arbitre central désigné peut certifier et clôturer le rapport officiel',
       );
     }
   }

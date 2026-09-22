@@ -74,6 +74,12 @@ export class MatchEventsService {
   ) {
     const match = await this.getAuthorizedMatch(actor, matchId, true);
 
+    await this.assertCanCreatePostMatchEntry(
+      actor,
+      match,
+      input.type,
+    );
+
     if (match.status !== MatchStatus.COMPLETED) {
       throw new BadRequestException(
         'Le match doit être terminé avant la saisie post-match',
@@ -597,6 +603,76 @@ export class MatchEventsService {
         ? 'Seul un officiel affecté et confirmé ou la Ligue peut agir sur ce match'
         : 'Vous n’êtes pas désigné sur cette rencontre',
     );
+  }
+
+  private async assertCanCreatePostMatchEntry(
+    actor: AuthenticatedActor,
+    match: {
+      officialAssignments: Array<{
+        officialProfileId: string;
+        role: MatchOfficialRole;
+      }>;
+    },
+    type: PostMatchEntryType,
+  ) {
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
+    );
+
+    if (isLeagueAdmin) return;
+
+    const officialProfile = await this.prisma.officialProfile.findUnique({
+      where: { userId: actor.userId },
+      select: { registrationId: true },
+    });
+
+    if (!officialProfile) {
+      throw new ForbiddenException('Profil officiel introuvable');
+    }
+
+    const assignment = match.officialAssignments.find(
+      (item) =>
+        item.officialProfileId === officialProfile.registrationId,
+    );
+
+    if (!assignment) {
+      throw new ForbiddenException(
+        'Vous n’êtes pas désigné et confirmé sur cette rencontre',
+      );
+    }
+
+    const standardPostMatchEntries = [
+      PostMatchEntryType.POST_MATCH_OBSERVATION,
+      PostMatchEntryType.OFFICIAL_INCIDENT_REPORT,
+    ];
+
+    const allowedByRole: Record<
+      MatchOfficialRole,
+      PostMatchEntryType[]
+    > = {
+      [MatchOfficialRole.REFEREE]: [
+        PostMatchEntryType.TECHNICAL_RESERVE,
+        ...standardPostMatchEntries,
+      ],
+      [MatchOfficialRole.ASSISTANT_REFEREE_1]:
+        standardPostMatchEntries,
+      [MatchOfficialRole.ASSISTANT_REFEREE_2]:
+        standardPostMatchEntries,
+      [MatchOfficialRole.FOURTH_OFFICIAL]:
+        standardPostMatchEntries,
+      [MatchOfficialRole.MATCH_COMMISSIONER]:
+        standardPostMatchEntries,
+      [MatchOfficialRole.DELEGATE]:
+        standardPostMatchEntries,
+    };
+
+    const allowedEntries = allowedByRole[assignment.role];
+
+    if (!allowedEntries || !allowedEntries.includes(type)) {
+      throw new ForbiddenException(
+        `Le rôle ${assignment.role ?? 'INCONNU'} n’est pas autorisé à enregistrer la saisie post-match ${type}`,
+      );
+    }
   }
 
   private async assertCanCreateEvent(

@@ -1191,6 +1191,121 @@ describe('MatchEventsService - post-match entries', () => {
     });
   });
 
+  it('refuse une réserve technique à un arbitre assistant', async () => {
+    const prisma = makePostMatchPrisma();
+
+    prisma.match.findUnique.mockResolvedValue({
+      id: 'match-1',
+      status: MatchStatus.COMPLETED,
+      homeClubId: 'club-home',
+      awayClubId: 'club-away',
+      homeScore: 1,
+      awayScore: 0,
+      competition: {
+        organizationId: 'league-org',
+      },
+      homeClub: {
+        organizationId: 'home-org',
+      },
+      awayClub: {
+        organizationId: 'away-org',
+      },
+      officialAssignments: [
+        {
+          officialProfileId: 'official-registration',
+          role: MatchOfficialRole.ASSISTANT_REFEREE_1,
+        },
+      ],
+    });
+
+    prisma.officialProfile.findUnique.mockResolvedValue({
+      registrationId: 'official-registration',
+    });
+
+    const officialActor = {
+      userId: 'official-user',
+      memberships: [
+        {
+          role: Role.OFFICIEL,
+          organizationId: 'league-org',
+        },
+      ],
+    } as any;
+
+    const service = new MatchEventsService(prisma, {
+      createSuspension: jest.fn(),
+      createYellowCardSuspensionIfThresholdReached: jest.fn(),
+      serveSuspensionsForCompletedMatch: jest.fn(),
+    } as any);
+
+    await expect(
+      service.createPostMatchEntry(officialActor, 'match-1', {
+        type: 'TECHNICAL_RESERVE' as any,
+        clubId: 'club-home',
+        description: 'Réserve technique.',
+      }),
+    ).rejects.toThrow(
+      'Le rôle ASSISTANT_REFEREE_1 n’est pas autorisé à enregistrer la saisie post-match TECHNICAL_RESERVE',
+    );
+  });
+
+  it('autorise une observation post-match à un arbitre assistant', async () => {
+    const prisma = makePostMatchPrisma();
+
+    prisma.match.findUnique.mockResolvedValue({
+      id: 'match-1',
+      status: MatchStatus.COMPLETED,
+      homeClubId: 'club-home',
+      awayClubId: 'club-away',
+      homeScore: 1,
+      awayScore: 0,
+      competition: {
+        organizationId: 'league-org',
+      },
+      homeClub: {
+        organizationId: 'home-org',
+      },
+      awayClub: {
+        organizationId: 'away-org',
+      },
+      officialAssignments: [
+        {
+          officialProfileId: 'official-registration',
+          role: MatchOfficialRole.ASSISTANT_REFEREE_1,
+        },
+      ],
+    });
+
+    prisma.officialProfile.findUnique.mockResolvedValue({
+      registrationId: 'official-registration',
+    });
+
+    const officialActor = {
+      userId: 'official-user',
+      memberships: [
+        {
+          role: Role.OFFICIEL,
+          organizationId: 'league-org',
+        },
+      ],
+    } as any;
+
+    const service = new MatchEventsService(prisma, {
+      createSuspension: jest.fn(),
+      createYellowCardSuspensionIfThresholdReached: jest.fn(),
+      serveSuspensionsForCompletedMatch: jest.fn(),
+    } as any);
+
+    await expect(
+      service.createPostMatchEntry(officialActor, 'match-1', {
+        type: 'POST_MATCH_OBSERVATION' as any,
+        description: 'Observation de l’assistant.',
+      }),
+    ).resolves.toMatchObject({
+      type: 'POST_MATCH_OBSERVATION',
+    });
+  });
+
   it('refuse une saisie post-match avant la fin du match', async () => {
     const prisma = makePostMatchPrisma(
       MatchStatus.IN_PROGRESS,

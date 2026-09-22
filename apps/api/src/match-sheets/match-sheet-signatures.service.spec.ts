@@ -1,5 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
 import {
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
+import {
+  MatchOfficialRole,
   MatchSheetStatus,
   MatchStatus,
   Role,
@@ -244,6 +248,84 @@ describe('MatchSheetSignaturesService - report certification', () => {
         signerName: 'Président Away',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('refuse la certification finale à un arbitre assistant', async () => {
+    const prisma = createPrisma();
+
+    prisma.officialProfile.findUnique.mockResolvedValue({
+      registrationId: 'official-registration',
+    });
+
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue({
+      id: 'assignment-1',
+      officialProfileId: 'official-registration',
+      status: 'ACCEPTED',
+      role: MatchOfficialRole.ASSISTANT_REFEREE_1,
+    });
+
+    const officialActor = {
+      userId: 'official-user',
+      email: 'official@example.test',
+      memberships: [
+        {
+          organizationId: 'org-league',
+          role: Role.OFFICIEL,
+        },
+      ],
+    } as any;
+
+    const service = new MatchSheetSignaturesService(prisma);
+
+    await expect(
+      service.sign(officialActor, 'match-1', {
+        role: MatchSheetSignatureRole.OFFICIAL,
+        signerName: 'Assistant Un',
+      }),
+    ).rejects.toThrow(
+      'Seul l’arbitre central désigné peut certifier et clôturer le rapport officiel',
+    );
+  });
+
+  it('autorise l’arbitre central à atteindre le circuit de certification finale', async () => {
+    const prisma = createPrisma();
+
+    prisma.officialProfile.findUnique.mockResolvedValue({
+      registrationId: 'official-registration',
+    });
+
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue({
+      id: 'assignment-1',
+      officialProfileId: 'official-registration',
+      status: 'ACCEPTED',
+      role: MatchOfficialRole.REFEREE,
+    });
+
+    const officialActor = {
+      userId: 'official-user',
+      email: 'official@example.test',
+      memberships: [
+        {
+          organizationId: 'org-league',
+          role: Role.OFFICIEL,
+        },
+      ],
+    } as any;
+
+    const service = new MatchSheetSignaturesService(prisma);
+
+    await expect(
+      service.sign(officialActor, 'match-1', {
+        role: MatchSheetSignatureRole.OFFICIAL,
+        signerName: 'Arbitre Central',
+      }),
+    ).rejects.toThrow(
+      'Les représentants des deux clubs doivent signer avant l’officiel',
+    );
+
+    expect(
+      prisma.matchOfficialAssignment.findFirst,
+    ).toHaveBeenCalled();
   });
 
   it('refuse toute nouvelle signature après la clôture officielle', async () => {
