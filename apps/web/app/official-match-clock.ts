@@ -8,9 +8,9 @@ export function clockFromEvents(events: Array<{ type: string; createdAt?: string
   let period: MatchClockPeriod = 'FIRST_HALF'; let running = false; let elapsedSeconds = 0; let periodStartedAt: string | null = null; let legacyClock = false;
   for (const event of events) {
     if (event.type === 'MATCH_START') { period = 'FIRST_HALF'; running = true; elapsedSeconds = 0; periodStartedAt = event.createdAt ?? null; }
-    else if (event.type === 'HALF_TIME') { if (running && periodStartedAt) elapsedSeconds += Math.max(0, Math.floor((new Date(event.createdAt ?? nowMs).getTime() - new Date(periodStartedAt).getTime()) / 1000)); period = 'HALF_TIME'; running = false; periodStartedAt = null; }
+    else if (event.type === 'HALF_TIME') { if (running && periodStartedAt) { const segmentSeconds = Math.max(0, Math.floor((new Date(event.createdAt ?? nowMs).getTime() - new Date(periodStartedAt).getTime()) / 1000)); elapsedSeconds += segmentSeconds > LEGACY_RUNNING_LIMIT_SECONDS ? 45 * 60 : segmentSeconds; } period = 'HALF_TIME'; running = false; periodStartedAt = null; }
     else if (event.type === 'SECOND_HALF_START') { period = 'SECOND_HALF'; running = true; elapsedSeconds = 45 * 60; periodStartedAt = event.createdAt ?? null; }
-    else if (event.type === 'MATCH_END') { if (running && periodStartedAt) elapsedSeconds += Math.max(0, Math.floor((new Date(event.createdAt ?? nowMs).getTime() - new Date(periodStartedAt).getTime()) / 1000)); period = 'FINISHED'; running = false; periodStartedAt = null; }
+    else if (event.type === 'MATCH_END') { if (running && periodStartedAt) { const segmentSeconds = Math.max(0, Math.floor((new Date(event.createdAt ?? nowMs).getTime() - new Date(periodStartedAt).getTime()) / 1000)); elapsedSeconds += segmentSeconds > LEGACY_RUNNING_LIMIT_SECONDS ? 45 * 60 : segmentSeconds; } period = 'FINISHED'; running = false; periodStartedAt = null; }
   }
   if (running && periodStartedAt) {
     const liveSeconds = Math.max(0, Math.floor((nowMs - new Date(periodStartedAt).getTime()) / 1000));

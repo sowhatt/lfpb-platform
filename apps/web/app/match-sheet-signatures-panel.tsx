@@ -30,14 +30,14 @@ type Summary = {
   closedAt?: string | null;
 };
 
-type Props = { token: string; matchId: string; memberships: Membership[] };
+type Props = { token: string; matchId: string; memberships: Membership[]; refreshKey?: number };
 
 function messageOf(payload: unknown, fallback: string) {
   const raw = (payload as { message?: string | string[] } | null)?.message;
   return Array.isArray(raw) ? raw.join(' · ') : raw ?? fallback;
 }
 
-export function MatchSheetSignaturesPanel({ token, matchId, memberships }: Props) {
+export function MatchSheetSignaturesPanel({ token, matchId, memberships, refreshKey = 0 }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [name, setName] = useState('');
   const [fn, setFn] = useState('');
@@ -57,7 +57,7 @@ export function MatchSheetSignaturesPanel({ token, matchId, memberships }: Props
 
   useEffect(() => {
     void load().catch((reason) => setError(reason instanceof Error ? reason.message : 'Signatures indisponibles'));
-  }, [load]);
+  }, [load, refreshKey]);
 
   const allowedRole = useMemo<SignatureRole | null>(() => {
     if (!summary) return null;

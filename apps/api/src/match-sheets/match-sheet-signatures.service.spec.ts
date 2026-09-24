@@ -349,4 +349,45 @@ describe('MatchSheetSignaturesService - report certification', () => {
     ).rejects.toThrow('Le rapport officiel est définitivement clôturé');
   });
 
+
+  it('refuse la lecture des signatures à un officiel non désigné sur le match', async () => {
+    const prisma = createPrisma();
+
+    prisma.officialProfile.findUnique.mockResolvedValue({
+      registrationId: 'official-registration',
+    });
+
+    prisma.matchOfficialAssignment.findFirst.mockResolvedValue(null);
+
+    const officialActor = {
+      userId: 'official-user',
+      email: 'official@example.test',
+      memberships: [
+        {
+          organizationId: 'org-league',
+          role: Role.OFFICIEL,
+        },
+      ],
+    } as any;
+
+    const service = new MatchSheetSignaturesService(prisma);
+
+    await expect(
+      service.list(officialActor, 'match-1'),
+    ).rejects.toThrow(
+      'Accès interdit aux signatures de cette feuille',
+    );
+
+    expect(
+      prisma.matchOfficialAssignment.findFirst,
+    ).toHaveBeenCalledWith({
+      where: {
+        matchId: 'match-1',
+        officialProfileId: 'official-registration',
+        status: 'ACCEPTED',
+      },
+      select: { id: true },
+    });
+  });
+
 });

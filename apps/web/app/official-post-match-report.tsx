@@ -89,7 +89,7 @@ type SignaturePayload = {
   awaySigned: boolean;
 };
 
-type Props = { token: string; matchId: string };
+type Props = { token: string; matchId: string; refreshKey?: number };
 
 const EVENT_LABELS: Record<string, string> = {
   MATCH_START: 'Coup d’envoi',
@@ -125,7 +125,7 @@ function minuteLabel(event: EventItem) {
     : `${event.minute}’ · `;
 }
 
-export function OfficialPostMatchReport({ token, matchId }: Props) {
+export function OfficialPostMatchReport({ token, matchId, refreshKey = 0 }: Props) {
   const [data, setData] = useState<ReportPayload | null>(null);
   const [signatures, setSignatures] = useState<SignaturePayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -173,7 +173,7 @@ export function OfficialPostMatchReport({ token, matchId }: Props) {
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, refreshKey]);
 
   const lineups = useMemo(() => {
     const players = data?.sheet?.players ?? [];

@@ -44,6 +44,7 @@ export class MatchSheetSignaturesService {
 
     await this.assertCanRead(
       actor,
+      matchId,
       sheet.match.homeClub.organizationId,
       sheet.match.awayClub.organizationId,
     );
@@ -410,24 +411,58 @@ export class MatchSheetSignaturesService {
 
   private async assertCanRead(
     actor: AuthenticatedActor,
+    matchId: string,
     homeOrgId: string,
     awayOrgId: string,
   ) {
-    const allowed = actor.memberships.some(
-      (membership) =>
-        membership.role === Role.LIGUE_ADMIN ||
-        membership.role === Role.OFFICIEL ||
-        (membership.role === Role.CLUB_ADMIN &&
-          [homeOrgId, awayOrgId].includes(
-            membership.organizationId,
-          )),
+    const isLeagueAdmin = actor.memberships.some(
+      (membership) => membership.role === Role.LIGUE_ADMIN,
     );
 
-    if (!allowed) {
-      throw new ForbiddenException(
-        'Accès interdit aux signatures de cette feuille',
-      );
+    if (isLeagueAdmin) {
+      return;
     }
+
+    const isClubRepresentative = actor.memberships.some(
+      (membership) =>
+        membership.role === Role.CLUB_ADMIN &&
+        [homeOrgId, awayOrgId].includes(membership.organizationId),
+    );
+
+    if (isClubRepresentative) {
+      return;
+    }
+
+    const isOfficial = actor.memberships.some(
+      (membership) => membership.role === Role.OFFICIEL,
+    );
+
+    if (isOfficial) {
+      const profile = await this.prisma.officialProfile.findUnique({
+        where: { userId: actor.userId },
+        select: { registrationId: true },
+      });
+
+      if (profile) {
+        const assignment =
+          await this.prisma.matchOfficialAssignment.findFirst({
+            where: {
+              matchId,
+              officialProfileId: profile.registrationId,
+              status: MatchOfficialAssignmentStatus.ACCEPTED,
+            },
+            select: { id: true },
+          });
+
+        if (assignment) {
+          return;
+        }
+      }
+    }
+
+    throw new ForbiddenException(
+      'Accès interdit aux signatures de cette feuille',
+    );
   }
 
   private async assertCanSign(

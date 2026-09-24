@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { OfficialLiveMatchControl } from './official-live-match-control';
 import { OfficialPreMatchGate } from './official-pre-match-gate';
 import { OfficialMatchPlayerControlGpt } from './official-match-player-control-gpt';
@@ -20,6 +22,8 @@ export function OfficialRefereeWorkspace({
   matchId: string;
   memberships: Membership[];
 }) {
+  const [matchRevision, setMatchRevision] = useState(0);
+
   return (
     <div className="referee-workspace">
       <section className="referee-hero">
@@ -164,6 +168,7 @@ export function OfficialRefereeWorkspace({
           token={token}
           matchId={matchId}
           assignmentRole="REFEREE"
+            onMatchUpdated={() => setMatchRevision((value) => value + 1)}
         />
       </section>
 
@@ -181,6 +186,7 @@ export function OfficialRefereeWorkspace({
         <OfficialPostMatchReport
           token={token}
           matchId={matchId}
+            refreshKey={matchRevision}
         />
       </section>
 
@@ -199,6 +205,7 @@ export function OfficialRefereeWorkspace({
           token={token}
           matchId={matchId}
           memberships={memberships}
+            refreshKey={matchRevision}
         />
       </section>
     </div>
