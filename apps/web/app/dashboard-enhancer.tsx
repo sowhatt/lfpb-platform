@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClubAiAssistant } from "./club-ai-assistant";
+import { ClubDashboardV2 } from "./club-dashboard-v2";
 import { ClubMatchSignaturesWorkspace } from "./club-match-signatures-workspace";
 import { OfficialMissionsWorkspace } from "./official-missions-workspace";
 import { OfficialPortalWorkspace } from "./official-portal-workspace";
@@ -84,6 +85,7 @@ export function DashboardEnhancer() {
 
   const membership = actor?.memberships?.[0];
   const enhanced =
+    (active === "Vue d’ensemble" && membership?.role === "CLUB_ADMIN") ||
     active === "Assistant IA" ||
     active === "Mes missions" ||
     active === "Accueil" ||
@@ -149,6 +151,18 @@ export function DashboardEnhancer() {
 
   const content = useMemo(() => {
     if (!token || !membership) return null;
+    if (
+      active === "Vue d’ensemble" &&
+      membership.role === "CLUB_ADMIN"
+    ) {
+      return (
+        <ClubDashboardV2
+          token={token}
+          membership={membership}
+        />
+      );
+    }
+
     if (
       active === "Calendrier officiel" &&
       ["LIGUE_ADMIN", "COMPETITION_MANAGER", "SCHEDULE_APPROVER"].includes(
